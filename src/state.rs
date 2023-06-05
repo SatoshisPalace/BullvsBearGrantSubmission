@@ -8,8 +8,8 @@ pub static CONFIG_KEY: &[u8] = b"config";
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct State {
-    pub count: i32,
-    pub owner: Addr,
+    pub satoshis_palace: Addr,
+    pub oracle_contract: Addr,
 }
 
 pub fn config(storage: &mut dyn Storage) -> Singleton<State> {
