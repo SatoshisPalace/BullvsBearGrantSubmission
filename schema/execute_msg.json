@@ -9,10 +9,92 @@
       ],
       "properties": {
         "create_contest": {
-          "type": "object"
+          "type": "object",
+          "required": [
+            "contest_info",
+            "contest_info_signature_hex",
+            "users_bet"
+          ],
+          "properties": {
+            "contest_info": {
+              "$ref": "#/definitions/ContestInfo"
+            },
+            "contest_info_signature_hex": {
+              "type": "string"
+            },
+            "users_bet": {
+              "$ref": "#/definitions/Bet"
+            }
+          }
         }
       },
       "additionalProperties": false
     }
-  ]
+  ],
+  "definitions": {
+    "Bet": {
+      "type": "object",
+      "required": [
+        "option",
+        "value"
+      ],
+      "properties": {
+        "option": {
+          "type": "integer",
+          "format": "int8"
+        },
+        "value": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "ContestInfo": {
+      "type": "object",
+      "required": [
+        "id",
+        "options",
+        "time_of_close",
+        "time_of_resolve"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "uint8",
+          "minimum": 0.0
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ContestOutcome"
+          }
+        },
+        "time_of_close": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "time_of_resolve": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "ContestOutcome": {
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "uint8",
+          "minimum": 0.0
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    }
+  }
 }

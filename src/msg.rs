@@ -1,6 +1,8 @@
-use cosmwasm_std::{Addr};
+use cosmwasm_std::Addr;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+
+use crate::{contest::contest_info::ContestInfo, bet::bet::Bet};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
@@ -11,11 +13,17 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    CreateContest {},
+    CreateContest {
+        contest_info: ContestInfo,
+        contest_info_signature_hex: String,
+        users_bet: Bet,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    GetContest {},
+    GetContest {
+        contest_id: u8
+    },
 }

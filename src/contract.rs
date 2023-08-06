@@ -1,8 +1,9 @@
-use cosmwasm_std::{
-     entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
-};
-use crate::msg::{ ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::contest::actions::{query_contest, try_create_contest};
+use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{config, State};
+use cosmwasm_std::{
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+};
 
 #[entry_point]
 pub fn instantiate(
@@ -24,15 +25,39 @@ pub fn instantiate(
 }
 
 #[entry_point]
-pub fn execute(_deps: DepsMut, _env: Env, _info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
+pub fn execute<'a>(
+    deps: DepsMut,
+    _env: Env,
+    _info: MessageInfo,
+    msg: ExecuteMsg,
+) -> StdResult<Response> {
     match msg {
-        ExecuteMsg::CreateContest {} => todo!()
+        ExecuteMsg::CreateContest {
+            contest_info,
+            contest_info_signature_hex,
+            users_bet: _,
+        } => {
+            let contest_creation = try_create_contest(
+                deps,
+                contest_info,
+                contest_info_signature_hex,
+            );
+            match contest_creation {
+                Ok(_) => {
+                    Ok(Response::default())
+                },
+                Err(cryptography_error) => {
+                    Err(cosmwasm_std::StdError::GenericErr { msg: cryptography_error.to_string() })
+                },
+            }
+
+        }
     }
 }
 
 #[entry_point]
-pub fn query(_deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetContest {} => todo!()
+        QueryMsg::GetContest { contest_id } => to_binary(&query_contest(deps, contest_id)?),
     }
 }

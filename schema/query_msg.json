@@ -9,7 +9,17 @@
       ],
       "properties": {
         "get_contest": {
-          "type": "object"
+          "type": "object",
+          "required": [
+            "contest_id"
+          ],
+          "properties": {
+            "contest_id": {
+              "type": "integer",
+              "format": "uint8",
+              "minimum": 0.0
+            }
+          }
         }
       },
       "additionalProperties": false
