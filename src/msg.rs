@@ -1,8 +1,8 @@
-use cosmwasm_std::Addr;
+use cosmwasm_std::{Addr, Uint128, Binary};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::{contest::contest_info::ContestInfo, bet::bet::Bet};
+use crate::contest::data::contest_info::ContestInfo;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
@@ -16,14 +16,56 @@ pub enum ExecuteMsg {
     CreateContest {
         contest_info: ContestInfo,
         contest_info_signature_hex: String,
-        users_bet: Bet,
+        outcome_id: u8,
+        sender: Option<Addr>,
+        amount: Option<Uint128>,    
     },
+    BetContest {
+        contest_id: u32,
+        outcome_id: u8,
+        sender: Option<Addr>,
+        amount: Option<Uint128>,
+    },
+    // SNIP-20 MSGs
+    Register {
+        reg_addr: String,
+        reg_hash: String,
+    },
+    Receive {
+        sender: Addr,
+        from: Addr,
+        amount: Uint128,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        memo: Option<String>,
+        msg: Binary,
+    },
+    Redeem {
+        addr: String,
+        hash: String,
+        to: Addr,
+        amount: Uint128,
+        denom: Option<String>,
+    },
+    //
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     GetContest {
-        contest_id: u8
+        contest_id: u32
     },
+    //SNIP 20s
+    GetSnip20s {},
+    //Contract specific snip-20s
+    GetContestCreationMsgBinary {
+        contest_info: ContestInfo,
+        contest_info_signature_hex: String,
+        outcome_id: u8,
+    },
+    GetBetContestMsgBinary {
+        contest_id: u32,
+        outcome_id: u8,
+    }
+    //
 }

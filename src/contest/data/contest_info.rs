@@ -3,11 +3,12 @@ use schemars::JsonSchema;
 use secret_toolkit::storage::Keymap;
 use serde::{Deserialize, Serialize};
 
-use super::constants::{CONNTEST_SAVE_ERROR_MESSAGE, CONTEST_CONFIG_KEY};
+use crate::contest::{constants::{CONNTEST_SAVE_ERROR_MESSAGE, CONTEST_CONFIG_KEY}, error::ContestError};
+
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct ContestInfo {
-    pub id: u8,
+    pub id: u32,
     pub options: Vec<ContestOutcome>,
     pub time_of_close: i32,
     pub time_of_resolve: i32,
@@ -20,7 +21,7 @@ pub struct ContestOutcome {
 
 impl<'a> ContestInfo {
     pub fn new(
-        id: u8,
+        id: u32,
         time_of_close: i32,
         time_of_resolve: i32,
         options: Vec<ContestOutcome>,
@@ -32,7 +33,7 @@ impl<'a> ContestInfo {
             options,
         }
     }
-    pub fn id(&self) -> u8 {
+    pub fn id(&self) -> u32 {
         return self.id;
     }
     pub fn time_of_close(&self) -> i32 {
@@ -50,15 +51,31 @@ impl<'a> ContestInfo {
     }
 }
 
-static CONTESTS: Keymap<u8, ContestInfo> = Keymap::new(CONTEST_CONFIG_KEY);
+static CONTESTS: Keymap<u32, ContestInfo> = Keymap::new(CONTEST_CONFIG_KEY);
 
 pub fn save_contest(storage: &mut dyn Storage, contest_info: &ContestInfo) {
-    let key: u8 = contest_info.id;
+    let key  = contest_info.id;
     CONTESTS
         .insert(storage, &key, &contest_info)
         .expect(CONNTEST_SAVE_ERROR_MESSAGE);
 }
 
-pub fn get_contest(storage: &dyn Storage, contest_id: u8) -> Option<ContestInfo> {
+pub fn get_contest(storage: &dyn Storage, contest_id: u32) -> Option<ContestInfo> {
     return CONTESTS.get(storage, &contest_id);
+}
+
+pub fn verify_contest(storage: &dyn Storage, contest_id: u32, outcome_id: u8) -> Result<(), ContestError> {
+    let contest = get_contest(storage, contest_id);
+    
+    // Check if the contest exists
+    if let Some(contest) = contest {
+        // Check if the option_id exists within the contest's options
+        if contest.options.iter().any(|outcome| outcome.id == outcome_id) {
+            Ok(())
+        } else {
+            Err(ContestError::OutcomeDNE)
+        }
+    } else {
+        Err(ContestError::ContestDNE)
+    }
 }

@@ -59,12 +59,36 @@ secretcli tx compute execute $CONTRACT_ADDRESS '{
 	}
 }' --from myWallet
 ```
-
-Query A Contest
+## Query
+### Query A Contest
 ```
 secretcli query compute query $CONTRACT_ADDRESS '{
 	"get_contest": {
 	  "contest_id": 0
+	}
+}'
+```
+### Get Contest Creation Msg Binary
+```
+secretcli query compute query $CONTRACT_ADDRESS '{
+	"get_contest_creation_msg_binary": {
+		"contest_info": {
+			"id": 0,
+			"options": [
+				{
+					"id": 0,
+					"name": "option1"
+				},
+				{
+					"id": 1,
+					"name": "option2"
+				}
+			],
+			"time_of_close": 0,
+			"time_of_resolve": 0
+		},
+		"contest_info_signature_hex": "ccf5c5b987455453eaddc62ce5b8e64877ea4f14500a7bdcce594e4b79303ceb29c5c9038e70177005b61cb6fbb486e7b22b76831da46c34e42f77909f0310f5",
+		"outcome_id": 0
 	}
 }'
 ```

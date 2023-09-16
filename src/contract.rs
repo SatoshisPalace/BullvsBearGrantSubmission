@@ -1,8 +1,11 @@
-use crate::contest::actions::{query_contest, try_create_contest};
+use crate::contest::actions::{try_create_contest, try_bet_on_contest};
+use crate::contest::queries::{contest_creation_send_msg, contest_bet_send_msg, query_contest};
+use crate::integrations::snip_20::snip_20::{try_register, try_redeem, try_receive};
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{config, State};
+use crate::state::{config, State, config_read};
+use crate::utils::utils::contract_only_call;
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, StdError,
 };
 
 #[entry_point]
@@ -15,10 +18,10 @@ pub fn instantiate(
     let state = State {
         satoshis_palace: msg.satoshis_palace,
         oracle_contract: msg.oracle_contract,
+        owner: deps.api.addr_canonicalize(info.sender.as_str())?,
+        known_snip_20: vec![],
     };
 
-    deps.api
-        .debug(format!("Contract was initialized by {}", info.sender).as_str());
     config(deps.storage).save(&state)?;
 
     Ok(Response::default())
@@ -26,38 +29,58 @@ pub fn instantiate(
 
 #[entry_point]
 pub fn execute<'a>(
-    deps: DepsMut,
-    _env: Env,
-    _info: MessageInfo,
+    mut deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
     msg: ExecuteMsg,
 ) -> StdResult<Response> {
     match msg {
-        ExecuteMsg::CreateContest {
-            contest_info,
-            contest_info_signature_hex,
-            users_bet: _,
-        } => {
-            let contest_creation = try_create_contest(
-                deps,
-                contest_info,
-                contest_info_signature_hex,
-            );
-            match contest_creation {
-                Ok(_) => {
-                    Ok(Response::default())
-                },
-                Err(cryptography_error) => {
-                    Err(cosmwasm_std::StdError::GenericErr { msg: cryptography_error.to_string() })
-                },
-            }
-
-        }
+        // SNIP-20 Msgs 
+        ExecuteMsg::Register { reg_addr, reg_hash } => try_register(deps, env, reg_addr, reg_hash),
+        ExecuteMsg::Receive { sender, from, amount, memo: _, msg } => try_receive(deps, env, info, sender, from, amount, msg), 
+        ExecuteMsg::Redeem { addr, hash, to, amount, denom } => try_redeem(&deps, addr, hash, to, amount, denom),
+        // 
+        _ => Err(StdError::generic_err("Unsupported message variant for execute. try sending via snip-20?")),
     }
 }
 
-#[entry_point]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+
+/**
+ * This method should only ever be called from integrations::snip_20::try_receive
+ */
+pub fn execute_from_snip_20(
+    mut deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    msg: ExecuteMsg,
+) -> StdResult<Response> {
     match msg {
-        QueryMsg::GetContest { contest_id } => to_binary(&query_contest(deps, contest_id)?),
+        ExecuteMsg::CreateContest { contest_info, contest_info_signature_hex, outcome_id, sender, amount,} => {
+            contract_only_call(env, info)?;
+            try_create_contest(&mut deps, &contest_info, &contest_info_signature_hex)?;
+            try_bet_on_contest(&mut deps, contest_info.id(), outcome_id, sender, amount)?;
+            Ok(Response::default())
+        }
+        ExecuteMsg::BetContest {contest_id, outcome_id, sender, amount,} => {
+            contract_only_call(env, info)?;
+            try_bet_on_contest(&mut deps, contest_id, outcome_id, sender, amount)?;
+            Ok(Response::default())
+        }
+        _ => Err(StdError::generic_err("Unsupported message variant for execute_from_snip_20")),
+    }
+}
+
+
+
+#[entry_point]
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    match msg {
+        QueryMsg::GetSnip20s {} =>{
+            let state: State = config_read(deps.storage).load()?;
+            to_binary(&state.known_snip_20)
+        },
+        QueryMsg::GetContest{contest_id}=>to_binary(&query_contest(deps, contest_id)?),
+        QueryMsg::GetContestCreationMsgBinary { contest_info, contest_info_signature_hex, outcome_id} => contest_creation_send_msg(env, contest_info, contest_info_signature_hex, outcome_id),
+        QueryMsg::GetBetContestMsgBinary { contest_id, outcome_id } => contest_bet_send_msg(env, contest_id, outcome_id), 
     }
 }

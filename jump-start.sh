@@ -1,6 +1,6 @@
 #! /bin/bash
-echo "----Cleaning Build----"
-make clean
+# echo "----Cleaning Build----"
+# make clean
 echo "----------------------"
 echo "----Building----"
 make build-mainnet
