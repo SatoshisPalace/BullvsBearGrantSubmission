@@ -1,10 +1,8 @@
 use cosmwasm_std::{Binary, StdResult, to_binary, Env, Uint128, StdError, Deps};
-use schemars::JsonSchema;
-use serde::{Serialize, Deserialize};
 
 use crate::{msg::ExecuteMsg, integrations::snip_20::snip_20_msg::Snip20Msg};
 
-use super::data::{contest_info::{ContestInfo, get_contest}, contest_bet_summary::{ContestBetSummary, get_contest_bet_summary}};
+use super::{data::{contest_info::{ContestInfo, get_contest}, contest_bet_summary::{ContestBetSummary, get_contest_bet_summary}, bets::{UserContest, get_bet}}, response::{UserBetQueryResponse, ContestQueryResponse}, error::ContestError};
 
 
 pub fn contest_creation_send_msg(
@@ -55,15 +53,6 @@ pub fn contest_bet_send_msg(
 	)
 }
 
-
-
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
-pub struct ContestQueryResponse {
-    pub contest_info: ContestInfo,
-    pub contest_bet_summary: ContestBetSummary,
-}
-
-
 pub fn query_contest(
     deps: Deps,
     contest_id: u32
@@ -81,5 +70,16 @@ pub fn query_contest(
         _ => Err(StdError::generic_err(
             format!("Contest with ID:{contest_id} not found")
         )),
+    }
+}
+
+pub fn query_user_bet(
+    deps: &Deps,
+	user_contest: UserContest
+)-> StdResult<UserBetQueryResponse>{
+    let bet = get_bet(deps.storage, &user_contest);
+    match bet {
+        Some(bet) => Ok(UserBetQueryResponse { bet }),
+        None => Err(ContestError::NoBetForUserContest{user_contest}.into()),
     }
 }

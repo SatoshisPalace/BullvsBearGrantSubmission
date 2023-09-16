@@ -1,6 +1,6 @@
 #[cfg(test)]
 pub mod tests{
-	use cosmwasm_std::{testing::{mock_dependencies, mock_env, mock_info, MockStorage, MockApi, MockQuerier}, Addr, coins, OwnedDeps, Empty, Response, Uint128};
+	use cosmwasm_std::{testing::{mock_dependencies, mock_env, mock_info, MockStorage, MockApi, MockQuerier}, coins, OwnedDeps, Empty, Response, Uint128};
 
 	use crate::{msg::ExecuteMsg, contract::execute_from_snip_20, contest::data::contest_info::{ContestInfo, ContestOutcome}, tests::contract_init_test::tests::_initialize_test};
 	
@@ -100,11 +100,13 @@ pub mod tests{
 	}
 
 	pub fn _get_valid_create_contest_msg() -> ExecuteMsg {
+		let env = mock_env();
+
 		let msg = ExecuteMsg::CreateContest {
 			contest_info: _get_valid_contest_info(),
 			contest_info_signature_hex: "ccf5c5b987455453eaddc62ce5b8e64877ea4f14500a7bdcce594e4b79303ceb29c5c9038e70177005b61cb6fbb486e7b22b76831da46c34e42f77909f0310f5".to_string(),
 			outcome_id: 0,
-			sender: Option::Some(Addr::unchecked("secret160se29szxttl0xufrm2qwjquszl87px0ls46y6".to_owned())), //TODO fix
+			sender: Option::Some(env.contract.address), //TODO fix
 			amount: Option::Some(Uint128::from(100u128)), //TODO fix
 		};
 		return msg

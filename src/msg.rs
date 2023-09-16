@@ -2,7 +2,7 @@ use cosmwasm_std::{Addr, Uint128, Binary};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::contest::data::contest_info::ContestInfo;
+use crate::contest::data::{contest_info::ContestInfo, bets::UserContest};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
@@ -46,6 +46,16 @@ pub enum ExecuteMsg {
         amount: Uint128,
         denom: Option<String>,
     },
+    // Viewing Keys
+
+    CreateViewingKey {
+        entropy: String,
+        padding: Option<String>,
+    },
+    SetViewingKey {
+        key: String,
+        padding: Option<String>,
+    },
     //
 }
 
@@ -55,7 +65,10 @@ pub enum QueryMsg {
     GetContest {
         contest_id: u32
     },
-    //SNIP 20s
+    GetUserBet {
+        user_contest: UserContest,
+        key: String,
+    },
     GetSnip20s {},
     //Contract specific snip-20s
     GetContestCreationMsgBinary {

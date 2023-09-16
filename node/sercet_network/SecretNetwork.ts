@@ -44,6 +44,7 @@ export class SecretNetwork {
 			throw new Error("MNEMONIC environment variable is missing!");
 		}
 		const wallet = new Wallet(process.env.MNEMONIC);
+		console.log(`Using \nChain ID: ${process.env.CHAIN_ID}\nEndpoint${process.env.RPC_URL}\nAddress:${wallet.address}`)
 		const defaultOptions: SecretNetworkOptions = {
 			chainId: process.env.CHAIN_ID,
 			url: process.env.RPC_URL,
@@ -70,7 +71,7 @@ export class SecretNetwork {
 		)?.value;
 
 		if(!codeId){
-			throw new Error("Failed to upload code")
+			throw new Error(`Failed to upload code`)
 		}
 
         const contractCodeHash = (

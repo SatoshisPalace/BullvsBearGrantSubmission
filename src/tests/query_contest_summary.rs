@@ -2,7 +2,7 @@
 pub mod tests{
 	use cosmwasm_std::{testing::{mock_env, MockStorage, MockApi, MockQuerier, mock_dependencies}, OwnedDeps, Empty, from_binary, Uint128};
 
-	use crate::{msg::{ExecuteMsg, QueryMsg}, contract::query, contest::queries::ContestQueryResponse, tests::{contract_init_test::tests::_initialize_test, create_contest_test::tests::{_get_valid_create_contest_msg, _create_contest_test}, bet_contest_test::tests::{_bet_contest_test, _get_valid_bet_contest_msg}}};
+	use crate::{msg::{ExecuteMsg, QueryMsg}, contract::query, contest::response::ContestQueryResponse, tests::{contract_init_test::tests::_initialize_test, create_contest_test::tests::{_get_valid_create_contest_msg, _create_contest_test}, bet_contest_test::tests::{_bet_contest_test, _get_valid_bet_contest_msg}}};
 	
 	////////TESTS////////
 	#[test]

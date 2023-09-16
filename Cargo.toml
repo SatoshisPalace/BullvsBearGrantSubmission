@@ -35,6 +35,7 @@ thiserror = { version = "1.0" }
 cosmwasm-schema = "1.0.0"
 secret-toolkit = { git = "https://github.com/scrtlabs/secret-toolkit", tag = "v0.8.0", features = [
     "storage",
+    "viewing-key",
 ] }
 hex = "0.4"
 sha2 = "0.10"

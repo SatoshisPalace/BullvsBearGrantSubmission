@@ -10,8 +10,17 @@ use crate::contest::{error::ContestError, constants::USER_CONTEST_CONFIG_KEY};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct UserContest {
-	address: Addr,
-	contest_id : u32,
+	pub address: Addr,
+	pub contest_id : u32,
+}
+
+impl UserContest{
+	pub fn get_address_as_str(&self) -> &str{
+		return self.address.as_str()
+	}
+	pub fn get_contest_id(&self) -> u32{
+		return self.contest_id
+	}
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
@@ -44,4 +53,8 @@ pub fn save_bet(storage: &mut dyn Storage, address: Addr, contest_id: u32, amoun
 	};
 	BETS.insert(storage, &user_contest, &bet)?;
 	Ok(())
+}
+
+pub fn get_bet(storage: &dyn Storage, user_contest: &UserContest ) -> Option<Bet> {
+    return BETS.get(storage, user_contest);
 }

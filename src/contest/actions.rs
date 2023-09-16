@@ -1,6 +1,6 @@
 use cosmwasm_std::{DepsMut, Uint128, Addr};
 use crate::{cryptography::cryptography::is_valid_signature, state::config_read};
-use super::{data::{contest_info::{save_contest, ContestInfo, verify_contest, get_contest}, bets::{verify_bet, save_bet}, contest_bet_summary::{update_contest_bet_summary, ContestBetSummary, save_contest_bet_summary}}, error::ContestError};
+use super::{data::{contest_info::{save_contest, ContestInfo, verify_contest, get_contest}, bets::{verify_bet, save_bet, get_bet, UserContest}, contest_bet_summary::{update_contest_bet_summary, ContestBetSummary, save_contest_bet_summary}}, error::ContestError};
 
 pub fn try_create_contest<'a>(
     deps: &mut DepsMut,
@@ -42,7 +42,34 @@ pub fn try_bet_on_contest(
 )-> Result<(), ContestError > {
 	verify_bet(&sender, amount)?;
 	verify_contest(deps.storage, contest_id, outcome_id)?;
-	save_bet(deps.storage, sender.unwrap(), contest_id, amount.unwrap(), outcome_id)?;
+
+    let user_contest = UserContest{
+        address: sender.clone().unwrap(),
+        contest_id,
+    };
+    let bet = get_bet(deps.storage, &user_contest);
+    match bet {
+        Some(bet) => { // User has bet before
+            if outcome_id != bet.outcome_id {
+                return Err(ContestError::CannotBetOnBothSides);
+            }
+            save_bet(
+                deps.storage,
+                sender.clone().unwrap(),
+                contest_id,
+                amount.unwrap() + bet.amount,
+                outcome_id
+            )?;
+        }
+        None => save_bet( // User has not bet before
+            deps.storage,
+            sender.unwrap(),
+            contest_id,
+            amount.unwrap(),
+            outcome_id
+        )?,
+    }
+
 	update_contest_bet_summary(deps.storage, contest_id, amount.unwrap(), outcome_id)?;
 	Ok(())
 }

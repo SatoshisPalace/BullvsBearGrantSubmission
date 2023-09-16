@@ -6,3 +6,4 @@ pub mod cryptography;
 pub mod tests;
 pub mod integrations;
 pub mod utils;
+pub mod viewingkeys;
