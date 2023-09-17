@@ -1,12 +1,14 @@
 #[cfg(test)]
 
+pub mod tests {
+    use cosmwasm_std::{
+        coins,
+        testing::{mock_env, mock_info},
+    };
 
-pub mod tests{
-	use cosmwasm_std::{testing::{mock_env, mock_info}, coins};
+    use crate::utils::{error::UtilError, utils::contract_only_call};
 
-	use crate::utils::{utils::contract_only_call, error::UtilError};
-	
-	////////TESTS////////
+    ////////TESTS////////
 
     #[test]
     fn contract_only_call_valid_test() {

@@ -1,33 +1,36 @@
 // Reference https://github.com/scrtlabs/snip20-reference-impl/tree/master/tests/example-receiver
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, Binary, CosmosMsg, DepsMut,
-    Env, MessageInfo, Response, StdError, StdResult, Uint128, WasmMsg, BankMsg, Coin,
+    from_binary, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env, MessageInfo,
+    Response, StdResult, Uint128, WasmMsg,
 };
 
-use crate::{msg:: ExecuteMsg, state::{config, config_read}, contract::execute_from_snip_20};
-use super::snip_20_msg::Snip20Msg;
+use super::{
+    error::Snip20Error,
+    query_state::{check_known_snip_20, get_snip_20_contract},
+    snip_20_msg::Snip20Msg,
+    update_state::add_snip_20,
+};
+use crate::{contract::execute_from_snip_20, msg::ExecuteMsg};
 
+use secret_toolkit::snip20;
 
 pub const BLOCK_SIZE: usize = 256;
-
 
 pub fn try_register(
     deps: DepsMut,
     env: Env,
-    snip_20_contract_address: String,
+    snip_20_contract_address: Addr,
     snip_20_contract_code_hash: String,
 ) -> StdResult<Response> {
-
-    let mut conf = config(deps.storage);
-    let mut state = conf.load()?;
-    if !state.known_snip_20.contains(&snip_20_contract_address) {
-        state.known_snip_20.push(snip_20_contract_address.clone());
-    }
-    conf.save(&state)?;
+    add_snip_20(
+        deps,
+        snip_20_contract_address.clone(),
+        snip_20_contract_code_hash.clone(),
+    )?;
 
     let msg = to_binary(&Snip20Msg::register_receive(env.contract.code_hash))?;
     let message = CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: snip_20_contract_address,
+        contract_addr: snip_20_contract_address.to_string(),
         code_hash: snip_20_contract_code_hash,
         msg,
         funds: vec![],
@@ -47,36 +50,36 @@ pub fn try_receive(
     amount: Uint128,
     msg: Binary,
 ) -> StdResult<Response> {
-    let state = config_read(deps.storage).load()?;
-    if !state.known_snip_20.contains(&info.clone().sender.to_string()) {
-        return Err(StdError::generic_err(format!(
-            "XX is not a known SNIP-20 coin that this contract registered to"        )));
-    }
+    check_known_snip_20(deps.storage, &info.clone().sender.to_string())?;
 
     let mut msg: ExecuteMsg = from_binary(&msg)?;
 
     msg = match msg {
-        ExecuteMsg::CreateContest { contest_info, contest_info_signature_hex, outcome_id, .. } => {
-            ExecuteMsg::CreateContest {
-                contest_info,
-                contest_info_signature_hex,
-                outcome_id,
-                sender: Some(sender),
-                amount: Some(amount),
-            }
+        ExecuteMsg::CreateContest {
+            contest_info,
+            contest_info_signature_hex,
+            outcome_id,
+            ..
+        } => ExecuteMsg::CreateContest {
+            contest_info,
+            contest_info_signature_hex,
+            outcome_id,
+            sender: Some(sender),
+            amount: Some(amount),
         },
-        ExecuteMsg::BetContest { contest_id, outcome_id, .. } => {
-            ExecuteMsg::BetContest {
-                contest_id,
-                outcome_id,
-                sender: Some(sender),
-                amount: Some(amount),
-            }
+        ExecuteMsg::BetContest {
+            contest_id,
+            outcome_id,
+            ..
+        } => ExecuteMsg::BetContest {
+            contest_id,
+            outcome_id,
+            sender: Some(sender),
+            amount: Some(amount),
         },
         _ => {
-            return Err(StdError::generic_err(format!(
-                " receive function only forwards CreateContest and BetContest ExecuteMsgs"            )));
-        }        
+            return Err(Snip20Error::UnsupportedMethod(msg).into());
+        }
     };
     execute_from_snip_20(deps, env, info, msg)
 }
@@ -89,14 +92,8 @@ pub fn try_redeem(
     amount: Uint128,
     denom: Option<String>,
 ) -> StdResult<Response> {
-    let state = config_read(deps.storage).load()?;
-    if !state.known_snip_20.contains(&addr) {
-        return Err(StdError::generic_err(format!(
-            "{} is not a known SNIP-20 coin that this contract registered to",
-            addr
-        )));
-    }
-	
+    check_known_snip_20(deps.storage, &addr)?;
+
     let unwrapped_denom = denom.unwrap_or("uscrt".to_string());
 
     let msg = to_binary(&Snip20Msg::redeem(amount, unwrapped_denom.clone()))?;
@@ -115,4 +112,20 @@ pub fn try_redeem(
     Ok(Response::new()
         .add_message(secret_redeem)
         .add_message(redeem))
+}
+
+pub fn send(deps: &DepsMut, recipient: String, amount: Uint128) -> StdResult<Response> {
+    let snip20 = get_snip_20_contract(deps.storage, 0)?;
+
+    let msg = snip20::send_msg(
+        recipient,
+        amount,
+        None,
+        None,
+        None,
+        BLOCK_SIZE,
+        snip20.code_hash,
+        snip20.address.to_string(),
+    )?;
+    Ok(Response::new().add_message(msg))
 }

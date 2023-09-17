@@ -33,6 +33,6 @@ pub fn is_valid_signature(
     if api.secp256k1_verify(&msg_hash_bytes, &sig_bytes, &key_bytes)? {
         Ok(())
     } else {
-		Err(CryptographyError::InvalidSignature)
+        Err(CryptographyError::InvalidSignature)
     }
 }

@@ -3,8 +3,10 @@ use schemars::JsonSchema;
 use secret_toolkit::storage::Keymap;
 use serde::{Deserialize, Serialize};
 
-use crate::contest::{constants::{CONNTEST_SAVE_ERROR_MESSAGE, CONTEST_CONFIG_KEY}, error::ContestError};
-
+use crate::contest::{
+    constants::{CONNTEST_SAVE_ERROR_MESSAGE, CONTEST_CONFIG_KEY},
+    error::ContestError,
+};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct ContestInfo {
@@ -54,7 +56,7 @@ impl<'a> ContestInfo {
 static CONTESTS: Keymap<u32, ContestInfo> = Keymap::new(CONTEST_CONFIG_KEY);
 
 pub fn save_contest(storage: &mut dyn Storage, contest_info: &ContestInfo) {
-    let key  = contest_info.id;
+    let key = contest_info.id;
     CONTESTS
         .insert(storage, &key, &contest_info)
         .expect(CONNTEST_SAVE_ERROR_MESSAGE);
@@ -64,13 +66,21 @@ pub fn get_contest(storage: &dyn Storage, contest_id: u32) -> Option<ContestInfo
     return CONTESTS.get(storage, &contest_id);
 }
 
-pub fn verify_contest(storage: &dyn Storage, contest_id: u32, outcome_id: u8) -> Result<(), ContestError> {
+pub fn verify_contest(
+    storage: &dyn Storage,
+    contest_id: u32,
+    outcome_id: u8,
+) -> Result<(), ContestError> {
     let contest = get_contest(storage, contest_id);
-    
+
     // Check if the contest exists
     if let Some(contest) = contest {
         // Check if the option_id exists within the contest's options
-        if contest.options.iter().any(|outcome| outcome.id == outcome_id) {
+        if contest
+            .options
+            .iter()
+            .any(|outcome| outcome.id == outcome_id)
+        {
             Ok(())
         } else {
             Err(ContestError::OutcomeDNE)

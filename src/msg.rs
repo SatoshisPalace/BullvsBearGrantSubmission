@@ -1,8 +1,8 @@
-use cosmwasm_std::{Addr, Uint128, Binary};
+use cosmwasm_std::{Addr, Binary, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::contest::data::{contest_info::ContestInfo, bets::UserContest};
+use crate::contest::data::{bets::UserContest, contest_info::ContestInfo};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
@@ -18,7 +18,7 @@ pub enum ExecuteMsg {
         contest_info_signature_hex: String,
         outcome_id: u8,
         sender: Option<Addr>,
-        amount: Option<Uint128>,    
+        amount: Option<Uint128>,
     },
     BetContest {
         contest_id: u32,
@@ -26,9 +26,12 @@ pub enum ExecuteMsg {
         sender: Option<Addr>,
         amount: Option<Uint128>,
     },
+    Claim {
+        contest_id: u32,
+    },
     // SNIP-20 MSGs
     Register {
-        reg_addr: String,
+        reg_addr: Addr,
         reg_hash: String,
     },
     Receive {
@@ -47,7 +50,6 @@ pub enum ExecuteMsg {
         denom: Option<String>,
     },
     // Viewing Keys
-
     CreateViewingKey {
         entropy: String,
         padding: Option<String>,
@@ -56,14 +58,13 @@ pub enum ExecuteMsg {
         key: String,
         padding: Option<String>,
     },
-    //
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     GetContest {
-        contest_id: u32
+        contest_id: u32,
     },
     GetUserBet {
         user_contest: UserContest,
@@ -79,6 +80,5 @@ pub enum QueryMsg {
     GetBetContestMsgBinary {
         contest_id: u32,
         outcome_id: u8,
-    }
-    //
+    }, //
 }

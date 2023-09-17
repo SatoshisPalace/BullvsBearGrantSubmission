@@ -18,6 +18,35 @@ export interface MintMsg {
         amount: string;
     };
 }
+export interface BalanceMsg {
+    balance: {
+        address: string,
+        key: string,
+    }
+}
+export interface CreateViewingKey {
+    create_viewing_key: {
+        entropy: string,
+        padding: string | undefined,
+    },
+}
+
+// Define the message interface
+export interface SetViewingKeyMsg {
+    set_viewing_key: {
+        key: string,
+        padding?: string,  // Using TypeScript's optional property syntax
+    }
+}
+
+export interface SetViewingKeyResponse {
+    status: ResponseStatus,  // Assuming ResponseStatus is already defined
+}
+
+export enum ResponseStatus {
+    Success,
+    Failure,
+}
 
 export interface SendMsg {
     send: {
@@ -26,4 +55,8 @@ export interface SendMsg {
         amount: string;
         msg: string;
     };
+}
+
+export interface CreateViewingKeyResponse {
+    key: string;
 }

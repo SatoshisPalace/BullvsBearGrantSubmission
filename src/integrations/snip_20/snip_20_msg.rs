@@ -1,7 +1,6 @@
-use cosmwasm_std::{Uint128, Binary};
+use cosmwasm_std::{Binary, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -38,12 +37,17 @@ impl Snip20Msg {
             padding: None, // TODO add padding calculation
         }
     }
-    pub fn send(recipient: String, recipient_code_hash: Option<String>, amount:Uint128, msg: Option<Binary>)-> Self{
-        Snip20Msg::Send { 
-            recipient, 
-            recipient_code_hash, 
-            amount, 
-            msg: msg, 
+    pub fn send(
+        recipient: String,
+        recipient_code_hash: Option<String>,
+        amount: Uint128,
+        msg: Option<Binary>,
+    ) -> Self {
+        Snip20Msg::Send {
+            recipient,
+            recipient_code_hash,
+            amount,
+            msg: msg,
         }
     }
 }

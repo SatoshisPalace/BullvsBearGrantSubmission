@@ -1,9 +1,12 @@
-use cosmwasm_std::{DepsMut, Env, MessageInfo, StdResult, Response, to_binary, Deps};
+use cosmwasm_std::{to_binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use secret_toolkit::viewing_key::{ViewingKey, ViewingKeyStore};
 
 use crate::msg::QueryMsg;
 
-use super::{response::{ViewingKeyResponse, ResponseStatus}, error::ViewingKeyError};
+use super::{
+    error::ViewingKeyError,
+    response::{ResponseStatus, ViewingKeyResponse},
+};
 
 pub fn try_create_key(
     deps: DepsMut,
@@ -31,13 +34,13 @@ pub fn try_set_key(deps: DepsMut, info: MessageInfo, key: String) -> StdResult<R
     )
 }
 
-pub fn validate_query(deps: &Deps, msg: &QueryMsg) -> Result<(), ViewingKeyError>{
-	match msg {
-		QueryMsg::GetUserBet { user_contest, key } => {
-			let address = deps.api.addr_validate(user_contest.get_address_as_str())?;
-			ViewingKey::check(deps.storage, address.as_str(), key.as_str())?;
-			Ok(())
-		},
-		_ => Err(ViewingKeyError::InvalidQueryMessage),
-	}
+pub fn validate_query(deps: &Deps, msg: &QueryMsg) -> Result<(), ViewingKeyError> {
+    match msg {
+        QueryMsg::GetUserBet { user_contest, key } => {
+            let address = deps.api.addr_validate(user_contest.get_address_as_str())?;
+            ViewingKey::check(deps.storage, address.as_str(), key.as_str())?;
+            Ok(())
+        }
+        _ => Err(ViewingKeyError::InvalidQueryMessage),
+    }
 }

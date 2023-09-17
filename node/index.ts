@@ -4,6 +4,7 @@ import { Contest } from './satoshis_palace_contest/contest';
 import { SecretNetwork } from './sercet_network/SecretNetwork';
 import { GetBetContestMsgBinary, GetContestCreationMsgBinary, GetContestMsg } from './satoshis_palace_contest/contest_msg';
 import { SendMsg } from './satoshis_palace_contest/test_snip_20_msg';
+import crypto from 'crypto';
 
 const CONTEST_CONTRACT_CODE = "../contract.wasm.gz";
 const TEST_SNIP_20_CODE = "../test_snip_20_contract.wasm.gz";
@@ -12,6 +13,7 @@ class MainExecutor {
     private sercet_network = SecretNetwork.getInstance();
     private testSnip20!: TestSnip20;
     private contest!: Contest;
+    private viewingKey!: string;  // Declare a class-level variable to store the viewing key
 
     async instantiateTestSnip20() {
         const testSnip20Code = fs.readFileSync(TEST_SNIP_20_CODE);
@@ -69,6 +71,7 @@ class MainExecutor {
         console.log("Registered Snip20s:");
         console.log(snip20s);
     }
+    
     async fetchContestCreationMsgBinary(): Promise<any> {
         const msg: GetContestCreationMsgBinary = {
             get_contest_creation_msg_binary: {
@@ -95,13 +98,13 @@ class MainExecutor {
         const result = await this.contest.getContestCreationMsgBinary(msg);
         return result.send.msg;
     }
-    
+
     async sendContestMsgBinary(msg_binary: string): Promise<any> {
         const sendMsg: SendMsg = {
             send: {
                 recipient: this.contest.getContractAddress(),
                 recipient_code_hash: this.contest.getCodeInfo().contractCodeHash,
-                amount: "1",  // Adjust this value as needed
+                amount: "1000",  // Adjust this value as needed
                 msg: msg_binary
             }
         };
@@ -133,24 +136,87 @@ class MainExecutor {
         return betContestMsgBinary.send.msg;
     }
 
+    async claimReward(contestId: number): Promise<any> {
+        const claimMsg = {
+            claim: {
+                contest_id: contestId
+            }
+        };
+        return await this.contest.claimReward(claimMsg);
+    }
+
+    async setAndSaveViewingKey(): Promise<void> {
+        const key = this.generateRandomKey();  // Generate a random key
+        const setViewingKeyMsg = {
+            set_viewing_key: {
+                key: key,
+                padding: undefined  // Optional, you can also set some padding here
+            }
+        };
+
+        const response = await this.testSnip20.setViewingKey(setViewingKeyMsg);
+        this.viewingKey = key;  // Save the viewing key
+    }
+
+    generateRandomKey(): string {
+        const random = crypto.randomBytes(32);
+        return random.toString('hex');
+    }
+
+
+    async checkBalance(): Promise<any> {
+        const balanceMsg = {
+            balance: {
+                address: this.sercet_network.getWallet().address,
+                key: this.viewingKey  // Use the saved viewing key
+            }
+        };
+        const balance = await this.testSnip20.getBalance(balanceMsg);
+        console.log("----------CheckBalance-------------");
+        console.log(balance);
+    }
+
     async execute() {
+        console.log("----------TestSnip20-------------")
         await this.instantiateTestSnip20();
+        console.log("----------MintSnip20-------------")
         await this.mintTestSnip20();
+        console.log("----------ContestContract-------------")
         await this.instantiateContest();
-        await this.registerSnip20WithContest();
+        const snip_20_register_result = await this.registerSnip20WithContest();
+        // console.log(snip_20_register_result)
         await this.printRegisteredSnip20s();
 
-        const contest_create_msg_binary = await this.fetchContestCreationMsgBinary()
-        console.log("----------ContestCreate-------------")
-        console.log(await this.sendContestMsgBinary(contest_create_msg_binary));
+        // Create and save the viewing key
+        console.log("----------SetViewingKey-------------")
+        await this.setAndSaveViewingKey();
 
-        const betContestMsgBinary = await this.fetchBetContestMsgBinary(0, 0);  // Assuming contest ID 0 and outcome ID 0 for this example
+        await this.checkBalance();  // Check balance after making a contest
+
+        console.log("----------ContestCreate-------------")
+        const contest_create_msg_binary = await this.fetchContestCreationMsgBinary()
+        const create_contest_response = await this.sendContestMsgBinary(contest_create_msg_binary)
+        // console.log(create_contest_response);
+
+        await this.checkBalance();  // Check balance after making a contest
+
         console.log("----------ContestBet-------------")
-        console.log(await this.sendContestMsgBinary(betContestMsgBinary));
+        const betContestMsgBinary = await this.fetchBetContestMsgBinary(0, 0);  // Assuming contest ID 0 and outcome ID 0 for this example
+        const betResponse = await this.sendContestMsgBinary(betContestMsgBinary);
+        // console.log(betResponse);
+
+        await this.checkBalance();  // Check balance after making a contest
 
         console.log("----------GetContest-------------")
         const contest_bet_details = await this.fetchContestDetails(0)
-        console.log(JSON.stringify(contest_bet_details, null, 2));
+        // console.log(JSON.stringify(contest_bet_details, null, 2));
+
+        console.log("----------ClaimReward-------------");
+        const claimResult = await this.claimReward(0); // Replace 0 with the actual contest ID
+        // console.log(claimResult);
+
+        await this.checkBalance();  // Check balance after making a contest
+
     }
 }
 

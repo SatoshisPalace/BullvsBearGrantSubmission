@@ -46,3 +46,9 @@ export interface ContestOutcome {
     id: number;
     name: string;
 }
+
+export interface ClaimMsg {
+    claim: {
+        contest_id: number
+    }
+}

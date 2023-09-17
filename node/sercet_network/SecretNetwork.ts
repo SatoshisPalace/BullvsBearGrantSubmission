@@ -9,9 +9,9 @@ interface SecretNetworkOptions {
 	walletAddress: string;
 }
 
-export interface CodeInfo { 
+export interface CodeInfo {
 	codeId: string,
-	contractCodeHash: string 
+	contractCodeHash: string
 }
 
 export class SecretNetwork {
@@ -70,15 +70,15 @@ export class SecretNetwork {
 			(log) => log.type === "message" && log.key === "code_id"
 		)?.value;
 
-		if(!codeId){
+		if (!codeId) {
 			throw new Error(`Failed to upload code`)
 		}
 
-        const contractCodeHash = (
-            await this.secretjs.query.compute.codeHashByCodeId({ code_id: codeId })
-        ).code_hash;
+		const contractCodeHash = (
+			await this.secretjs.query.compute.codeHashByCodeId({ code_id: codeId })
+		).code_hash;
 
-		if(!contractCodeHash){
+		if (!contractCodeHash) {
 			throw new Error("Failed to upload code")
 		}
 
@@ -88,9 +88,9 @@ export class SecretNetwork {
 		}
 		console.log(`Uploaded Code Info: ${JSON.stringify(code_info, null, 2)}`);
 		return code_info;
-    }
+	}
 
-	public async instantiate_contract(codeId: number, contractCodeHash: string, initMsg: any): Promise<string> { 
+	public async instantiate_contract(codeId: number, contractCodeHash: string, initMsg: any): Promise<string> {
 		const tx: TxResponse = await this.secretjs.tx.compute.instantiateContract(
 			{
 				code_id: codeId,
@@ -103,14 +103,13 @@ export class SecretNetwork {
 				gasLimit: 400_000,
 			}
 		);
-
 		// Find the contract_address in the logs
 		const contractAddress = tx.arrayLog?.find(
 			(log: { type: string; key: string; }) => log.type === "message" && log.key === "contract_address"
 		)?.value ?? null;
 
-		if (!contractAddress){
-			throw new Error("Contract Failed to instantiate")
+		if (!contractAddress) {
+			throw new Error(`Contract Failed to instantiate:${tx}`)
 		}
 		console.log(`Contract Address: ${contractAddress}`)
 		return contractAddress;
@@ -126,7 +125,7 @@ export class SecretNetwork {
 			},
 			{ gasLimit: 100_000 }
 		);
-	
+
 		return tx;
 	}
 	public async query(contractAddress: string, codeHash: string, query: any): Promise<any> {
@@ -135,10 +134,10 @@ export class SecretNetwork {
 			code_hash: codeHash,
 			query: query
 		});
-	
+
 		return tx;
 	}
-	public getWallet(): Wallet{
+	public getWallet(): Wallet {
 		return this.wallet
 	}
 }
