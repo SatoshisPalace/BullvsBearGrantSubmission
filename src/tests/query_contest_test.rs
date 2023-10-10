@@ -8,7 +8,7 @@ pub mod tests {
     };
 
     use crate::{
-        contest::response::ContestQueryResponse,
+        contest::response::{ContestQueryResponse, ContestsQueryResponse},
         contract::query,
         msg::{ExecuteMsg, QueryMsg},
         tests::{
@@ -24,8 +24,7 @@ pub mod tests {
     ////////TESTS////////
     #[test]
     fn query_contest() {
-        let mut deps: OwnedDeps<cosmwasm_std::MemoryStorage, MockApi, MockQuerier> =
-            mock_dependencies();
+        let mut deps: OwnedDeps<cosmwasm_std::MemoryStorage, MockApi, MockQuerier> = mock_dependencies();
 
         _initialize_test(&mut deps);
 
@@ -35,6 +34,20 @@ pub mod tests {
 
         _query_contest_test(&mut deps);
     }
+
+    #[test]
+    fn query_contests() {
+        let mut deps: OwnedDeps<cosmwasm_std::MemoryStorage, MockApi, MockQuerier> = mock_dependencies();
+
+        _initialize_test(&mut deps);
+
+        let msg: ExecuteMsg = _get_valid_create_contest_msg();
+
+        _create_contest_test(&mut deps, msg);
+
+        _query_contests_test(&mut deps);
+    }
+
 
     #[test]
     fn query_invalid_contest() {
@@ -58,7 +71,24 @@ pub mod tests {
 
         let res = query(deps.as_ref(), mock_env(), msg).unwrap();
         let contest_query_response: ContestQueryResponse = from_binary(&res).unwrap();
-        assert_eq!(0, contest_query_response.contest_info.id());
+        assert_eq!(1, contest_query_response.contest_info.id());
+        assert_eq!(0, contest_query_response.contest_info.time_of_close());
+        assert_eq!(0, contest_query_response.contest_info.time_of_resolve());
+        assert_eq!(2, contest_query_response.contest_info.options().len());
+    }
+
+    pub fn _query_contests_test(deps: &mut OwnedDeps<MockStorage, MockApi, MockQuerier, Empty>) {
+        let msg = QueryMsg::GetContests {
+            contest_ids: vec![_get_valid_contest_info().id],  // Using just one contest_id for this test
+        };
+    
+        let res = query(deps.as_ref(), mock_env(), msg).unwrap();
+        let contests_query_response: ContestsQueryResponse = from_binary(&res).unwrap();
+    
+        assert_eq!(1, contests_query_response.len());  // Should have one contest in the response
+    
+        let contest_query_response = contests_query_response.get(0).expect("Expected a contest at index 0");
+        assert_eq!(1, contest_query_response.contest_info.id());
         assert_eq!(0, contest_query_response.contest_info.time_of_close());
         assert_eq!(0, contest_query_response.contest_info.time_of_resolve());
         assert_eq!(2, contest_query_response.contest_info.options().len());

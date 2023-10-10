@@ -9,7 +9,7 @@ use super::{
         contest_info::{get_contest, ContestInfo, ContestOutcome},
     },
     error::ContestError,
-    response::{ContestQueryResponse, UserBetQueryResponse},
+    response::{ContestQueryResponse, UserBetQueryResponse, ContestsQueryResponse},
 };
 
 pub fn contest_creation_send_msg(
@@ -56,8 +56,7 @@ pub fn contest_bet_send_msg(env: Env, contest_id: u32, outcome_id: u8) -> StdRes
 
 pub fn query_contest(deps: Deps, contest_id: u32) -> StdResult<ContestQueryResponse> {
     let contest_option: Option<ContestInfo> = get_contest(deps.storage, contest_id);
-    let contest_bet_summary_option: Option<ContestBetSummary> =
-        get_contest_bet_summary(deps.storage, contest_id);
+    let contest_bet_summary_option: Option<ContestBetSummary> = get_contest_bet_summary(deps.storage, contest_id);
 
     match (contest_option, contest_bet_summary_option) {
         (Some(contest_info), Some(contest_bet_summary)) => {
@@ -75,6 +74,17 @@ pub fn query_contest(deps: Deps, contest_id: u32) -> StdResult<ContestQueryRespo
             "Contest with ID:{contest_id} not found"
         ))),
     }
+}
+
+pub fn query_contests(deps: Deps, contest_ids: Vec<u32>) -> StdResult<ContestsQueryResponse> {
+    // Use filter_map to collect only the Ok results from query_contest
+    let contest_query_responses: Vec<ContestQueryResponse> = contest_ids
+        .into_iter()
+        .filter_map(|contest_id| query_contest(deps, contest_id).ok())
+        .collect();
+
+    // Return the ContestsQueryResponse containing all the individual ContestQueryResponses
+    Ok(ContestsQueryResponse::new(contest_query_responses))
 }
 
 pub fn query_user_bet(deps: &Deps, user_contest: UserContest) -> StdResult<UserBetQueryResponse> {

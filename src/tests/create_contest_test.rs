@@ -100,10 +100,11 @@ pub mod tests {
 						name: "option2".to_string(),
 					}
 				],
+                event_details: "something invalid".to_string(),
 				time_of_close: 0,
 				time_of_resolve: 0,
 			},
-			contest_info_signature_hex: "ccf5c5b987455453eaddc62ce5b8e64877ea4f14500a7bdcce594e4b79303ceb29c5c9038e70177005b61cb6fbb486e7b22b76831da46c34e42f77909f0310f5".to_string(),
+			contest_info_signature_hex: "c59576d467bc77be37b5b1d74e4a3fc056f7642746964a1bd8fb897955458d2c6c8801b4017b9d09c8ceb77356002c0f2a0ce425cb830cb7305bd4ab1ae4c261".to_string(),
 			outcome_id: 0,
 			sender: Option::None,//TODO fix
 			amount: Option::None,//TODO fix
@@ -116,7 +117,7 @@ pub mod tests {
 
         let msg = ExecuteMsg::CreateContest {
 			contest_info: _get_valid_contest_info(),
-			contest_info_signature_hex: "ccf5c5b987455453eaddc62ce5b8e64877ea4f14500a7bdcce594e4b79303ceb29c5c9038e70177005b61cb6fbb486e7b22b76831da46c34e42f77909f0310f5".to_string(),
+			contest_info_signature_hex: "c59576d467bc77be37b5b1d74e4a3fc056f7642746964a1bd8fb897955458d2c6c8801b4017b9d09c8ceb77356002c0f2a0ce425cb830cb7305bd4ab1ae4c261".to_string(),
 			outcome_id: 0,
 			sender: Option::Some(env.contract.address), //TODO fix
 			amount: Option::Some(Uint128::from(100u128)), //TODO fix
@@ -126,7 +127,7 @@ pub mod tests {
 
     pub fn _get_valid_contest_info() -> ContestInfo {
         return ContestInfo {
-            id: 0,
+            id: 1,
             options: vec![
                 ContestOutcome {
                     id: 0,
@@ -137,6 +138,7 @@ pub mod tests {
                     name: "option2".to_string(),
                 },
             ],
+            event_details: "Example event details".to_string(),
             time_of_close: 0,
             time_of_resolve: 0,
         };

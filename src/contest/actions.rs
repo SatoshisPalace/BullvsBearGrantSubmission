@@ -24,6 +24,8 @@ pub fn try_create_contest<'a>(
 
     //Validate Signature
     let contest_info_json: String = contest_info.to_json();
+    deps.api.debug("----------------");
+    deps.api.debug(contest_info_json.as_str());
     is_valid_signature(
         deps.api,
         state.satoshis_palace.as_str(),

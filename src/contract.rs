@@ -1,6 +1,6 @@
 use crate::contest::actions::{try_bet_on_contest, try_claim, try_create_contest};
 use crate::contest::queries::{
-    contest_bet_send_msg, contest_creation_send_msg, query_contest, query_user_bet,
+    contest_bet_send_msg, contest_creation_send_msg, query_contest, query_user_bet, query_contests,
 };
 use crate::integrations::snip_20::query_state::get_registered_snip_20s;
 use crate::integrations::snip_20::snip_20::{try_receive, try_redeem, try_register};
@@ -117,7 +117,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             contest_id,
             outcome_id,
         } => contest_bet_send_msg(env, contest_id, outcome_id),
-
+        QueryMsg::GetContests { contest_ids }=> to_binary(&query_contests(deps, contest_ids)?),
         _ => viewing_keys_queries(deps, msg),
     }
 }

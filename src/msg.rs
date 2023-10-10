@@ -66,6 +66,9 @@ pub enum QueryMsg {
     GetContest {
         contest_id: u32,
     },
+    GetContests {
+        contest_ids: Vec<u32>
+    },
     GetUserBet {
         user_contest: UserContest,
         key: String,

@@ -14,6 +14,7 @@ pub struct ContestInfo {
     pub options: Vec<ContestOutcome>,
     pub time_of_close: i32,
     pub time_of_resolve: i32,
+    pub event_details: String,
 }
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct ContestOutcome {
@@ -27,12 +28,14 @@ impl<'a> ContestInfo {
         time_of_close: i32,
         time_of_resolve: i32,
         options: Vec<ContestOutcome>,
+        event_details: String,
     ) -> ContestInfo {
         Self {
             id,
             time_of_close,
             time_of_resolve,
             options,
+            event_details,
         }
     }
     pub fn id(&self) -> u32 {
