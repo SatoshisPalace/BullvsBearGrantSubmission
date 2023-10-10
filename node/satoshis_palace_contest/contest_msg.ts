@@ -40,6 +40,7 @@ export interface ContestInfo {
     options: ContestOutcome[];
     time_of_close: number;
     time_of_resolve: number;
+    event_details: string;
 }
 
 export interface ContestOutcome {

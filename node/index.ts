@@ -76,26 +76,28 @@ class MainExecutor {
         const msg: GetContestCreationMsgBinary = {
             get_contest_creation_msg_binary: {
                 contest_info: {
-                    id: 0,
+                    id: 1,
                     options: [
                         {
                             id: 0,
-                            name: "option1"
+                            name: "Arizona Cardinals"
                         },
                         {
                             id: 1,
-                            name: "option2"
+                            name: "Atlanta Falcons"
                         }
                     ],
-                    time_of_close: 0,
-                    time_of_resolve: 0
+                    time_of_close: 1384759,
+                    time_of_resolve: 1385509,
+                    event_details: "NFL game 1",
                 },
-                contest_info_signature_hex: "ccf5c5b987455453eaddc62ce5b8e64877ea4f14500a7bdcce594e4b79303ceb29c5c9038e70177005b61cb6fbb486e7b22b76831da46c34e42f77909f0310f5",
+                contest_info_signature_hex: "bb8e4c6b9bacce9be10c404111da06a40518c5a1965eb19e1d431050de3218f707b72fa3a05767bb53967f387eb6693c3631cec1dbf2fee7cdcb00d712e30397",
                 outcome_id: 0
             }
         };
-
+        console.log(msg)
         const result = await this.contest.getContestCreationMsgBinary(msg);
+        console.log(result)
         return result.send.msg;
     }
 
@@ -110,6 +112,8 @@ class MainExecutor {
         };
 
         const result = await this.testSnip20.send(sendMsg);
+        console.log("--------Conontest Creation MSG--------")
+        console.log(result)
         return result;
     }
 
@@ -155,6 +159,7 @@ class MainExecutor {
         };
 
         const response = await this.testSnip20.setViewingKey(setViewingKeyMsg);
+        console.log(response)
         this.viewingKey = key;  // Save the viewing key
     }
 
@@ -196,12 +201,11 @@ class MainExecutor {
         console.log("----------ContestCreate-------------")
         const contest_create_msg_binary = await this.fetchContestCreationMsgBinary()
         const create_contest_response = await this.sendContestMsgBinary(contest_create_msg_binary)
-        // console.log(create_contest_response);
 
         await this.checkBalance();  // Check balance after making a contest
 
         console.log("----------ContestBet-------------")
-        const betContestMsgBinary = await this.fetchBetContestMsgBinary(0, 0);  // Assuming contest ID 0 and outcome ID 0 for this example
+        const betContestMsgBinary = await this.fetchBetContestMsgBinary(1, 0);  // Assuming contest ID 0 and outcome ID 0 for this example
         const betResponse = await this.sendContestMsgBinary(betContestMsgBinary);
         // console.log(betResponse);
 
