@@ -1,0 +1,2 @@
+pub const FAR_IN_THE_FUTURE:u64 = 4102462800u64;
+pub const FAR_IN_THE_PAST:u64 = 0u64;

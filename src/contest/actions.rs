@@ -13,19 +13,19 @@ use crate::{
     cryptography::cryptography::is_valid_signature, integrations::snip_20::snip_20::send,
     state::config_read,
 };
-use cosmwasm_std::{Addr, DepsMut, Response, StdResult, Uint128};
+use cosmwasm_std::{Addr, DepsMut, Response, StdResult, Uint128, Env};
 
 pub fn try_create_contest<'a>(
     deps: &mut DepsMut,
+    env: &Env,
     contest_info: &ContestInfo,
     contest_info_signature_hex: &String,
 ) -> Result<(), ContestError> {
-    let state = config_read(deps.storage).load()?;
+    contest_info.assert_time_of_close_not_passed(env.block.time.seconds())?;
 
+    let state = config_read(deps.storage).load()?;
     //Validate Signature
     let contest_info_json: String = contest_info.to_json();
-    deps.api.debug("----------------");
-    deps.api.debug(contest_info_json.as_str());
     is_valid_signature(
         deps.api,
         state.satoshis_palace.as_str(),
@@ -50,13 +50,15 @@ pub fn try_create_contest<'a>(
 
 pub fn try_bet_on_contest(
     deps: &mut DepsMut,
+    env: &Env,
     contest_id: u32,
     outcome_id: u8,
     sender: Option<Addr>,
     amount: Option<Uint128>,
 ) -> Result<(), ContestError> {
     verify_bet(&sender, amount)?;
-    verify_contest(deps.storage, contest_id, outcome_id)?;
+    let contest_info = verify_contest(deps.storage, contest_id, outcome_id)?;
+    contest_info.assert_time_of_close_not_passed(env.block.time.seconds())?;
 
     let user_contest = UserContest {
         address: sender.clone().unwrap(),

@@ -12,8 +12,8 @@ use crate::contest::{
 pub struct ContestInfo {
     pub id: u32,
     pub options: Vec<ContestOutcome>,
-    pub time_of_close: i32,
-    pub time_of_resolve: i32,
+    pub time_of_close: u64,
+    pub time_of_resolve: u64,
     pub event_details: String,
 }
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
@@ -25,8 +25,8 @@ pub struct ContestOutcome {
 impl<'a> ContestInfo {
     pub fn new(
         id: u32,
-        time_of_close: i32,
-        time_of_resolve: i32,
+        time_of_close: u64,
+        time_of_resolve: u64,
         options: Vec<ContestOutcome>,
         event_details: String,
     ) -> ContestInfo {
@@ -41,10 +41,10 @@ impl<'a> ContestInfo {
     pub fn id(&self) -> u32 {
         return self.id;
     }
-    pub fn time_of_close(&self) -> i32 {
+    pub fn time_of_close(&self) -> u64 {
         return self.time_of_close;
     }
-    pub fn time_of_resolve(&self) -> i32 {
+    pub fn time_of_resolve(&self) -> u64 {
         return self.time_of_resolve;
     }
     pub fn options(&self) -> &Vec<ContestOutcome> {
@@ -53,6 +53,21 @@ impl<'a> ContestInfo {
     pub fn to_json(&self) -> String {
         let raw_json = serde_json::to_string(&self).expect("Failed to serialize struct to JSON");
         return raw_json.replace("\\", "");
+    }
+    pub fn assert_time_of_close_not_passed(&self, current_time: u64) -> Result<(), ContestError> {
+        if current_time >= self.time_of_close {
+            Err(ContestError::TimeOfClosePassed(self.id))
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn assert_time_of_resolve_not_passed(&self, current_time: u64) -> Result<(), ContestError> {
+        if current_time >= self.time_of_resolve {
+            Err(ContestError::TimeOfResolvePassed(self.id))
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -73,9 +88,9 @@ pub fn verify_contest(
     storage: &dyn Storage,
     contest_id: u32,
     outcome_id: u8,
-) -> Result<(), ContestError> {
+) -> Result<ContestInfo, ContestError> {
     let contest = get_contest(storage, contest_id);
-
+    
     // Check if the contest exists
     if let Some(contest) = contest {
         // Check if the option_id exists within the contest's options
@@ -84,7 +99,7 @@ pub fn verify_contest(
             .iter()
             .any(|outcome| outcome.id == outcome_id)
         {
-            Ok(())
+            Ok(contest)
         } else {
             Err(ContestError::OutcomeDNE)
         }

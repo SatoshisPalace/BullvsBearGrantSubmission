@@ -4,7 +4,7 @@ pub mod tests {
     use cosmwasm_std::{
         coins,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
-        Addr, Empty, OwnedDeps, Response, StdResult, Uint128,
+        Addr, Empty, OwnedDeps, Response, StdResult, Uint128, Timestamp,
     };
 
     use crate::{
@@ -12,7 +12,7 @@ pub mod tests {
         msg::ExecuteMsg,
         tests::{
             contract_init_test::tests::_initialize_test,
-            create_contest_test::tests::{_create_contest_test, _get_valid_create_contest_msg},
+            create_contest_test::tests::{_create_contest_test, _get_valid_create_contest_msg}, constants::FAR_IN_THE_FUTURE,
         },
     };
 
@@ -41,6 +41,25 @@ pub mod tests {
         _create_contest_test(&mut deps, msg);
 
         _bet_contest_test(&mut deps)
+    }
+
+    #[test]
+    fn bet_on_contest_after_time_of_close() {
+        let mut deps: OwnedDeps<cosmwasm_std::MemoryStorage, MockApi, MockQuerier> =
+            mock_dependencies();
+
+        _initialize_test(&mut deps);
+
+        let msg: ExecuteMsg = _get_valid_create_contest_msg();
+
+        _create_contest_test(&mut deps, msg);
+
+        let mut env = mock_env();
+        env.block.time = Timestamp::from_seconds(FAR_IN_THE_FUTURE);
+        let msg = _get_valid_bet_contest_msg();
+        let info = mock_info(env.contract.address.as_str(), &coins(1000, "earth"));
+        let res = execute_from_snip_20(deps.as_mut(), env, info, msg);
+        assert!(res.is_err(), "Expected an error but got {:?}", res);
     }
 
     #[test]

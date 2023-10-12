@@ -72,8 +72,8 @@ pub mod tests {
         let res = query(deps.as_ref(), mock_env(), msg).unwrap();
         let contest_query_response: ContestQueryResponse = from_binary(&res).unwrap();
         assert_eq!(1, contest_query_response.contest_info.id());
-        assert_eq!(0, contest_query_response.contest_info.time_of_close());
-        assert_eq!(0, contest_query_response.contest_info.time_of_resolve());
+        assert_eq!(4102462800u64, contest_query_response.contest_info.time_of_close());
+        assert_eq!(4102462800u64, contest_query_response.contest_info.time_of_resolve());
         assert_eq!(2, contest_query_response.contest_info.options().len());
     }
 
@@ -89,8 +89,8 @@ pub mod tests {
     
         let contest_query_response = contests_query_response.get(0).expect("Expected a contest at index 0");
         assert_eq!(1, contest_query_response.contest_info.id());
-        assert_eq!(0, contest_query_response.contest_info.time_of_close());
-        assert_eq!(0, contest_query_response.contest_info.time_of_resolve());
+        assert_eq!(4102462800u64, contest_query_response.contest_info.time_of_close());
+        assert_eq!(4102462800u64, contest_query_response.contest_info.time_of_resolve());
         assert_eq!(2, contest_query_response.contest_info.options().len());
     }
 

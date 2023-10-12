@@ -7,3 +7,4 @@ pub mod state;
 pub mod tests;
 pub mod utils;
 pub mod viewingkeys;
+pub mod error;

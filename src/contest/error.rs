@@ -41,6 +41,12 @@ pub enum ContestError {
 
     #[error(transparent)]
     ContestCryptagraphyError(#[from] CryptographyError),
+
+    #[error("Time of close for contest with id: {0} has passed")]
+    TimeOfClosePassed(u32),
+
+    #[error("Time of resolve for contest with id: {0} has passed")]
+    TimeOfResolvePassed(u32),
 }
 
 impl From<ContestError> for cosmwasm_std::StdError {
