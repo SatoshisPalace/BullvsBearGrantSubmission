@@ -5,7 +5,7 @@ use super::{
             get_contest_bet_summary, save_contest_bet_summary, update_contest_bet_summary,
             ContestBetSummary,
         },
-        contest_info::{get_contest, save_contest, verify_contest, ContestInfo},
+        contest_info::{ get_contest, save_contest, verify_contest, ContestInfo},
     },
     error::ContestError,
 };
@@ -13,7 +13,7 @@ use crate::{
     cryptography::cryptography::is_valid_signature, integrations::snip_20::snip_20::send,
     state::config_read,
 };
-use cosmwasm_std::{Addr, DepsMut, Response, StdResult, Uint128, Env};
+use cosmwasm_std::{Addr, DepsMut, Env, Response, StdResult, Uint128};
 
 pub fn try_create_contest<'a>(
     deps: &mut DepsMut,
@@ -93,7 +93,16 @@ pub fn try_bet_on_contest(
     Ok(())
 }
 
-pub fn try_claim(deps: &mut DepsMut, contest_id: u32, sender: Addr) -> StdResult<Response> {
+pub fn try_claim(
+    deps: &mut DepsMut,
+    env: &Env,
+    contest_id: u32,
+    sender: Addr
+) -> StdResult<Response> {
+    let contest_info = get_contest(deps.storage, contest_id).unwrap();
+
+    contest_info.assert_time_of_resolve_is_passed(env.block.time.seconds())?;
+
     // Create a UserContest instance
     let user_contest = UserContest {
         address: sender.clone(),

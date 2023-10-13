@@ -45,8 +45,12 @@ pub enum ContestError {
     #[error("Time of close for contest with id: {0} has passed")]
     TimeOfClosePassed(u32),
 
-    #[error("Time of resolve for contest with id: {0} has passed")]
-    TimeOfResolvePassed(u32),
+    #[error("Time of resolve for contest with id: {contest_id} has yet to pass. Time of resolve: {time_of_resolve}, Current time: {current_time}")]
+    TimeOfResolveHasYetToPassed {
+        contest_id: u32,
+        time_of_resolve: u64,
+        current_time: u64,
+    },
 }
 
 impl From<ContestError> for cosmwasm_std::StdError {

@@ -62,13 +62,17 @@ impl<'a> ContestInfo {
         }
     }
 
-    pub fn assert_time_of_resolve_not_passed(&self, current_time: u64) -> Result<(), ContestError> {
-        if current_time >= self.time_of_resolve {
-            Err(ContestError::TimeOfResolvePassed(self.id))
-        } else {
-            Ok(())
+    pub fn assert_time_of_resolve_is_passed(&self, current_time: u64) -> Result<(), ContestError> {
+        if current_time < self.time_of_resolve {
+            return Err(ContestError::TimeOfResolveHasYetToPassed {
+                contest_id: self.id,
+                time_of_resolve: self.time_of_resolve,
+                current_time,
+            });
         }
+        Ok(())
     }
+    
 }
 
 static CONTESTS: Keymap<u32, ContestInfo> = Keymap::new(CONTEST_CONFIG_KEY);

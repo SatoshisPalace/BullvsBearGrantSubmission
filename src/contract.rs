@@ -41,7 +41,7 @@ pub fn execute<'a>(
     msg: ExecuteMsg,
 ) -> StdResult<Response> {
     match msg {
-        ExecuteMsg::Claim { contest_id } => try_claim(&mut deps, contest_id, info.sender),
+        ExecuteMsg::Claim { contest_id } => try_claim(&mut deps, &env, contest_id, info.sender),
         // SNIP-20 Msgs
         ExecuteMsg::Register { reg_addr, reg_hash } => try_register(deps, env, reg_addr, reg_hash),
         ExecuteMsg::Receive {
@@ -111,7 +111,7 @@ pub fn execute_from_snip_20(
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetSnip20s {} => get_registered_snip_20s(deps.storage),
-        QueryMsg::GetContest { contest_id } => to_binary(&query_contest(deps, contest_id)?),
+        QueryMsg::GetContest { contest_id } => to_binary(&query_contest(deps, &env, contest_id)?),
         QueryMsg::GetContestCreationMsgBinary {
             contest_info,
             contest_info_signature_hex,
@@ -121,7 +121,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             contest_id,
             outcome_id,
         } => contest_bet_send_msg(env, contest_id, outcome_id),
-        QueryMsg::GetContests { contest_ids } => to_binary(&query_contests(deps, contest_ids)?),
+        QueryMsg::GetContests { contest_ids } => to_binary(&query_contests(deps, &env ,contest_ids)?),
         _ => viewing_keys_queries(deps, msg),
     }
 }

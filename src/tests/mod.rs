@@ -6,3 +6,4 @@ pub mod query_contest_summary;
 pub mod query_contest_test;
 pub mod viewing_key_test;
 pub mod constants;
+pub mod claim_rewards_test;
