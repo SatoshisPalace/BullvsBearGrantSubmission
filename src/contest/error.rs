@@ -51,6 +51,9 @@ pub enum ContestError {
         time_of_resolve: u64,
         current_time: u64,
     },
+
+    #[error("The bet has already been paid")]
+    BetAlreadyPaid,
 }
 
 impl From<ContestError> for cosmwasm_std::StdError {

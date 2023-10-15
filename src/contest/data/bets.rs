@@ -24,6 +24,17 @@ impl UserContest {
 pub struct Bet {
     pub amount: Uint128,
     pub outcome_id: u8,
+    pub has_been_paid: bool
+}
+
+impl Bet {
+    pub fn assert_not_paid(&self) -> Result<(), ContestError> {
+        if self.has_been_paid {
+            Err(ContestError::BetAlreadyPaid)
+        } else {
+            Ok(())
+        }
+    }
 }
 
 pub fn verify_bet(sender: &Option<Addr>, amount: Option<Uint128>) -> Result<(), ContestError> {
@@ -45,12 +56,13 @@ pub fn save_bet(
     contest_id: u32,
     amount: Uint128,
     outcome_id: u8,
+    has_been_paid: bool
 ) -> Result<(), ContestError> {
     let user_contest = UserContest {
         address,
         contest_id,
     };
-    let bet = Bet { amount, outcome_id };
+    let bet = Bet { amount, outcome_id, has_been_paid};
     BETS.insert(storage, &user_contest, &bet)?;
     Ok(())
 }

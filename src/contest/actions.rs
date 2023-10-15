@@ -77,6 +77,7 @@ pub fn try_bet_on_contest(
                 contest_id,
                 amount.unwrap() + bet.amount,
                 outcome_id,
+                false,
             )?;
         }
         None => save_bet(
@@ -86,6 +87,7 @@ pub fn try_bet_on_contest(
             contest_id,
             amount.unwrap(),
             outcome_id,
+            false,
         )?,
     }
 
@@ -114,13 +116,21 @@ pub fn try_claim(
 
     match bet_option {
         Some(bet) => {
+            bet.assert_not_paid()?;
             // TODO check if user won the contest or not ///////////////////////////////////
             let contest_bet_summary_option = get_contest_bet_summary(deps.storage, contest_id);
             match contest_bet_summary_option {
                 Some(contest_bet_summary) => {
                     // Calculate the user's share
-                    let user_share =
-                        contest_bet_summary.calculate_user_share(bet.amount, bet.outcome_id)?;
+                    let user_share = contest_bet_summary.calculate_user_share(bet.amount, bet.outcome_id)?;
+                    save_bet(
+                        deps.storage,
+                        sender.clone(),
+                        contest_id,
+                        bet.amount,
+                        bet.outcome_id,
+                        true,
+                    )?;
                     return send(deps, sender.to_string(), user_share);
                 }
                 None => Err(ContestError::ContestNotFound(contest_id).into()),
