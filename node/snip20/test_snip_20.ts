@@ -7,6 +7,12 @@ export class TestSnip20 extends Contract {
         super(contractCode);
     }
 
+    public static from(address: string, code_hash: string): TestSnip20 {
+        const instance = new this(new Buffer([])); // Create an instance with an empty Buffer
+        instance.from(address, code_hash); // Call the parent class's from() method
+        return instance;
+    }
+
     async instantiate(initMsg: TestSnip20InitMsg): Promise<TestSnip20> {
         await super.instantiate(initMsg);
         return this;
@@ -19,6 +25,32 @@ export class TestSnip20 extends Contract {
     async send(msg: SendMsg): Promise<any> {
         return await this.execute(msg);
     }
+
+    async send_msg(
+        contract: Contract,
+        msg: any,
+        amount: string
+    ): Promise<any> {
+        // Base64 encode the msg parameter
+        // const encodedMsg = encodeMessage(msg);
+    
+        const encodedMsg = Buffer.from(JSON.stringify(msg)).toString('base64');
+    
+        // Create the SendMsg object
+        const sendMsg: SendMsg = {
+            send: {
+                recipient: contract.getContractAddress(),
+                recipient_code_hash: contract.getCodeHash(),
+                amount: amount,
+                msg: encodedMsg
+            }
+        };
+    
+        // Call the send method of TestSnip20
+        return await this.send(sendMsg);
+    }
+    
+    
 
     async getBalance(msg: BalanceMsg): Promise<any> {
         return await this.query(msg);

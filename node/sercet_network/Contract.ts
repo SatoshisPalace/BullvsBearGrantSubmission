@@ -12,6 +12,15 @@ export class Contract {
         this.contractCode = contractCode;
     }
 
+    public from(address: string, code_hash: string): this {
+        this.secretNetwork = SecretNetwork.getInstance(); 
+        this.contractAddress = address;
+        this.codeInfo = {
+            contractCodeHash: code_hash
+        };
+        return this;
+    }
+
     async deploy(): Promise<Contract> {
         const result = await this.secretNetwork.upload_contract(this.contractCode);
 
@@ -70,6 +79,13 @@ export class Contract {
             throw new Error("Contract has not been instantiated yet.");
         }
         return this.contractAddress;
+    }
+
+    public getCodeHash(): string {
+        if (!this.codeInfo?.contractCodeHash) {
+            throw new Error("Contract has not been instantiated yet.");
+        }
+        return this.codeInfo?.contractCodeHash;
     }
 
     public getCodeInfo(): CodeInfo {

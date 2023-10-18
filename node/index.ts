@@ -1,13 +1,16 @@
 import fs from 'fs';
-import { TestSnip20 } from './satoshis_palace_contest/test_snip_20';
 import { Contest } from './satoshis_palace_contest/contest';
 import { SecretNetwork } from './sercet_network/SecretNetwork';
 import { GetBetContestMsgBinary, GetContestCreationMsgBinary, GetContestMsg } from './satoshis_palace_contest/contest_msg';
-import { SendMsg } from './satoshis_palace_contest/test_snip_20_msg';
 import crypto from 'crypto';
+import { TestSnip20 } from './snip20/test_snip_20';
+import { SendMsg } from './snip20/test_snip_20_msg';
 
 const CONTEST_CONTRACT_CODE = "../contract.wasm.gz";
-const TEST_SNIP_20_CODE = "../test_snip_20_contract.wasm.gz";
+const SNIP_20_CONTRACT_ADDRESS = "secret18rh39utg2vyyymgevqfksquea8ve9yp8vauzyy"
+const SNIP_20_CONTRACT_CODE_HASH = "18c26bde92662902d3d9b090edff53642e9da4f46d0a76ec921c9dea0c64dcda"
+
+
 
 class MainExecutor {
     private sercet_network = SecretNetwork.getInstance();
@@ -15,25 +18,6 @@ class MainExecutor {
     private contest!: Contest;
     private viewingKey!: string;  // Declare a class-level variable to store the viewing key
 
-    async instantiateTestSnip20() {
-        const testSnip20Code = fs.readFileSync(TEST_SNIP_20_CODE);
-        this.testSnip20 = new TestSnip20(testSnip20Code);
-        await this.testSnip20.deploy();
-        const testSnip20InitMsg = {
-            name: "USDC",
-            symbol: "USDC",
-            decimals: 18,
-            prng_seed: "VGhpcyBpcyBhIGJhc2UgNjQgZW5jb2RlZCBzdHJpbmcK",
-            config: {
-                public_total_supply: true,
-                enable_deposit: true,
-                enable_redeem: true,
-                enable_mint: true,
-                enable_burn: true
-            }
-        };
-        await this.testSnip20.instantiate(testSnip20InitMsg);
-    }
 
     async mintTestSnip20() {
         const mintMsg = {
@@ -183,7 +167,7 @@ class MainExecutor {
 
     async execute() {
         console.log("----------TestSnip20-------------")
-        await this.instantiateTestSnip20();
+        this.testSnip20 = TestSnip20.from(SNIP_20_CONTRACT_ADDRESS, SNIP_20_CONTRACT_CODE_HASH)
         console.log("----------MintSnip20-------------")
         await this.mintTestSnip20();
         console.log("----------ContestContract-------------")

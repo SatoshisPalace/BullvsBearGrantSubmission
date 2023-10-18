@@ -10,7 +10,7 @@ interface SecretNetworkOptions {
 }
 
 export interface CodeInfo {
-	codeId: string,
+	codeId?: string,
 	contractCodeHash: string
 }
 
