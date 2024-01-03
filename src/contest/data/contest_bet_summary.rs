@@ -1,12 +1,12 @@
-use cosmwasm_std::{Storage, Uint128};
+use cosmwasm_std::{Storage, Uint128, QuerierWrapper};
 use schemars::JsonSchema;
 use secret_toolkit::storage::Keymap;
 use serde::{Deserialize, Serialize};
 
-use crate::contest::{
+use crate::{contest::{
     constants::{CONTEST_BET_SUMMARY_CONFIG_KEY, FEE_PERCENTAGE, PERCENTAGE_BASE},
     error::ContestError,
-};
+}, integrations::oracle::{oracle::query_contest_result, response::GetContestResultResponse, constants::NULL_AND_VOID_CONTEST_RESULT}};
 
 use super::contest_info::{ContestInfo, ContestOutcome};
 
@@ -19,6 +19,7 @@ pub struct OptionBetSummary {
 
 pub struct ContestBetSummary {
     pub options: Vec<OptionBetSummary>,
+    outcome: Option<ContestOutcome>,
 }
 
 impl ContestBetSummary {
@@ -32,7 +33,41 @@ impl ContestBetSummary {
             })
             .collect();
 
-        ContestBetSummary { options }
+        ContestBetSummary { 
+            options,
+            outcome: None 
+        }
+    }
+
+    pub fn set_outcome(&mut self, outcome: &ContestOutcome)->Result<(), ContestError>{
+        if self.outcome.is_none(){
+            self.outcome = Some(outcome.clone());
+            Ok(())
+        }else{
+            Err(ContestError::CannotResetOutcome)
+        }
+    }
+
+    pub fn get_outcome(
+        &mut self, 
+        querier: &QuerierWrapper, 
+        storage: &dyn Storage, 
+        contest_info: &ContestInfo,
+        contest_id: u32
+    ) -> Result<ContestOutcome, ContestError> {
+        match self.outcome {
+            Some(ref outcome) => Ok(outcome.clone()),
+            None => {
+                // Query oracle if the outcome is not resolved
+                let oracle_result: GetContestResultResponse = query_contest_result(querier, storage, contest_id as u64)?;
+                if oracle_result.result == NULL_AND_VOID_CONTEST_RESULT {
+                    return Ok(ContestOutcome::nullified_result())
+                }                
+                let outcome: ContestOutcome = contest_info.find_outcome(oracle_result.result)?;
+                self.set_outcome(&outcome)?;
+                Ok(outcome)
+            }
+        }
     }
 
     pub fn calc_total_pool(&self) -> Uint128 {
@@ -63,6 +98,7 @@ impl ContestBetSummary {
         }
         Err(ContestError::OutcomeDNE)
     }
+    
     pub fn calculate_user_share(
         &self,
         user_bet_amount: Uint128,
@@ -72,16 +108,14 @@ impl ContestBetSummary {
         let total_pool = self.calc_total_pool();
 
         // Apply the fee
-        let total_pool_after_fee =
-            total_pool.u128() * (PERCENTAGE_BASE - FEE_PERCENTAGE) / PERCENTAGE_BASE;
+        let total_pool_after_fee = total_pool.u128() * (PERCENTAGE_BASE - FEE_PERCENTAGE) / PERCENTAGE_BASE;
 
         // Get the total allocation for the user's chosen outcome
         let total_allocation_for_outcome = self.get_allocation(outcome_id)?;
 
         // Calculate the user's share
         // To avoid floating-point arithmetic, we multiply before dividing
-        let user_share =
-            user_bet_amount.u128() * total_pool_after_fee / total_allocation_for_outcome.u128();
+        let user_share = user_bet_amount.u128() * total_pool_after_fee / total_allocation_for_outcome.u128();
 
         Ok(Uint128::from(user_share))
     }

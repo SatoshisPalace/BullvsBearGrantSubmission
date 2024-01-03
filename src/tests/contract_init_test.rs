@@ -2,7 +2,7 @@
 #[cfg(test)]
 
 pub mod tests{
-	use cosmwasm_std::{testing::{mock_dependencies, mock_env, mock_info, MockStorage, MockApi, MockQuerier}, Addr, coins, OwnedDeps, Empty};
+	use cosmwasm_std::{testing::{mock_dependencies, mock_env, mock_info, MockStorage, MockApi, MockQuerier}, Addr, coins, OwnedDeps, Empty, ContractInfo};
 
 	use crate::{msg::InstantiateMsg, contract::instantiate};
 	
@@ -16,7 +16,10 @@ pub mod tests{
 	pub fn _initialize_test(deps: &mut OwnedDeps<MockStorage, MockApi, MockQuerier, Empty>){
 		let msg = InstantiateMsg { 
 			satoshis_palace: Addr::unchecked("04eec6a876668ffb7031f9b9ade7c0c4bc47681ac27fec532bfd5c94fb3dd71d675a363d7036ba8d831a499b12e4f04c8741b90e3c4f3c6b64dd1104132d49498c"),
-			oracle_contract: Addr::unchecked("TODO FIXME WHEN INTEGRATING WITH ORACLE")
+			oracle_contract_info: ContractInfo{
+				address: Addr::unchecked("TODO FIXME WHEN INTEGRATING WITH ORACLE"),
+				code_hash: "XXxXXXXXXXXXXXXXXXXXX".to_owned()
+			}
 		};
 
 		let info = mock_info("creator", &coins(1000, "earth"));

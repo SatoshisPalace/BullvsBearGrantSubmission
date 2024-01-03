@@ -24,7 +24,7 @@ pub enum ContestError {
     #[error("Bet made without a sender")]
     BetHasNoSender,
 
-    #[error("Bet made without a sender")]
+    #[error("409: Cannot bet on both sides of a contest")]
     CannotBetOnBothSides,
 
     #[error("Message passed from snip-20 was not a contest bet")]
@@ -33,7 +33,7 @@ pub enum ContestError {
     #[error("User: {} has not bet on Contest: {}", .user_contest.get_address_as_str(), .user_contest.get_contest_id())]
     NoBetForUserContest { user_contest: UserContest },
 
-    #[error("Contest with id: {} Not Found", 0)]
+    #[error("Contest with id: {0} Not Found")]
     ContestNotFound(u32),
 
     #[error(transparent)]
@@ -54,6 +54,23 @@ pub enum ContestError {
 
     #[error("The bet has already been paid")]
     BetAlreadyPaid,
+
+    #[error("403: Cannot claim on a lost contest")]
+    CannotClaimOnLostContest,
+
+    #[error("Outcome with ID: {outcome_id}, was not found on Contest with ID: {contest_id}")]
+    OutcomeNotFound {
+        contest_id: u32,
+        outcome_id: u8,
+    },
+
+    #[error("Outcome has already been set, and connot be reset")]
+    CannotResetOutcome,
+
+    #[error("412: Precondition Failed. Invalid Outcome ID found in contest with ID: {contest_id}")]
+    InvalidOutcomeId {
+        contest_id: u32,
+    },
 }
 
 impl From<ContestError> for cosmwasm_std::StdError {

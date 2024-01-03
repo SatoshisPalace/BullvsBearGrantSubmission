@@ -4,7 +4,7 @@ pub mod tests {
     use cosmwasm_std::{
         coins,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
-        Addr, Empty, OwnedDeps, Response, StdResult, Uint128, Timestamp,
+        Addr, Empty, OwnedDeps, Response, StdResult, Uint128, Timestamp, Env,
     };
 
     use crate::{
@@ -14,6 +14,7 @@ pub mod tests {
             contract_init_test::tests::_initialize_test,
             create_contest_test::tests::{_create_contest_test, _get_valid_create_contest_msg}, constants::FAR_IN_THE_FUTURE,
         },
+        answer::{ExecuteAnswer, ResponseStatus::Success}
     };
 
     ////////TESTS////////
@@ -82,36 +83,78 @@ pub mod tests {
         let msg = _get_valid_bet_contest_msg();
         let info = mock_info(env.contract.address.as_str(), &coins(1000, "earth"));
         let res = execute_from_snip_20(deps.as_mut(), env, info, msg).unwrap();
-        assert_eq!(Response::default(), res);
+        let expected = Response::default().set_data(ExecuteAnswer::BetContestAnswer { status: Success });
+        assert_eq!(expected, res);
     }
+
+    pub fn _bet_contest_test_with_sender(
+        deps: &mut OwnedDeps<MockStorage, MockApi, MockQuerier, Empty>,
+        sender: &str,
+    ) {
+        let env = mock_env();
+        let msg = _get_valid_bet_contest_msg(); // Ensure this msg is appropriate for the test
+        let info = mock_info(sender, &coins(1000, "earth")); // Use the sender parameter
+        let res = execute_from_snip_20(deps.as_mut(), env, info, msg).unwrap();
+        let expected = Response::default().set_data(ExecuteAnswer::BetContestAnswer { status: Success });
+
+        assert_eq!(expected, res);
+    }
+
+    pub fn _bet_contest_test_with_sender_outcome(
+        deps: &mut OwnedDeps<MockStorage, MockApi, MockQuerier, Empty>,
+        sender: &str,
+        contest_id: u32,
+        outcome_id: u8,
+        amount: Uint128
+    ) {
+        let env = mock_env();
+        let msg = ExecuteMsg::BetContest {
+            contest_id,
+            outcome_id,
+            sender: Some(Addr::unchecked(sender)),
+            amount: Some(amount),
+        };        
+        let info = mock_info(sender, &coins(1000, "earth")); // Use the sender parameter
+        let res = execute_from_snip_20(deps.as_mut(), env, info, msg).unwrap();
+        let expected = Response::default().set_data(ExecuteAnswer::BetContestAnswer { status: Success });
+
+        assert_eq!(expected, res);
+    }
+    
 
     pub fn _bet_contest_opposite_sides_test(
         deps: &mut OwnedDeps<MockStorage, MockApi, MockQuerier, Empty>,
     ) {
         let contest_id = 1;
-        let outcome_id = 1;
+        let outcome_id = 2;
         let env = mock_env();
         let sender = Some(env.contract.address.clone());
         let amount = Some(Uint128::from(100u128)); // Replace with the actual amount you want to bet
 
         // Perform the bet using the helper function
-        let res = _bet_contest(deps, contest_id, outcome_id, sender.clone(), amount.clone());
+        let res = _bet_contest(deps, env, contest_id, outcome_id, sender, amount.clone());
 
         // Check if the result is an error
-        assert!(res.is_err(), "Expected an error but got a result");
+        match res {
+            Ok(_) => panic!("Expected an error but got success"),
+            Err(e) =>  {
+                assert!(e.to_string().contains("409"),"{}, does not contain 409", e.to_string())
+            }
+        }
     }
 
     /////////Helpers/////////
 
     pub fn _bet_contest(
         deps: &mut OwnedDeps<MockStorage, MockApi, MockQuerier, Empty>,
+        env: Env,
         contest_id: u32,
         outcome_id: u8,
         sender: Option<Addr>,
         amount: Option<Uint128>,
     ) -> StdResult<Response> {
         // Clone the sender to avoid the "use of moved value" error
-        let sender_clone = sender.clone();
+        let sender_clone = sender.clone().unwrap().clone();
 
         // Create the ExecuteMsg
         let msg = ExecuteMsg::BetContest {
@@ -122,8 +165,7 @@ pub mod tests {
         };
 
         // Create the environment and info
-        let env = mock_env();
-        let info = mock_info(sender_clone.unwrap().as_str(), &coins(1000, "earth"));
+        let info = mock_info(sender_clone.as_str(), &coins(1000, "earth"));
 
         // Execute the function
         execute_from_snip_20(deps.as_mut(), env, info, msg)

@@ -3,10 +3,10 @@ use schemars::JsonSchema;
 use secret_toolkit::storage::Keymap;
 use serde::{Deserialize, Serialize};
 
-use crate::contest::{
+use crate::{contest::{
     constants::{CONNTEST_SAVE_ERROR_MESSAGE, CONTEST_CONFIG_KEY},
     error::ContestError,
-};
+}, integrations::oracle::constants::NULL_AND_VOID_CONTEST_RESULT};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct ContestInfo {
@@ -20,6 +20,14 @@ pub struct ContestInfo {
 pub struct ContestOutcome {
     pub id: u8,
     pub name: String,
+}
+impl ContestOutcome {
+    pub fn nullified_result() -> Self {
+        ContestOutcome {
+            id: NULL_AND_VOID_CONTEST_RESULT,
+            name: "Nullified Result".to_string(),
+        }
+    }
 }
 
 impl<'a> ContestInfo {
@@ -72,6 +80,22 @@ impl<'a> ContestInfo {
         }
         Ok(())
     }
+
+    pub fn find_outcome(&self, id: u8)-> Result<ContestOutcome, ContestError>{
+        let option: Option<ContestOutcome> = self
+            .options
+            .iter()
+            .find(|&outcome| outcome.id == id)
+            .cloned();
+        option.ok_or(ContestError::OutcomeNotFound { contest_id: self.id(), outcome_id: id })
+    }
+
+    pub fn validate_contest(&self) -> Result<(), ContestError> {
+        if self.options.iter().any(|outcome| outcome.id == 0) {
+            return Err(ContestError::InvalidOutcomeId { contest_id: self.id });
+        }
+        Ok(())
+    }
     
 }
 
@@ -87,6 +111,13 @@ pub fn save_contest(storage: &mut dyn Storage, contest_info: &ContestInfo) {
 pub fn get_contest(storage: &dyn Storage, contest_id: u32) -> Option<ContestInfo> {
     return CONTESTS.get(storage, &contest_id);
 }
+
+
+
+
+
+
+
 
 pub fn verify_contest(
     storage: &dyn Storage,

@@ -9,7 +9,6 @@ pub static CONFIG_KEY: &[u8] = b"config";
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct State {
     pub satoshis_palace: Addr,
-    pub oracle_contract: Addr,
     pub owner: CanonicalAddr,
 }
 

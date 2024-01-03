@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Binary, Uint128};
+use cosmwasm_std::{Addr, Binary, Uint128, ContractInfo};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -7,7 +7,15 @@ use crate::contest::data::{bets::UserContest, contest_info::ContestInfo};
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub satoshis_palace: Addr,
-    pub oracle_contract: Addr,
+    pub oracle_contract_info: ContractInfo,
+}
+
+#[derive(Serialize, Deserialize, Clone, JsonSchema, Debug)]
+#[cfg_attr(test, derive(Eq, PartialEq))]
+#[serde(rename_all = "snake_case")]
+pub enum ResponseStatus {
+    Success,
+    Failure,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
@@ -72,6 +80,9 @@ pub enum QueryMsg {
     GetUserBet {
         user_contest: UserContest,
         key: String,
+    },
+    GetContestResult {
+        contest_id : u32,
     },
     GetSnip20s {},
     //Contract specific snip-20s

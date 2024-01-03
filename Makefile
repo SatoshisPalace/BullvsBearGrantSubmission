@@ -11,7 +11,7 @@ test: unit-test
 
 .PHONY: unit-test
 unit-test:
-	cargo unit-test
+	cargo test --features testing -- --nocapture --test-threads=1
 
 # This is a local build with debug-prints activated. Debug prints only show up
 # in the local development chain (see the `start-server` command below)
@@ -41,7 +41,7 @@ compress-wasm:
 	cp ./target/wasm32-unknown-unknown/release/*.wasm ./contract.wasm
 	@## The following line is not necessary, may work only on linux (extra size optimization)
 	@# wasm-opt -Os ./contract.wasm -o ./contract.wasm
-	cat ./contract.wasm | gzip -9 > ./contract.wasm.gz
+	cat ./contract.wasm | gzip -9 > ./contest.wasm.gz
 
 .PHONY: schema
 schema:
@@ -65,4 +65,4 @@ store-contract-local:
 .PHONY: clean
 clean:
 	cargo clean
-	-rm -f ./contract.wasm ./contract.wasm.gz
+	-rm -f ./contract.wasm ./contest.wasm.gz
