@@ -6,34 +6,34 @@ use super::data::bets::UserContest;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ContestError {
-    #[error("Contest Does Not Exist")]
+    #[error("Contest Does Not Exist. Display Text: Failure to place bet. Cannot place bet on contest that does not exist.")]
     ContestDNE,
 
-    #[error("A contest with id: {0} already exists and cannot be reinitialized")]
+    #[error("A contest with id: {0} already exists and cannot be reinitialized. Display Text: A contest with id: {0} already exists and cannot be reinitialized.")]
     ContestAlreadyExist(u32),
 
-    #[error("Outcome Does Not Exist")]
+    #[error("Outcome Does Not Exist. Display Text: Failure to place bet. Cannot place bet on a side that does not exist.")]
     OutcomeDNE,
 
-    #[error("Bet on contest is insufficient")]
-    BetInsufficient,
+    // #[error("Bet on contest is insufficient. Display Text:")]
+    // BetInsufficient,
 
-    #[error("Bet made without amount")]
+    #[error("Bet made without amount. Display Text: Failure to place bet. Please enter a bet.")]
     BetHasNoAmount,
 
-    #[error("Bet made without a sender")]
+    #[error("Bet made without a sender. Display Text: Failure to place bet. Bet Made without sender.")]
     BetHasNoSender,
 
-    #[error("409: Cannot bet on both sides of a contest")]
+    #[error("409: Cannot bet on both sides of a contest. Display Text: Failure to place bet. Current wallet can only be tied to one team.")]
     CannotBetOnBothSides,
 
-    #[error("Message passed from snip-20 was not a contest bet")]
-    MessageNotContestBet,
+    // #[error("Message passed from snip-20 was not a contest bet. Display Text:")]
+    // MessageNotContestBet,
 
-    #[error("User: {} has not bet on Contest: {}", .user_contest.get_address_as_str(), .user_contest.get_contest_id())]
+    #[error("User: {} has not bet on Contest: {}. Display Text: Failure to claim. Wallet has not placed a bet on this contest.", .user_contest.get_address_as_str(), .user_contest.get_contest_id())]
     NoBetForUserContest { user_contest: UserContest },
 
-    #[error("Contest with id: {0} Not Found")]
+    #[error("Contest with id: {0} Not Found. Display Text: Failure to claim. Contest does not exist.")]
     ContestNotFound(u32),
 
     #[error(transparent)]
@@ -42,23 +42,23 @@ pub enum ContestError {
     #[error(transparent)]
     ContestCryptagraphyError(#[from] CryptographyError),
 
-    #[error("Time of close for contest with id: {0} has passed")]
+    #[error("Time of close for contest with id: {0} has passed. Display Text: Failure to place bet. Contest has closed.")]
     TimeOfClosePassed(u32),
 
-    #[error("Time of resolve for contest with id: {contest_id} has yet to pass. Time of resolve: {time_of_resolve}, Current time: {current_time}")]
+    #[error("Time of resolve for contest with id: {contest_id} has yet to pass. Time of resolve: {time_of_resolve}, Current time: {current_time}. Display Text: Failure to claim. Contest has not been resolved.")]
     TimeOfResolveHasYetToPassed {
         contest_id: u32,
         time_of_resolve: u64,
         current_time: u64,
     },
 
-    #[error("The bet has already been paid")]
+    #[error("The bet has already been paid. Display Text: Failure to claim. Wallet has already claimed winnings on this contest.")]
     BetAlreadyPaid,
 
-    #[error("403: Cannot claim on a lost contest")]
+    #[error("403: Cannot claim on a lost contest. Display Text: Failure to claim. Wallet did not place a bet on the winning side.")]
     CannotClaimOnLostContest,
 
-    #[error("Outcome with ID: {outcome_id}, was not found on Contest with ID: {contest_id}")]
+    #[error("Outcome with ID: {outcome_id}, was not found on Contest with ID: {contest_id}.")]
     OutcomeNotFound {
         contest_id: u32,
         outcome_id: u8,

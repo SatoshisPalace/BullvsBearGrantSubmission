@@ -3,9 +3,6 @@ use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
-    #[error("Contest Does Not Exist")]
-    ContestDNE,
-
 	#[error("Unsupported message variant for execute. try sending via snip-20?")]
 	UnsupportedExecuteMessage,
 
