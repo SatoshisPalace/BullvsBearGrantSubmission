@@ -7,9 +7,13 @@ pub mod tests {
     };
 
     use crate::{
-        contest::{response::ContestQueryResponse, error::ContestError, constants::{PERCENTAGE_BASE, FEE_PERCENTAGE}},
+        contest::{
+            constants::{FEE_PERCENTAGE, PERCENTAGE_BASE},
+            error::ContestError,
+            response::ContestQueryResponse,
+        },
         contract::query,
-        msg::{ExecuteMsg, QueryMsg},
+        msg::{InvokeMsg, QueryMsg},
         tests::{
             bet_contest_test::tests::{_bet_contest_test, _get_valid_bet_contest_msg},
             contract_init_test::tests::_initialize_test,
@@ -25,7 +29,7 @@ pub mod tests {
 
         _initialize_test(&mut deps);
 
-        let msg: ExecuteMsg = _get_valid_create_contest_msg();
+        let msg = _get_valid_create_contest_msg();
 
         _create_contest_test(&mut deps, msg);
 
@@ -39,7 +43,7 @@ pub mod tests {
 
         _initialize_test(&mut deps);
 
-        let msg: ExecuteMsg = _get_valid_create_contest_msg();
+        let msg = _get_valid_create_contest_msg();
 
         _create_contest_test(&mut deps, msg);
 
@@ -56,7 +60,7 @@ pub mod tests {
     ) {
         let execute_msg = _get_valid_create_contest_msg();
         let (contest_info, amount) = match execute_msg {
-            ExecuteMsg::CreateContest {
+            InvokeMsg::CreateContest {
                 contest_info,
                 amount,
                 ..
@@ -103,33 +107,39 @@ pub mod tests {
         let msg = QueryMsg::GetContest { contest_id };
         let res = query(deps.as_ref(), mock_env(), msg).unwrap();
         let contest_query_response: ContestQueryResponse = from_binary(&res).unwrap();
-    
+
         // Extract total pool
-        let total_pool = contest_query_response.contest_bet_summary.calc_total_pool().u128();
-    
+        let total_pool = contest_query_response
+            .contest_bet_summary
+            .calc_total_pool()
+            .u128();
+
         // Apply the fee
-        let total_pool_after_fee = total_pool * (PERCENTAGE_BASE - FEE_PERCENTAGE) / PERCENTAGE_BASE;
-    
+        let total_pool_after_fee =
+            total_pool * (PERCENTAGE_BASE - FEE_PERCENTAGE) / PERCENTAGE_BASE;
+
         // Get the total allocation for the user's chosen outcome
-        let total_allocation_for_outcome = contest_query_response.contest_bet_summary.get_allocation(outcome_id)?.u128();
-    
+        let total_allocation_for_outcome = contest_query_response
+            .contest_bet_summary
+            .get_allocation(outcome_id)?
+            .u128();
+
         // Calculate the user's share proportionally to their bet and the total allocation
         let user_share = if total_allocation_for_outcome > 0 {
             user_bet_amount * total_pool_after_fee / total_allocation_for_outcome
         } else {
             0 // Or handle error as you see fit
         };
-    
+
         Ok(user_share)
     }
-    
 
     pub fn _query_contest_with_additional_bet(
         deps: &mut OwnedDeps<MockStorage, MockApi, MockQuerier, Empty>,
     ) {
         let execute_msg = _get_valid_create_contest_msg();
         let (contest_info, initial_amount) = match execute_msg {
-            ExecuteMsg::CreateContest {
+            InvokeMsg::CreateContest {
                 contest_info,
                 amount,
                 ..
@@ -143,7 +153,7 @@ pub mod tests {
 
         let execute_msg2 = _get_valid_bet_contest_msg();
         let added_amount = match execute_msg2 {
-            ExecuteMsg::BetContest { amount, .. } => amount,
+            InvokeMsg::BetContest { amount, .. } => amount,
             _ => panic!("Expected CreateContest variant"),
         };
 

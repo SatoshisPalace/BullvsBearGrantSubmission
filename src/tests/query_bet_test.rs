@@ -9,7 +9,7 @@ pub mod tests {
     use crate::{
         contest::{data::bets::UserContest, response::UserBetQueryResponse},
         contract::query,
-        msg::{ExecuteMsg, QueryMsg},
+        msg::{InvokeMsg, QueryMsg},
         tests::{
             bet_contest_test::tests::{_bet_contest_test, _get_valid_bet_contest_msg},
             contract_init_test::tests::_initialize_test,
@@ -34,11 +34,11 @@ pub mod tests {
         let viewing_key = "api_key_/WMIRnqFsFmb6KuvRSX8LQGSz3umCjcXcptco4gl3Lg=";
         _set_viewing_key_test(&mut deps, viewing_key);
 
-        if let ExecuteMsg::CreateContest {
+        if let InvokeMsg::CreateContest {
             contest_info,
             contest_info_signature_hex: _,
             outcome_id: _,
-            sender: _,
+            user: _,
             amount,
         } = msg
         {
@@ -84,11 +84,11 @@ pub mod tests {
         let viewing_key = "api_key_/WMIRnqFsFmb6KuvRSX8LQGSz3umCjcXcptco4gl3Lg=";
         _set_viewing_key_test(&mut deps, viewing_key);
 
-        if let ExecuteMsg::CreateContest {
+        if let InvokeMsg::CreateContest {
             contest_info,
             contest_info_signature_hex: _,
             outcome_id: _,
-            sender: _,
+            user: _,
             amount: _,
         } = msg
         {
@@ -106,7 +106,7 @@ pub mod tests {
         let create_contest_msg = _get_valid_create_contest_msg();
         let bet_contest_msg = _get_valid_bet_contest_msg();
         // Extract the bet amounts from the messages
-        let (first_bet, contest_id) = if let ExecuteMsg::CreateContest {
+        let (first_bet, contest_id) = if let InvokeMsg::CreateContest {
             contest_info,
             amount,
             ..
@@ -117,7 +117,7 @@ pub mod tests {
             panic!("Expected CreateContest message");
         };
 
-        let second_bet = if let ExecuteMsg::BetContest { amount, .. } = bet_contest_msg {
+        let second_bet = if let InvokeMsg::BetContest { amount, .. } = bet_contest_msg {
             amount.unwrap()
         } else {
             panic!("Expected BetContest message");

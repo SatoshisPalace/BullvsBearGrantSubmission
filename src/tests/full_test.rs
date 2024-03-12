@@ -6,8 +6,7 @@ pub mod tests {
     };
 
     use crate::{
-        integrations::snip_20::tests::snip_20_test::tests::_register_fake_snip20_test,
-        msg::ExecuteMsg,
+        msg::InvokeMsg,
         tests::{
             bet_contest_test::tests::_bet_contest_test_with_sender_outcome,
             claim_rewards_test::tests::{
@@ -21,7 +20,7 @@ pub mod tests {
     };
 
     ////////TESTS////////
-	#[test]
+    #[test]
     fn claim_rewards_successful_contest_multi_user_full0() {
         let mut deps = mock_dependencies();
         claim_rewards_successful_contest_multi_user(
@@ -85,15 +84,14 @@ pub mod tests {
 
         // Initialize and create a contest
         _initialize_test(&mut deps);
-        _register_fake_snip20_test(&mut deps);
 
-        let create_contest_msg: ExecuteMsg = _get_valid_create_contest_msg_with_params(
+        let create_contest_msg = _get_valid_create_contest_msg_with_params(
             contest_creator_bet_on_1,
             contest_creator_bet_amount,
         );
         let binding = create_contest_msg.clone();
         let (contest_info, _, _) = match &binding {
-            ExecuteMsg::CreateContest {
+            InvokeMsg::CreateContest {
                 contest_info,
                 outcome_id,
                 amount,
@@ -155,7 +153,7 @@ pub mod tests {
         );
     }
 
-	////////// Inner Tests ////////////
+    ////////// Inner Tests ////////////
     pub fn claim_rewards_successful_contest_multi_user(
         deps: &mut OwnedDeps<cosmwasm_std::MemoryStorage, MockApi, MockQuerier>,
         contest_creator_bet_amount: Uint128,
@@ -170,15 +168,14 @@ pub mod tests {
 
         // Initialize and create a contest
         _initialize_test(deps);
-        _register_fake_snip20_test(deps);
 
-        let create_contest_msg: ExecuteMsg = _get_valid_create_contest_msg_with_params(
+        let create_contest_msg = _get_valid_create_contest_msg_with_params(
             contest_creator_bet_on_1,
             contest_creator_bet_amount,
         );
         let binding = create_contest_msg.clone();
         let (contest_info, _, _) = match &binding {
-            ExecuteMsg::CreateContest {
+            InvokeMsg::CreateContest {
                 contest_info,
                 outcome_id,
                 amount,

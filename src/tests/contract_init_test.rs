@@ -19,13 +19,17 @@ pub mod tests{
 			oracle_contract_info: ContractInfo{
 				address: Addr::unchecked("TODO FIXME WHEN INTEGRATING WITH ORACLE"),
 				code_hash: "XXxXXXXXXXXXXXXXXXXXX".to_owned()
-			}
+			},
+    		snip20: ContractInfo{
+				address: Addr::unchecked("Snip20"),
+				code_hash: "Codehash".to_owned()
+			},
 		};
 
 		let info = mock_info("creator", &coins(1000, "earth"));
 
 		let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-		assert_eq!(0, res.messages.len());
+		assert_eq!(1, res.messages.len());
 	}
 }
 

@@ -4,17 +4,18 @@ pub mod tests {
     use cosmwasm_std::{
         coins,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
-        Addr, Empty, OwnedDeps, Response, StdResult, Uint128, Timestamp, Env,
+        Addr, Empty, Env, OwnedDeps, Response, StdResult, Timestamp, Uint128,
     };
 
     use crate::{
+        answer::{ExecuteAnswer, ResponseStatus::Success},
         contract::execute_from_snip_20,
-        msg::ExecuteMsg,
+        msg::InvokeMsg,
         tests::{
+            constants::FAR_IN_THE_FUTURE,
             contract_init_test::tests::_initialize_test,
-            create_contest_test::tests::{_create_contest_test, _get_valid_create_contest_msg}, constants::FAR_IN_THE_FUTURE,
+            create_contest_test::tests::{_create_contest_test, _get_valid_create_contest_msg},
         },
-        answer::{ExecuteAnswer, ResponseStatus::Success}
     };
 
     ////////TESTS////////
@@ -25,7 +26,7 @@ pub mod tests {
 
         _initialize_test(&mut deps);
 
-        let msg: ExecuteMsg = _get_valid_create_contest_msg();
+        let msg = _get_valid_create_contest_msg();
 
         _create_contest_test(&mut deps, msg);
     }
@@ -37,7 +38,7 @@ pub mod tests {
 
         _initialize_test(&mut deps);
 
-        let msg: ExecuteMsg = _get_valid_create_contest_msg();
+        let msg = _get_valid_create_contest_msg();
 
         _create_contest_test(&mut deps, msg);
 
@@ -51,7 +52,7 @@ pub mod tests {
 
         _initialize_test(&mut deps);
 
-        let msg: ExecuteMsg = _get_valid_create_contest_msg();
+        let msg = _get_valid_create_contest_msg();
 
         _create_contest_test(&mut deps, msg);
 
@@ -69,7 +70,7 @@ pub mod tests {
             mock_dependencies();
         _initialize_test(&mut deps);
 
-        let msg: ExecuteMsg = _get_valid_create_contest_msg();
+        let msg = _get_valid_create_contest_msg();
 
         _create_contest_test(&mut deps, msg);
 
@@ -83,7 +84,8 @@ pub mod tests {
         let msg = _get_valid_bet_contest_msg();
         let info = mock_info(env.contract.address.as_str(), &coins(1000, "earth"));
         let res = execute_from_snip_20(deps.as_mut(), env, info, msg).unwrap();
-        let expected = Response::default().set_data(ExecuteAnswer::BetContestAnswer { status: Success });
+        let expected =
+            Response::default().set_data(ExecuteAnswer::BetContestAnswer { status: Success });
         assert_eq!(expected, res);
     }
 
@@ -95,7 +97,8 @@ pub mod tests {
         let msg = _get_valid_bet_contest_msg(); // Ensure this msg is appropriate for the test
         let info = mock_info(sender, &coins(1000, "earth")); // Use the sender parameter
         let res = execute_from_snip_20(deps.as_mut(), env, info, msg).unwrap();
-        let expected = Response::default().set_data(ExecuteAnswer::BetContestAnswer { status: Success });
+        let expected =
+            Response::default().set_data(ExecuteAnswer::BetContestAnswer { status: Success });
 
         assert_eq!(expected, res);
     }
@@ -105,22 +108,22 @@ pub mod tests {
         sender: &str,
         contest_id: u32,
         outcome_id: u8,
-        amount: Uint128
+        amount: Uint128,
     ) {
         let env = mock_env();
-        let msg = ExecuteMsg::BetContest {
+        let msg = InvokeMsg::BetContest {
             contest_id,
             outcome_id,
-            sender: Some(Addr::unchecked(sender)),
+            user: Addr::unchecked(sender),
             amount: Some(amount),
-        };        
+        };
         let info = mock_info(sender, &coins(1000, "earth")); // Use the sender parameter
         let res = execute_from_snip_20(deps.as_mut(), env, info, msg).unwrap();
-        let expected = Response::default().set_data(ExecuteAnswer::BetContestAnswer { status: Success });
+        let expected =
+            Response::default().set_data(ExecuteAnswer::BetContestAnswer { status: Success });
 
         assert_eq!(expected, res);
     }
-    
 
     pub fn _bet_contest_opposite_sides_test(
         deps: &mut OwnedDeps<MockStorage, MockApi, MockQuerier, Empty>,
@@ -137,8 +140,12 @@ pub mod tests {
         // Check if the result is an error
         match res {
             Ok(_) => panic!("Expected an error but got success"),
-            Err(e) =>  {
-                assert!(e.to_string().contains("409"),"{}, does not contain 409", e.to_string())
+            Err(e) => {
+                assert!(
+                    e.to_string().contains("409"),
+                    "{}, does not contain 409",
+                    e.to_string()
+                )
             }
         }
     }
@@ -157,10 +164,10 @@ pub mod tests {
         let sender_clone = sender.clone().unwrap().clone();
 
         // Create the ExecuteMsg
-        let msg = ExecuteMsg::BetContest {
+        let msg = InvokeMsg::BetContest {
             contest_id,
             outcome_id,
-            sender,
+            user: sender.unwrap(),
             amount,
         };
 
@@ -171,10 +178,10 @@ pub mod tests {
         execute_from_snip_20(deps.as_mut(), env, info, msg)
     }
 
-    pub fn _get_valid_bet_contest_msg() -> ExecuteMsg {
+    pub fn _get_valid_bet_contest_msg() -> InvokeMsg {
         let execute_msg = _get_valid_create_contest_msg();
         let (contest_info, outcome_id) = match execute_msg {
-            ExecuteMsg::CreateContest {
+            InvokeMsg::CreateContest {
                 contest_info,
                 outcome_id,
                 ..
@@ -183,10 +190,10 @@ pub mod tests {
         };
         let env = mock_env();
 
-        let msg = ExecuteMsg::BetContest {
+        let msg = InvokeMsg::BetContest {
             contest_id: contest_info.id,
             outcome_id: outcome_id,
-            sender: Option::Some(env.contract.address),
+            user: env.contract.address,
             amount: Option::Some(Uint128::from(100u128)),
         };
         return msg;

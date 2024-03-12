@@ -1,16 +1,17 @@
 use super::{
     data::{
-        bets::{get_bet, save_bet, verify_bet, UserContest, Bet},
+        bets::{get_bet, save_bet, verify_bet, Bet, UserContest},
         contest_bet_summary::{
             get_contest_bet_summary, save_contest_bet_summary, update_contest_bet_summary,
             ContestBetSummary,
         },
-        contest_info::{ get_contest, save_contest, verify_contest, ContestInfo},
+        contest_info::{get_contest, save_contest, verify_contest, ContestInfo},
     },
     error::ContestError,
 };
 use crate::{
-    cryptography::cryptography::is_valid_signature, integrations::{snip_20::snip_20::send, oracle::constants::NULL_AND_VOID_CONTEST_RESULT},
+    cryptography::cryptography::is_valid_signature,
+    integrations::{oracle::constants::NULL_AND_VOID_CONTEST_RESULT, snip_20::snip_20::send},
     state::config_read,
 };
 use cosmwasm_std::{Addr, DepsMut, Env, Response, StdResult, Uint128};
@@ -54,15 +55,15 @@ pub fn try_bet_on_contest(
     env: &Env,
     contest_id: u32,
     outcome_id: u8,
-    sender: Option<Addr>,
+    user: Addr,
     amount: Option<Uint128>,
 ) -> Result<(), ContestError> {
-    verify_bet(&sender, amount)?;
+    verify_bet(&Some(user.clone()), amount)?;
     let contest_info = verify_contest(deps.storage, contest_id, outcome_id)?;
     contest_info.assert_time_of_close_not_passed(env.block.time.seconds())?;
 
     let user_contest = UserContest {
-        address: sender.clone().unwrap(),
+        address: user.clone(),
         contest_id,
     };
     let bet = get_bet(deps.storage, &user_contest);
@@ -74,7 +75,7 @@ pub fn try_bet_on_contest(
             }
             save_bet(
                 deps.storage,
-                sender.clone().unwrap(),
+                user.clone(),
                 contest_id,
                 amount.unwrap() + bet.amount,
                 outcome_id,
@@ -84,7 +85,7 @@ pub fn try_bet_on_contest(
         None => save_bet(
             // User has not bet before
             deps.storage,
-            sender.unwrap(),
+            user,
             contest_id,
             amount.unwrap(),
             outcome_id,
@@ -100,12 +101,14 @@ pub fn try_claim(
     deps: &mut DepsMut,
     env: &Env,
     contest_id: u32,
-    sender: Addr
+    sender: Addr,
 ) -> StdResult<Response> {
     let contest_info: ContestInfo = get_contest(deps.storage, contest_id).unwrap();
     contest_info.assert_time_of_resolve_is_passed(env.block.time.seconds())?;
-    let mut contest_bet_summary: ContestBetSummary = get_contest_bet_summary(deps.storage, contest_id).unwrap();
-    let contest_result = contest_bet_summary.get_outcome(&deps.querier, deps.storage, &contest_info, contest_id)?;
+    let mut contest_bet_summary: ContestBetSummary =
+        get_contest_bet_summary(deps.storage, contest_id).unwrap();
+    let contest_result =
+        contest_bet_summary.get_outcome(&deps.querier, deps.storage, &contest_info, contest_id)?;
     save_contest_bet_summary(deps.storage, contest_info.id, &contest_bet_summary)?;
 
     // Create a UserContest instance
@@ -138,7 +141,6 @@ pub fn try_claim(
     }
 }
 
-
 // This function contains the logic to handle a successful bet.
 fn handle_winning_claim(
     deps: &mut DepsMut,
@@ -150,7 +152,8 @@ fn handle_winning_claim(
     match contest_bet_summary_option {
         Some(contest_bet_summary) => {
             // Calculate the user's share
-            let user_share = contest_bet_summary.calculate_user_share(bet.amount, bet.outcome_id)?;
+            let user_share =
+                contest_bet_summary.calculate_user_share(bet.amount, bet.outcome_id)?;
             save_bet(
                 deps.storage,
                 sender.clone(),
@@ -164,7 +167,6 @@ fn handle_winning_claim(
         None => Err(ContestError::ContestNotFound(contest_id).into()),
     }
 }
-
 
 fn handle_null_and_void_contest(
     deps: &mut DepsMut,

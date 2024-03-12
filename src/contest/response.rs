@@ -15,13 +15,15 @@ pub struct ContestQueryResponse {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
-pub struct ContestsQueryResponse{
-    contest_query_responses: Vec<ContestQueryResponse>
+pub struct ContestsQueryResponse {
+    contest_query_responses: Vec<ContestQueryResponse>,
 }
 
 impl ContestsQueryResponse {
     pub fn new(contest_query_responses: Vec<ContestQueryResponse>) -> Self {
-        Self { contest_query_responses }
+        Self {
+            contest_query_responses,
+        }
     }
     // Method to get the length of contest_query_responses
     pub fn len(&self) -> usize {
@@ -34,8 +36,16 @@ impl ContestsQueryResponse {
     }
 }
 
-
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct UserBetQueryResponse {
     pub bet: Bet,
+}
+
+// Enum to encapsulate each query response type
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum QueryResponse {
+    Contest(ContestQueryResponse),
+    Contests(ContestsQueryResponse),
+    UserBet(UserBetQueryResponse),
 }

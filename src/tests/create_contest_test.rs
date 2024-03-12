@@ -3,14 +3,14 @@ pub mod tests {
     use cosmwasm_std::{
         coins,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
-        Empty, OwnedDeps, Response, StdResult, Uint128, Addr,
+        Addr, Empty, OwnedDeps, Response, StdResult, Uint128,
     };
 
     use crate::{
         answer::{ExecuteAnswer, ResponseStatus::Success},
         contest::data::contest_info::{ContestInfo, ContestOutcome},
         contract::execute_from_snip_20,
-        msg::ExecuteMsg,
+        msg::InvokeMsg,
         tests::{
             constants::{FAR_IN_THE_FUTURE, FAR_IN_THE_PAST},
             contract_init_test::tests::_initialize_test,
@@ -53,7 +53,7 @@ pub mod tests {
 
         _create_contest_test(&mut deps, msg);
 
-        let same_msg_but_again: ExecuteMsg = _get_valid_create_contest_msg();
+        let same_msg_but_again: InvokeMsg = _get_valid_create_contest_msg();
 
         _create_contest_for_the_second_time_test(&mut deps, same_msg_but_again);
     }
@@ -115,11 +115,11 @@ pub mod tests {
         contest_info: ContestInfo,
         contest_info_signature_hex: &str,
     ) -> StdResult<Response> {
-        let msg = ExecuteMsg::CreateContest {
+        let msg = InvokeMsg::CreateContest {
             contest_info,
             contest_info_signature_hex: contest_info_signature_hex.to_string(),
             outcome_id: 1,
-            sender: Some(mock_env().contract.address),
+            user: mock_env().contract.address,
             amount: Some(Uint128::from(100u128)),
         };
         let env = mock_env();
@@ -130,7 +130,7 @@ pub mod tests {
 
     pub fn _create_contest_with_sender_test(
         deps: &mut OwnedDeps<MockStorage, MockApi, MockQuerier, Empty>,
-        msg: ExecuteMsg,
+        msg: InvokeMsg,
         sender: &str,
     ) {
         let env = mock_env();
@@ -141,10 +141,9 @@ pub mod tests {
         assert_eq!(expected, res);
     }
 
-
     pub fn _create_contest_test(
         deps: &mut OwnedDeps<MockStorage, MockApi, MockQuerier, Empty>,
-        msg: ExecuteMsg,
+        msg: InvokeMsg,
     ) {
         let env = mock_env();
         let info = mock_info(env.contract.address.as_str(), &coins(1000, "earth"));
@@ -156,7 +155,7 @@ pub mod tests {
 
     pub fn _create_contest_for_the_second_time_test(
         deps: &mut OwnedDeps<MockStorage, MockApi, MockQuerier, Empty>,
-        msg: ExecuteMsg,
+        msg: InvokeMsg,
     ) {
         let env = mock_env();
         let info = mock_info(env.contract.address.as_str(), &coins(1000, "earth"));
@@ -166,7 +165,7 @@ pub mod tests {
 
     pub fn _create_invalid_contest_test(
         deps: &mut OwnedDeps<MockStorage, MockApi, MockQuerier, Empty>,
-        msg: ExecuteMsg,
+        msg: InvokeMsg,
     ) {
         let info = mock_info("creator", &coins(1000, "earth"));
         let res = execute_from_snip_20(deps.as_mut(), mock_env(), info, msg);
@@ -174,8 +173,10 @@ pub mod tests {
     }
 
     ///////Helpers/////////
-    pub fn _get_invalid_create_contest_msg() -> ExecuteMsg {
-        let msg = ExecuteMsg::CreateContest {
+    pub fn _get_invalid_create_contest_msg() -> InvokeMsg {
+        let env = mock_env();
+
+        let msg = InvokeMsg::CreateContest {
 			contest_info: ContestInfo{
 				id: 1,
 				options: vec![
@@ -194,44 +195,44 @@ pub mod tests {
 			},
 			contest_info_signature_hex: "c59576d467bc77be37b5b1d74e4a3fc056f7642746964a1bd8fb897955458d2c6c8801b4017b9d09c8ceb77356002c0f2a0ce425cb830cb7305bd4ab1ae4c261".to_string(),
 			outcome_id: 0,
-			sender: Option::None,//TODO fix
+			user: env.contract.address,//TODO fix
 			amount: Option::None,//TODO fix
 		};
         return msg;
     }
 
-    pub fn _get_valid_create_contest_msg() -> ExecuteMsg {
+    pub fn _get_valid_create_contest_msg() -> InvokeMsg {
         let env = mock_env();
 
-        let msg = ExecuteMsg::CreateContest {
+        let msg = InvokeMsg::CreateContest {
 			contest_info: _get_valid_contest_info(),
 			contest_info_signature_hex: "b5876a3fc9f0ff470fd2d5d446dbdac994486eb2c7db61ebc2bd6e96a5fb05f7773b3eb0e59d1a4dc80e317e4e69bb6bbb7635084c29dd1bedeabcd4544a9d40".to_string(),
 			outcome_id: 1,
-			sender: Option::Some(env.contract.address), //TODO fix
+			user: env.contract.address, //TODO fix
 			amount: Option::Some(Uint128::from(100u128)), //TODO fix
 		};
         return msg;
     }
 
-    pub fn _get_valid_create_contest_msg_with_params(sender: &str, amount: Uint128) -> ExecuteMsg {
-        let msg = ExecuteMsg::CreateContest {
+    pub fn _get_valid_create_contest_msg_with_params(sender: &str, amount: Uint128) -> InvokeMsg {
+        let msg = InvokeMsg::CreateContest {
 			contest_info: _get_valid_contest_info(),
 			contest_info_signature_hex: "b5876a3fc9f0ff470fd2d5d446dbdac994486eb2c7db61ebc2bd6e96a5fb05f7773b3eb0e59d1a4dc80e317e4e69bb6bbb7635084c29dd1bedeabcd4544a9d40".to_string(),
 			outcome_id: 1,
-			sender: Option::Some(Addr::unchecked(sender)), //TODO fix
+			user: Addr::unchecked(sender), //TODO fix
 			amount: Option::Some(amount), //TODO fix
 		};
         return msg;
     }
 
-    pub fn _get_past_create_contest_msg() -> ExecuteMsg {
+    pub fn _get_past_create_contest_msg() -> InvokeMsg {
         let env = mock_env();
 
-        let msg = ExecuteMsg::CreateContest {
+        let msg = InvokeMsg::CreateContest {
 			contest_info: _get_past_contest_info(),
 			contest_info_signature_hex: "b92ebd05884ed1871e03a720b843cca606c041dd47d48334968c83ed307f5ad14c60e7420ef1d27a35702ae5d31eda329f0a978829b88513589e32c1fa28eee6".to_string(),
 			outcome_id: 0,
-			sender: Option::Some(env.contract.address), //TODO fix
+			user: env.contract.address, //TODO fix
 			amount: Option::Some(Uint128::from(100u128)), //TODO fix
 		};
         return msg;

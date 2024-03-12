@@ -13,11 +13,9 @@ pub mod tests {
                 assert_query_contest_result_call_count, reset_query_contest_result_call_count,
                 set_mock_result,
             },
-            snip_20::{
-                snip_20_msg::Snip20Msg, tests::snip_20_test::tests::_register_fake_snip20_test,
-            },
+            snip_20::snip_20_msg::Snip20Msg,
         },
-        msg::ExecuteMsg,
+        msg::{ExecuteMsg, InvokeMsg},
         tests::{
             bet_contest_test::tests::{_bet_contest_test, _bet_contest_test_with_sender},
             constants::FAR_IN_THE_FUTURE,
@@ -35,9 +33,9 @@ pub mod tests {
 
         // Initialize and create a contest
         _initialize_test(&mut deps);
-        let create_contest_msg: ExecuteMsg = _get_valid_create_contest_msg();
+        let create_contest_msg = _get_valid_create_contest_msg();
         let contest_info = match &create_contest_msg {
-            ExecuteMsg::CreateContest { contest_info, .. } => contest_info,
+            InvokeMsg::CreateContest { contest_info, .. } => contest_info,
             _ => panic!("Expected CreateContest message"),
         };
         let contest_id = contest_info.id; // Extract the contest_id		_create_contest_test(&mut deps, create_contest_msg);
@@ -56,10 +54,10 @@ pub mod tests {
 
         // Initialize and create a contest
         _initialize_test(&mut deps);
-        let create_contest_msg: ExecuteMsg = _get_valid_create_contest_msg();
+        let create_contest_msg = _get_valid_create_contest_msg();
 
         // Extract contest_id from the create_contest_msg
-        let contest_id = if let ExecuteMsg::CreateContest { contest_info, .. } = &create_contest_msg
+        let contest_id = if let InvokeMsg::CreateContest { contest_info, .. } = &create_contest_msg
         {
             contest_info.id
         } else {
@@ -84,12 +82,12 @@ pub mod tests {
         let mut deps = mock_dependencies();
         _initialize_test(&mut deps);
         // Initialize and create a contest
-        let create_contest_msg: ExecuteMsg = _get_valid_create_contest_msg();
+        let create_contest_msg = _get_valid_create_contest_msg();
         // Extract contest_id from the create_contest_msg
-        let (contest_id, amount_bet, sender) = if let ExecuteMsg::CreateContest {
+        let (contest_id, amount_bet, sender) = if let InvokeMsg::CreateContest {
             contest_info,
             amount,
-            sender,
+            user: sender,
             ..
         } = &create_contest_msg
         {
@@ -97,7 +95,6 @@ pub mod tests {
         } else {
             panic!("Expected CreateContest message with contest_info, amount, and sender")
         };
-        _register_fake_snip20_test(&mut deps);
         // Assume _create_contest_test creates the contest and returns the contest_id
         _create_contest_test(&mut deps, create_contest_msg.clone());
 
@@ -105,11 +102,13 @@ pub mod tests {
         set_mock_result(0);
 
         // Define a function for the user to claim after nullification
-        let sender_address = sender.map_or_else(
-            || panic!("Expected sender address"),
-            |addr| addr.to_string(),
+
+        claim_after_nullification_test(
+            &mut deps,
+            contest_id,
+            &sender.to_string(),
+            amount_bet.u128(),
         );
-        claim_after_nullification_test(&mut deps, contest_id, &sender_address, amount_bet.u128());
 
         // Additional assertions and cleanup can be performed here
     }
@@ -174,7 +173,8 @@ pub mod tests {
             contest_id,
             amount_bet,
             winning_result, // Ensure you have this information
-        ).unwrap();        // Adjusted winning claim test example:
+        )
+        .unwrap(); // Adjusted winning claim test example:
         print!("USER SHARE{}", user_share);
         // Adjusted winning claim test example:
         let result = contains_snip20_send_msg(&response, sender, user_share);
@@ -194,18 +194,18 @@ pub mod tests {
         losing_result: u8,
     ) {
         reset_query_contest_result_call_count(); // Reset call count before the test
-    
+
         let mut env = mock_env();
         env.block.time = Timestamp::from_seconds(FAR_IN_THE_FUTURE);
         let claim_msg = ExecuteMsg::Claim { contest_id };
         let info = mock_info(sender, &coins(amount_bet, "earth"));
-    
+
         // Set up contest state to reflect a losing position for the user
         set_mock_result(losing_result); // Set the contest to a losing outcome
-    
+
         // Execute the claim action and expect it to fail
         let response = execute(deps.as_mut(), env, info, claim_msg);
-    
+
         // Check the response for an error containing the specific error text
         match response {
             Err(err) => {
@@ -217,11 +217,11 @@ pub mod tests {
                     error_msg
                 );
             }
-            _ => panic!("Expected an error for claiming on a lost contest, but claim was successful."),
+            _ => panic!(
+                "Expected an error for claiming on a lost contest, but claim was successful."
+            ),
         }
     }
-    
-    
 
     fn contains_snip20_send_msg(
         response: &Response,

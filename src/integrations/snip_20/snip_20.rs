@@ -5,23 +5,22 @@ use cosmwasm_std::{
 };
 
 use super::{
-    error::Snip20Error,
     query_state::{check_known_snip_20, get_snip_20_contract},
     snip_20_msg::Snip20Msg,
     update_state::add_snip_20,
 };
-use crate::{contract::execute_from_snip_20, msg::ExecuteMsg};
+use crate::{contract::execute_from_snip_20, msg::InvokeMsg};
 
 use secret_toolkit::snip20;
 
 pub const BLOCK_SIZE: usize = 256;
 
-pub fn try_register(
+pub fn try_create_register_snip20_msg(
     deps: DepsMut,
     env: Env,
     snip_20_contract_address: Addr,
     snip_20_contract_code_hash: String,
-) -> StdResult<Response> {
+) -> StdResult<CosmosMsg> {
     add_snip_20(
         deps,
         snip_20_contract_address.clone(),
@@ -36,7 +35,7 @@ pub fn try_register(
         funds: vec![],
     });
 
-    Ok(Response::new().add_message(message))
+    Ok(message)
 }
 
 #[allow(unused_assignments)]
@@ -52,34 +51,33 @@ pub fn try_receive(
 ) -> StdResult<Response> {
     check_known_snip_20(deps.storage, &info.clone().sender.to_string())?;
 
-    let mut msg: ExecuteMsg = from_binary(&msg)?;
+    let mut msg: InvokeMsg = from_binary(&msg)?;
 
     msg = match msg {
-        ExecuteMsg::CreateContest {
+        InvokeMsg::CreateContest {
             contest_info,
             contest_info_signature_hex,
             outcome_id,
+            user,
             ..
-        } => ExecuteMsg::CreateContest {
+        } => InvokeMsg::CreateContest {
             contest_info,
             contest_info_signature_hex,
             outcome_id,
-            sender: Some(sender),
+            user,
             amount: Some(amount),
         },
-        ExecuteMsg::BetContest {
+        InvokeMsg::BetContest {
             contest_id,
             outcome_id,
+            user,
             ..
-        } => ExecuteMsg::BetContest {
+        } => InvokeMsg::BetContest {
             contest_id,
             outcome_id,
-            sender: Some(sender),
+            user,
             amount: Some(amount),
         },
-        _ => {
-            return Err(Snip20Error::UnsupportedMethod(msg).into());
-        }
     };
     execute_from_snip_20(deps, env, info, msg)
 }

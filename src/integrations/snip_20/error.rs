@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::msg::ExecuteMsg;
+use crate::msg::InvokeMsg;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum Snip20Error {
@@ -8,7 +8,7 @@ pub enum Snip20Error {
     UnknownSnip20(String),
 
     #[error("Unsupported Method")]
-    UnsupportedMethod(ExecuteMsg),
+    UnsupportedMethod(InvokeMsg),
 
     #[error("There is no snip 20 at this index: {0}")]
     InvalidIndex(usize),

@@ -1,5 +1,5 @@
-use crate::answer::ResponseStatus::Success;
 use crate::answer::ExecuteAnswer;
+use crate::answer::ResponseStatus::Success;
 use crate::contest::actions::{try_bet_on_contest, try_claim, try_create_contest};
 use crate::contest::queries::{
     contest_bet_send_msg, contest_creation_send_msg, query_contest, query_contests, query_user_bet,
@@ -8,9 +8,11 @@ use crate::error::ContractError;
 use crate::integrations::oracle::oracle::query_contest_result;
 use crate::integrations::oracle::state::initialize_orace_state;
 use crate::integrations::snip_20::query_state::get_registered_snip_20s;
-use crate::integrations::snip_20::snip_20::{try_receive, try_redeem, try_register};
+use crate::integrations::snip_20::snip_20::{
+    try_create_register_snip20_msg, try_receive, try_redeem,
+};
 use crate::integrations::snip_20::update_state::initialize_snip_20_state;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, InvokeMsg, QueryMsg};
 use crate::state::{config, State};
 use crate::viewingkeys::viewing_keys::{try_create_key, try_set_key, validate_query};
 
@@ -21,7 +23,7 @@ use cosmwasm_std::{
 #[entry_point]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
@@ -33,8 +35,9 @@ pub fn instantiate(
 
     initialize_orace_state(deps.storage, msg.oracle_contract_info);
     initialize_snip_20_state(deps.storage);
+    let msg = try_create_register_snip20_msg(deps, env, msg.snip20.address, msg.snip20.code_hash)?;
 
-    Ok(Response::default())
+    Ok(Response::default().add_message(msg))
 }
 
 #[entry_point]
@@ -47,16 +50,13 @@ pub fn execute<'a>(
     match msg {
         ExecuteMsg::Claim { contest_id } => {
             match try_claim(&mut deps, &env, contest_id, info.sender) {
-                Ok(response) => {
-                    Ok(response.clone().set_data(ExecuteAnswer::ClaimContestAnswer { status: Success }))
-                },
-                Err(e) => {
-                    Err(e)
-                }
-            }        
-        },
+                Ok(response) => Ok(response
+                    .clone()
+                    .set_data(ExecuteAnswer::ClaimContestAnswer { status: Success })),
+                Err(e) => Err(e),
+            }
+        }
         // SNIP-20 Msgs
-        ExecuteMsg::Register { reg_addr, reg_hash } => try_register(deps, env, reg_addr, reg_hash),
         ExecuteMsg::Receive {
             sender,
             from,
@@ -75,7 +75,6 @@ pub fn execute<'a>(
         ExecuteMsg::CreateViewingKey { entropy, .. } => try_create_key(deps, env, info, entropy),
         ExecuteMsg::SetViewingKey { key, .. } => try_set_key(deps, info, key),
         //
-        _ => Err(ContractError::UnsupportedExecuteMessage.into()),
     }
 }
 
@@ -86,14 +85,14 @@ pub fn execute_from_snip_20(
     mut deps: DepsMut,
     env: Env,
     _info: MessageInfo,
-    msg: ExecuteMsg,
+    msg: InvokeMsg,
 ) -> StdResult<Response> {
     match msg {
-        ExecuteMsg::CreateContest {
+        InvokeMsg::CreateContest {
             contest_info,
             contest_info_signature_hex,
             outcome_id,
-            sender,
+            user: sender,
             amount,
         } => {
             try_create_contest(&mut deps, &env, &contest_info, &contest_info_signature_hex)?;
@@ -105,18 +104,20 @@ pub fn execute_from_snip_20(
                 sender,
                 amount,
             )?;
-            Ok(Response::default().set_data(ExecuteAnswer::CreateContestAnswer { status: Success }))
+            Ok(
+                Response::default()
+                    .set_data(ExecuteAnswer::CreateContestAnswer { status: Success }),
+            )
         }
-        ExecuteMsg::BetContest {
+        InvokeMsg::BetContest {
             contest_id,
             outcome_id,
-            sender,
+            user: sender,
             amount,
         } => {
             try_bet_on_contest(&mut deps, &env, contest_id, outcome_id, sender, amount)?;
             Ok(Response::default().set_data(ExecuteAnswer::BetContestAnswer { status: Success }))
         }
-        _ => Err(ContractError::UnsupportedSnip20ExecuteMsg.into()),
     }
 }
 
@@ -129,13 +130,27 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             contest_info,
             contest_info_signature_hex,
             outcome_id,
-        } => contest_creation_send_msg(env, contest_info, contest_info_signature_hex, outcome_id),
+            user,
+        } => contest_creation_send_msg(
+            env,
+            user,
+            contest_info,
+            contest_info_signature_hex,
+            outcome_id,
+        ),
         QueryMsg::GetBetContestMsgBinary {
             contest_id,
             outcome_id,
-        } => contest_bet_send_msg(env, contest_id, outcome_id),
-        QueryMsg::GetContests { contest_ids } => to_binary(&query_contests(deps, &env, contest_ids)?),
-        QueryMsg::GetContestResult { contest_id } => to_binary(&query_contest_result(&deps.querier, deps.storage, contest_id as u64)?),
+            user,
+        } => contest_bet_send_msg(env, user, contest_id, outcome_id),
+        QueryMsg::GetContests { contest_ids } => {
+            to_binary(&query_contests(deps, &env, contest_ids)?)
+        }
+        QueryMsg::GetContestResult { contest_id } => to_binary(&query_contest_result(
+            &deps.querier,
+            deps.storage,
+            contest_id as u64,
+        )?),
         _ => viewing_keys_queries(deps, msg),
     }
 }
