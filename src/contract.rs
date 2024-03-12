@@ -1,20 +1,16 @@
 use crate::answer::ExecuteAnswer;
 use crate::answer::ResponseStatus::Success;
 use crate::contest::actions::{try_bet_on_contest, try_claim, try_create_contest};
-use crate::contest::queries::{
-    contest_bet_send_msg, contest_creation_send_msg, query_contest, query_contests, query_user_bet,
-};
+use crate::contest::queries::{query_contest, query_contests, query_user_bet};
 use crate::error::ContractError;
 use crate::integrations::oracle::oracle::query_contest_result;
 use crate::integrations::oracle::state::initialize_orace_state;
 use crate::integrations::snip_20::query_state::get_registered_snip_20s;
-use crate::integrations::snip_20::snip_20::{
-    try_create_register_snip20_msg, try_receive, try_redeem,
-};
+use crate::integrations::snip_20::snip_20::{try_create_register_snip20_msg, try_receive};
 use crate::integrations::snip_20::update_state::initialize_snip_20_state;
 use crate::msg::{ExecuteMsg, InstantiateMsg, InvokeMsg, QueryMsg};
 use crate::state::{config, State};
-use crate::viewingkeys::viewing_keys::{try_create_key, try_set_key, validate_query};
+use crate::viewingkeys::viewing_keys::{try_set_key, validate_query};
 
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
@@ -64,15 +60,7 @@ pub fn execute<'a>(
             memo: _,
             msg,
         } => try_receive(deps, env, info, sender, from, amount, msg),
-        ExecuteMsg::Redeem {
-            addr,
-            hash,
-            to,
-            amount,
-            denom,
-        } => try_redeem(&deps, addr, hash, to, amount, denom),
         //Viewing Keys
-        ExecuteMsg::CreateViewingKey { entropy, .. } => try_create_key(deps, env, info, entropy),
         ExecuteMsg::SetViewingKey { key, .. } => try_set_key(deps, info, key),
         //
     }
@@ -126,23 +114,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetSnip20s {} => get_registered_snip_20s(deps.storage),
         QueryMsg::GetContest { contest_id } => to_binary(&query_contest(deps, &env, contest_id)?),
-        QueryMsg::GetContestCreationMsgBinary {
-            contest_info,
-            contest_info_signature_hex,
-            outcome_id,
-            user,
-        } => contest_creation_send_msg(
-            env,
-            user,
-            contest_info,
-            contest_info_signature_hex,
-            outcome_id,
-        ),
-        QueryMsg::GetBetContestMsgBinary {
-            contest_id,
-            outcome_id,
-            user,
-        } => contest_bet_send_msg(env, user, contest_id, outcome_id),
         QueryMsg::GetContests { contest_ids } => {
             to_binary(&query_contests(deps, &env, contest_ids)?)
         }

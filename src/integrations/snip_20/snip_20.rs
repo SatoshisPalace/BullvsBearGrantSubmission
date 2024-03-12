@@ -1,7 +1,7 @@
 // Reference https://github.com/scrtlabs/snip20-reference-impl/tree/master/tests/example-receiver
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env, MessageInfo,
-    Response, StdResult, Uint128, WasmMsg,
+    from_binary, to_binary, Addr, Binary, CosmosMsg, DepsMut, Env, MessageInfo, Response,
+    StdResult, Uint128, WasmMsg,
 };
 
 use super::{
@@ -80,36 +80,6 @@ pub fn try_receive(
         },
     };
     execute_from_snip_20(deps, env, info, msg)
-}
-
-pub fn try_redeem(
-    deps: &DepsMut,
-    addr: String,
-    hash: String,
-    to: Addr,
-    amount: Uint128,
-    denom: Option<String>,
-) -> StdResult<Response> {
-    check_known_snip_20(deps.storage, &addr)?;
-
-    let unwrapped_denom = denom.unwrap_or("uscrt".to_string());
-
-    let msg = to_binary(&Snip20Msg::redeem(amount, unwrapped_denom.clone()))?;
-    let secret_redeem = CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: addr,
-        code_hash: hash,
-        msg,
-        funds: vec![],
-    });
-    let redeem = CosmosMsg::Bank(BankMsg::Send {
-        // unsafe, don't use in production obviously
-        amount: vec![Coin::new(amount.u128(), unwrapped_denom)],
-        to_address: to.into_string(),
-    });
-
-    Ok(Response::new()
-        .add_message(secret_redeem)
-        .add_message(redeem))
 }
 
 pub fn send(deps: &DepsMut, recipient: String, amount: Uint128) -> StdResult<Response> {

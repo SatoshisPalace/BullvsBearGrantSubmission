@@ -1,11 +1,6 @@
-use cosmwasm_std::{to_binary, Addr, Binary, Deps, Env, StdResult, Uint128};
+use cosmwasm_std::{Deps, Env, StdResult};
 
-use crate::{
-    integrations::{
-        oracle::constants::NULL_AND_VOID_CONTEST_RESULT, snip_20::snip_20_msg::Snip20Msg,
-    },
-    msg::InvokeMsg,
-};
+use crate::integrations::oracle::constants::NULL_AND_VOID_CONTEST_RESULT;
 
 use super::{
     data::{
@@ -16,54 +11,6 @@ use super::{
     error::ContestError,
     response::{ContestQueryResponse, ContestsQueryResponse, UserBetQueryResponse},
 };
-
-pub fn contest_creation_send_msg(
-    env: Env,
-    user: Addr,
-    contest_info: ContestInfo,
-    contest_info_signature_hex: String,
-    outcome_id: u8,
-) -> StdResult<Binary> {
-    let create_contest_msg = Some(
-        to_binary(&InvokeMsg::CreateContest {
-            contest_info,
-            contest_info_signature_hex,
-            outcome_id,
-            user,
-            amount: Option::None,
-        })
-        .unwrap(),
-    );
-    to_binary(&Snip20Msg::send(
-        env.contract.address.into_string(),
-        Some(env.contract.code_hash),
-        Uint128::one(), // Default bet is 1 this should be overwritten by front end
-        create_contest_msg,
-    ))
-}
-
-pub fn contest_bet_send_msg(
-    env: Env,
-    user: Addr,
-    contest_id: u32,
-    outcome_id: u8,
-) -> StdResult<Binary> {
-    let bet_contest_msg = Some(
-        to_binary(&InvokeMsg::BetContest {
-            contest_id,
-            outcome_id,
-            user,
-            amount: Option::None,
-        })
-        .unwrap(),
-    );
-    to_binary(&Snip20Msg::send(
-        env.contract.address.into_string(),
-        Some(env.contract.code_hash),
-        Uint128::one(), // Default bet is 1 this should be overwritten by front end
-        bet_contest_msg,
-    ))
-}
 
 pub fn query_contest(deps: Deps, env: &Env, contest_id: u32) -> StdResult<ContestQueryResponse> {
     let contest_info_option: Option<ContestInfo> = get_contest(deps.storage, contest_id);

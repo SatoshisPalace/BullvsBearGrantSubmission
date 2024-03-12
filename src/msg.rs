@@ -34,18 +34,7 @@ pub enum ExecuteMsg {
         memo: Option<String>,
         msg: Binary,
     },
-    Redeem {
-        addr: String,
-        hash: String,
-        to: Addr,
-        amount: Uint128,
-        denom: Option<String>,
-    },
     // Viewing Keys
-    CreateViewingKey {
-        entropy: String,
-        padding: Option<String>,
-    },
     SetViewingKey {
         key: String,
         padding: Option<String>,
@@ -88,15 +77,4 @@ pub enum QueryMsg {
     },
     GetSnip20s {},
     //Contract specific snip-20s
-    GetContestCreationMsgBinary {
-        contest_info: ContestInfo,
-        contest_info_signature_hex: String,
-        user: Addr,
-        outcome_id: u8,
-    },
-    GetBetContestMsgBinary {
-        contest_id: u32,
-        outcome_id: u8,
-        user: Addr,
-    }, //
 }
