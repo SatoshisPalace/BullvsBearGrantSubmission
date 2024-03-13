@@ -9,7 +9,7 @@ use crate::integrations::snip_20::query_state::get_registered_snip_20s;
 use crate::integrations::snip_20::snip_20::{try_create_register_snip20_msg, try_receive};
 use crate::integrations::snip_20::update_state::initialize_snip_20_state;
 use crate::msg::{ExecuteMsg, InstantiateMsg, InvokeMsg, QueryMsg};
-use crate::state::{config, State};
+use crate::state::State;
 use crate::viewingkeys::viewing_keys::{try_set_key, validate_query};
 
 use cosmwasm_std::{
@@ -27,7 +27,7 @@ pub fn instantiate(
         satoshis_palace: msg.satoshis_palace,
         owner: deps.api.addr_canonicalize(info.sender.as_str())?,
     };
-    config(deps.storage).save(&state)?;
+    state.singleton_save(deps.storage)?;
 
     initialize_orace_state(deps.storage, msg.oracle_contract_info);
     initialize_snip_20_state(deps.storage);

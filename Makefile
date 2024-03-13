@@ -11,7 +11,7 @@ test: unit-test
 
 .PHONY: unit-test
 unit-test:
-	cargo test --features testing -- --nocapture --test-threads=1
+	cargo test --features testing --lib -- --nocapture --test-threads=1
 
 # This is a local build with debug-prints activated. Debug prints only show up
 # in the local development chain (see the `start-server` command below)

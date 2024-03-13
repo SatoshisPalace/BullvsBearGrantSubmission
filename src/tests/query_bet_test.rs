@@ -161,17 +161,14 @@ pub mod tests {
         let response_data: UserBetQueryResponse = from_binary(&binary_data).unwrap();
 
         // Compare the bet
-        assert_eq!(response_data.bet.amount, expected_bet); // Assuming `bet` has a field `amount` of type Uint128
+        assert_eq!(response_data.bet.get_amount(), expected_bet); // Assuming `bet` has a field `amount` of type Uint128
     }
 
     /////////Helpers/////////
 
     fn _get_query_bet_msg(address: &str, contest_id: u32, viewing_key: &str) -> QueryMsg {
         // Create a UserContest object
-        let user_contest = UserContest {
-            address: Addr::unchecked(address), // Create an Addr from the provided string
-            contest_id,
-        };
+        let user_contest = UserContest::new(Addr::unchecked(address), contest_id);
 
         // Create a GetUserBet message
         QueryMsg::GetUserBet {

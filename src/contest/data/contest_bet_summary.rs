@@ -1,24 +1,25 @@
-use cosmwasm_std::{Storage, Uint128, QuerierWrapper};
+use cosmwasm_std::{QuerierWrapper, Storage, Uint128};
 use schemars::JsonSchema;
-use secret_toolkit::storage::Keymap;
 use serde::{Deserialize, Serialize};
+use sp_secret_toolkit::macros::{identifiable::Identifiable, keymap::KeymapStorage};
 
-use crate::{contest::{
-    constants::{CONTEST_BET_SUMMARY_CONFIG_KEY, FEE_PERCENTAGE, PERCENTAGE_BASE},
-    error::ContestError,
-}, integrations::oracle::{oracle::query_contest_result, response::GetContestResultResponse, constants::NULL_AND_VOID_CONTEST_RESULT}};
+use crate::{
+    contest::{
+        constants::{FEE_PERCENTAGE, PERCENTAGE_BASE},
+        error::ContestError,
+    },
+    integrations::oracle::{
+        constants::NULL_AND_VOID_CONTEST_RESULT, oracle::query_contest_result,
+        response::GetContestResultResponse,
+    },
+};
 
 use super::contest_info::{ContestInfo, ContestOutcome};
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
-pub struct OptionBetSummary {
-    pub option: ContestOutcome,
-    pub bet_allocation: Uint128,
-}
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
-
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema, KeymapStorage)]
 pub struct ContestBetSummary {
-    pub options: Vec<OptionBetSummary>,
+    contest_id: u32,
+    options: Vec<OptionBetSummary>,
     outcome: Option<ContestOutcome>,
 }
 
@@ -32,37 +33,47 @@ impl ContestBetSummary {
                 bet_allocation: Uint128::zero(),
             })
             .collect();
-
-        ContestBetSummary { 
+        let contest_id = contest_info.id();
+        ContestBetSummary {
+            contest_id,
             options,
-            outcome: None 
+            outcome: None,
         }
     }
 
-    pub fn set_outcome(&mut self, outcome: &ContestOutcome)->Result<(), ContestError>{
-        if self.outcome.is_none(){
+    pub fn get_options(&self) -> &Vec<OptionBetSummary> {
+        &self.options
+    }
+
+    pub fn get_outcome(&self) -> &Option<ContestOutcome> {
+        &self.outcome
+    }
+
+    fn set_outcome(&mut self, outcome: &ContestOutcome) -> Result<(), ContestError> {
+        if self.outcome.is_none() {
             self.outcome = Some(outcome.clone());
             Ok(())
-        }else{
+        } else {
             Err(ContestError::CannotResetOutcome)
         }
     }
 
-    pub fn get_outcome(
-        &mut self, 
-        querier: &QuerierWrapper, 
-        storage: &dyn Storage, 
+    pub fn query_set_outcome(
+        &mut self,
+        querier: &QuerierWrapper,
+        storage: &dyn Storage,
         contest_info: &ContestInfo,
-        contest_id: u32
+        contest_id: u32,
     ) -> Result<ContestOutcome, ContestError> {
         match self.outcome {
             Some(ref outcome) => Ok(outcome.clone()),
             None => {
                 // Query oracle if the outcome is not resolved
-                let oracle_result: GetContestResultResponse = query_contest_result(querier, storage, contest_id as u64)?;
+                let oracle_result: GetContestResultResponse =
+                    query_contest_result(querier, storage, contest_id as u64)?;
                 if oracle_result.result == NULL_AND_VOID_CONTEST_RESULT {
-                    return Ok(ContestOutcome::nullified_result())
-                }                
+                    return Ok(ContestOutcome::nullified_result());
+                }
                 let outcome: ContestOutcome = contest_info.find_outcome(oracle_result.result)?;
                 self.set_outcome(&outcome)?;
                 Ok(outcome)
@@ -98,7 +109,7 @@ impl ContestBetSummary {
         }
         Err(ContestError::OutcomeDNE)
     }
-    
+
     pub fn calculate_user_share(
         &self,
         user_bet_amount: Uint128,
@@ -108,50 +119,49 @@ impl ContestBetSummary {
         let total_pool = self.calc_total_pool();
 
         // Apply the fee
-        let total_pool_after_fee = total_pool.u128() * (PERCENTAGE_BASE - FEE_PERCENTAGE) / PERCENTAGE_BASE;
+        let total_pool_after_fee =
+            total_pool.u128() * (PERCENTAGE_BASE - FEE_PERCENTAGE) / PERCENTAGE_BASE;
 
         // Get the total allocation for the user's chosen outcome
         let total_allocation_for_outcome = self.get_allocation(outcome_id)?;
 
         // Calculate the user's share
         // To avoid floating-point arithmetic, we multiply before dividing
-        let user_share = user_bet_amount.u128() * total_pool_after_fee / total_allocation_for_outcome.u128();
+        let user_share =
+            user_bet_amount.u128() * total_pool_after_fee / total_allocation_for_outcome.u128();
 
         Ok(Uint128::from(user_share))
     }
 }
 
-static CONTEST_BET_SUMMARIES: Keymap<u32, ContestBetSummary> =
-    Keymap::new(CONTEST_BET_SUMMARY_CONFIG_KEY);
+impl Identifiable for ContestBetSummary {
+    type ID = u32; // Or another type that implements Serialize + DeserializeOwned
 
-////////
-pub fn update_contest_bet_summary(
-    storage: &mut dyn Storage,
-    contest_id: u32,
-    amount: Uint128,
-    outcome_id: u8,
-) -> Result<(), ContestError> {
-    let mut current_contest_bet_summary = match get_contest_bet_summary(storage, contest_id) {
-        Some(summary) => summary,
-        None => return Err(ContestError::ContestDNE),
-    };
-
-    current_contest_bet_summary.add_bet_to_option(outcome_id, amount)?;
-    save_contest_bet_summary(storage, contest_id, &current_contest_bet_summary)
+    fn id(&self) -> Self::ID {
+        return self.contest_id;
+    }
 }
 
-pub fn get_contest_bet_summary(
-    storage: &dyn Storage,
-    contest_id: u32,
-) -> Option<ContestBetSummary> {
-    return CONTEST_BET_SUMMARIES.get(storage, &contest_id);
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
+pub struct OptionBetSummary {
+    option: ContestOutcome,
+    bet_allocation: Uint128,
 }
+impl OptionBetSummary {
+    // Constructor
+    pub fn new(option: ContestOutcome, bet_allocation: Uint128) -> Self {
+        OptionBetSummary {
+            option,
+            bet_allocation,
+        }
+    }
 
-pub fn save_contest_bet_summary(
-    storage: &mut dyn Storage,
-    contest_id: u32,
-    contest_bet_summary: &ContestBetSummary,
-) -> Result<(), ContestError> {
-    CONTEST_BET_SUMMARIES.insert(storage, &contest_id, contest_bet_summary)?;
-    Ok(())
+    // Getters
+    pub fn option(&self) -> &ContestOutcome {
+        &self.option
+    }
+
+    pub fn bet_allocation(&self) -> Uint128 {
+        self.bet_allocation
+    }
 }

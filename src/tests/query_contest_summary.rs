@@ -77,7 +77,10 @@ pub mod tests {
 
         assert_eq!(
             contest_info.options.len(),
-            contest_query_response.contest_bet_summary.options.len()
+            contest_query_response
+                .contest_bet_summary
+                .get_options()
+                .len()
         );
         assert_eq!(
             amount.unwrap(),
@@ -162,7 +165,10 @@ pub mod tests {
 
         assert_eq!(
             contest_info.options.len(),
-            contest_query_response.contest_bet_summary.options.len()
+            contest_query_response
+                .contest_bet_summary
+                .get_options()
+                .len()
         );
         assert_eq!(
             initial_amount.unwrap() + added_amount.unwrap(),
@@ -170,11 +176,11 @@ pub mod tests {
         );
         assert_eq!(
             initial_amount.unwrap() + added_amount.unwrap(),
-            contest_query_response.contest_bet_summary.options[0].bet_allocation
+            contest_query_response.contest_bet_summary.get_options()[0].bet_allocation()
         );
         assert_eq!(
             Uint128::from(0u128),
-            contest_query_response.contest_bet_summary.options[1].bet_allocation
+            contest_query_response.contest_bet_summary.get_options()[1].bet_allocation()
         );
     }
 }

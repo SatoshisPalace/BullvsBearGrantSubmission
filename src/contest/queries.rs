@@ -4,18 +4,19 @@ use crate::integrations::oracle::constants::NULL_AND_VOID_CONTEST_RESULT;
 
 use super::{
     data::{
-        bets::{get_bet, UserContest},
-        contest_bet_summary::{get_contest_bet_summary, ContestBetSummary},
-        contest_info::{get_contest, ContestInfo, ContestOutcome},
+        bets::{Bet, UserContest},
+        contest_bet_summary::ContestBetSummary,
+        contest_info::{ContestInfo, ContestOutcome},
     },
     error::ContestError,
     response::{ContestQueryResponse, ContestsQueryResponse, UserBetQueryResponse},
 };
 
 pub fn query_contest(deps: Deps, env: &Env, contest_id: u32) -> StdResult<ContestQueryResponse> {
-    let contest_info_option: Option<ContestInfo> = get_contest(deps.storage, contest_id);
+    let contest_info_option: Option<ContestInfo> =
+        ContestInfo::keymap_get_by_id(deps.storage, &contest_id);
     let contest_bet_summary_option: Option<ContestBetSummary> =
-        get_contest_bet_summary(deps.storage, contest_id);
+        ContestBetSummary::keymap_get_by_id(deps.storage, &contest_id);
 
     match (contest_info_option.clone(), contest_bet_summary_option) {
         (Some(contest_info), Some(mut contest_bet_summary)) => {
@@ -28,7 +29,7 @@ pub fn query_contest(deps: Deps, env: &Env, contest_id: u32) -> StdResult<Contes
                 .assert_time_of_resolve_is_passed(env.block.time.seconds())
                 .is_ok()
             {
-                let contest_result = match contest_bet_summary.get_outcome(
+                let contest_result = match contest_bet_summary.query_set_outcome(
                     &deps.querier,
                     deps.storage,
                     &contest_info,
@@ -72,7 +73,7 @@ pub fn query_contests(
 }
 
 pub fn query_user_bet(deps: &Deps, user_contest: UserContest) -> StdResult<UserBetQueryResponse> {
-    let bet = get_bet(deps.storage, &user_contest);
+    let bet = Bet::keymap_get_by_id(deps.storage, &user_contest);
     match bet {
         Some(bet) => Ok(UserBetQueryResponse { bet }),
         None => Err(ContestError::NoBetForUserContest { user_contest }.into()),

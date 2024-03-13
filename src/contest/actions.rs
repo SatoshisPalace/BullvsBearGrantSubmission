@@ -1,18 +1,15 @@
 use super::{
     data::{
-        bets::{get_bet, save_bet, verify_bet, Bet, UserContest},
-        contest_bet_summary::{
-            get_contest_bet_summary, save_contest_bet_summary, update_contest_bet_summary,
-            ContestBetSummary,
-        },
-        contest_info::{get_contest, save_contest, verify_contest, ContestInfo},
+        bets::{Bet, UserContest},
+        contest_bet_summary::ContestBetSummary,
+        contest_info::{verify_contest, ContestInfo},
     },
     error::ContestError,
 };
 use crate::{
     cryptography::cryptography::is_valid_signature,
     integrations::{oracle::constants::NULL_AND_VOID_CONTEST_RESULT, snip_20::snip_20::send},
-    state::config_read,
+    state::State,
 };
 use cosmwasm_std::{Addr, DepsMut, Env, Response, StdResult, Uint128};
 
@@ -25,7 +22,7 @@ pub fn try_create_contest<'a>(
     contest_info.assert_time_of_close_not_passed(env.block.time.seconds())?;
     contest_info.validate_contest()?;
 
-    let state = config_read(deps.storage).load()?;
+    let state = State::singleton_load(deps.storage)?;
     //Validate Signature
     let contest_info_json: String = contest_info.to_json();
     is_valid_signature(
@@ -37,15 +34,15 @@ pub fn try_create_contest<'a>(
 
     // Contests cannot be recreated
     let contest_id = contest_info.id();
-    if let Some(_) = get_contest(deps.storage, contest_id) {
+    if ContestInfo::keymap_verify_exists(deps.storage, &contest_id).is_ok() {
         return Err(ContestError::ContestAlreadyExist(contest_id));
     }
 
-    save_contest(deps.storage, &contest_info);
+    contest_info.keymap_save(deps.storage)?;
 
     // Initialize and save the ContestBetSummary
     let contest_bet_summary = ContestBetSummary::initialize(contest_info);
-    save_contest_bet_summary(deps.storage, contest_info.id, &contest_bet_summary)?;
+    contest_bet_summary.keymap_save(deps.storage)?;
 
     Ok(())
 }
@@ -58,42 +55,30 @@ pub fn try_bet_on_contest(
     user: Addr,
     amount: Option<Uint128>,
 ) -> Result<(), ContestError> {
-    verify_bet(&Some(user.clone()), amount)?;
-    let contest_info = verify_contest(deps.storage, contest_id, outcome_id)?;
+    let contest_info = verify_contest(deps.storage, &contest_id, outcome_id)?;
     contest_info.assert_time_of_close_not_passed(env.block.time.seconds())?;
 
-    let user_contest = UserContest {
-        address: user.clone(),
-        contest_id,
-    };
-    let bet = get_bet(deps.storage, &user_contest);
+    let user_contest = UserContest::new(user.clone(), contest_id);
+
+    let bet = Bet::keymap_get_by_id(deps.storage, &user_contest);
     match bet {
-        Some(bet) => {
+        Some(mut bet) => {
             // User has bet before
-            if outcome_id != bet.outcome_id {
+            if outcome_id != bet.get_outcome_id().to_owned() {
                 return Err(ContestError::CannotBetOnBothSides);
             }
-            save_bet(
-                deps.storage,
-                user.clone(),
-                contest_id,
-                amount.unwrap() + bet.amount,
-                outcome_id,
-                false,
-            )?;
+            bet.add_amount(amount.unwrap());
+            bet.keymap_save(deps.storage)?;
         }
-        None => save_bet(
-            // User has not bet before
-            deps.storage,
-            user,
-            contest_id,
-            amount.unwrap(),
-            outcome_id,
-            false,
-        )?,
+        None => {
+            let bet = Bet::new(user, contest_id, amount.unwrap(), outcome_id);
+            bet.keymap_save(deps.storage)?;
+        }
     }
-
-    update_contest_bet_summary(deps.storage, contest_id, amount.unwrap(), outcome_id)?;
+    let mut contest_bet_summary =
+        ContestBetSummary::keymap_get_by_id(deps.storage, &contest_id).unwrap();
+    contest_bet_summary.add_bet_to_option(outcome_id, amount.unwrap())?;
+    contest_bet_summary.keymap_save(deps.storage)?;
     Ok(())
 }
 
@@ -103,22 +88,25 @@ pub fn try_claim(
     contest_id: u32,
     sender: Addr,
 ) -> StdResult<Response> {
-    let contest_info: ContestInfo = get_contest(deps.storage, contest_id).unwrap();
+    let contest_info: ContestInfo =
+        ContestInfo::keymap_get_by_id(deps.storage, &contest_id).unwrap();
     contest_info.assert_time_of_resolve_is_passed(env.block.time.seconds())?;
     let mut contest_bet_summary: ContestBetSummary =
-        get_contest_bet_summary(deps.storage, contest_id).unwrap();
-    let contest_result =
-        contest_bet_summary.get_outcome(&deps.querier, deps.storage, &contest_info, contest_id)?;
-    save_contest_bet_summary(deps.storage, contest_info.id, &contest_bet_summary)?;
+        ContestBetSummary::keymap_get_by_id(deps.storage, &contest_id).unwrap();
+
+    let contest_result = contest_bet_summary.query_set_outcome(
+        &deps.querier,
+        deps.storage,
+        &contest_info,
+        contest_id,
+    )?;
+    contest_bet_summary.keymap_save(deps.storage)?;
 
     // Create a UserContest instance
-    let user_contest = UserContest {
-        address: sender.clone(),
-        contest_id,
-    };
+    let user_contest = UserContest::new(sender.clone(), contest_id);
 
     // Check if there is a bet for the given UserContest
-    let bet_option = get_bet(deps.storage, &user_contest);
+    let bet_option = Bet::keymap_get_by_id(deps.storage, &user_contest);
 
     match bet_option {
         Some(bet) => {
@@ -126,11 +114,11 @@ pub fn try_claim(
 
             // Check if contest result is NULL_AND_VOID_CONTEST_RESULT
             if contest_result.id == NULL_AND_VOID_CONTEST_RESULT {
-                return handle_null_and_void_contest(deps, sender, contest_id, bet);
+                return handle_null_and_void_contest(deps, sender, bet);
             }
 
             // Check if user's outcome_id matches the contest result
-            if bet.outcome_id == contest_result.id {
+            if bet.get_outcome_id().to_owned() == contest_result.id {
                 return handle_winning_claim(deps, sender, contest_id, bet);
             } else {
                 // User's Lost Bet
@@ -146,22 +134,18 @@ fn handle_winning_claim(
     deps: &mut DepsMut,
     sender: Addr,
     contest_id: u32,
-    bet: Bet,
+    mut bet: Bet,
 ) -> StdResult<Response> {
-    let contest_bet_summary_option = get_contest_bet_summary(deps.storage, contest_id);
+    let contest_bet_summary_option = ContestBetSummary::keymap_get_by_id(deps.storage, &contest_id);
     match contest_bet_summary_option {
         Some(contest_bet_summary) => {
             // Calculate the user's share
-            let user_share =
-                contest_bet_summary.calculate_user_share(bet.amount, bet.outcome_id)?;
-            save_bet(
-                deps.storage,
-                sender.clone(),
-                contest_id,
-                bet.amount,
-                bet.outcome_id,
-                true,
+            let user_share = contest_bet_summary.calculate_user_share(
+                bet.get_amount().to_owned(),
+                bet.get_outcome_id().to_owned(),
             )?;
+            bet.mark_paid();
+            bet.keymap_save(deps.storage)?;
             return send(deps, sender.to_string(), user_share);
         }
         None => Err(ContestError::ContestNotFound(contest_id).into()),
@@ -171,21 +155,12 @@ fn handle_winning_claim(
 fn handle_null_and_void_contest(
     deps: &mut DepsMut,
     sender: Addr,
-    contest_id: u32,
-    bet: Bet,
+    mut bet: Bet,
 ) -> StdResult<Response> {
     // Since the contest is null and void, we simply refund the full original bet
-
-    // Update the bet as paid to prevent duplicate refunds
-    save_bet(
-        deps.storage,
-        sender.clone(),
-        contest_id,
-        bet.amount,
-        bet.outcome_id,
-        true,
-    )?;
+    bet.mark_paid();
+    bet.keymap_save(deps.storage)?;
 
     // Use the send function to refund the full original bet
-    return send(deps, sender.to_string(), bet.amount.into());
+    return send(deps, sender.to_string(), bet.get_amount().to_owned());
 }

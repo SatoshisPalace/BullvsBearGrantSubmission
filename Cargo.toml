@@ -39,18 +39,14 @@ cosmwasm-schema = "1.0.0"
 secret-toolkit = { git = "https://github.com/scrtlabs/secret-toolkit", tag = "v0.8.0", features = [
     "storage",
     "viewing-key",
-    "crypto"
+    "crypto",
 ] }
 hex = "0.4"
 sha2 = "0.10"
 
-# Uncomment these for some common extra tools
-# secret-toolkit = { git = "https://github.com/scrtlabs/secret-toolkit", tag = "v0.8.0" }
-# cw-storage-plus = { version = "1.0.1", default-features = false }
-
-# [patch.crates-io]
-# uncomment this if you use cw-storage-plus
-# cosmwasm-std = { git = "https://github.com/scrtlabs/cosmwasm", tag = "v1.1.9-secret" }
+sp-secret-toolkit = { git = "ssh://git@github.com/SatoshisPalace/SP-Secret-Toolkit.git", branch = "master", features = [
+    "macros",
+] }
 
 [[bin]]
 name = "schema"

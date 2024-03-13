@@ -1,14 +1,13 @@
 use cosmwasm_std::Storage;
 use schemars::JsonSchema;
-use secret_toolkit::storage::Keymap;
 use serde::{Deserialize, Serialize};
+use sp_secret_toolkit::macros::{identifiable::Identifiable, keymap::KeymapStorage};
 
-use crate::{contest::{
-    constants::{CONNTEST_SAVE_ERROR_MESSAGE, CONTEST_CONFIG_KEY},
-    error::ContestError,
-}, integrations::oracle::constants::NULL_AND_VOID_CONTEST_RESULT};
+use crate::{
+    contest::error::ContestError, integrations::oracle::constants::NULL_AND_VOID_CONTEST_RESULT,
+};
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema, KeymapStorage)]
 pub struct ContestInfo {
     pub id: u32,
     pub options: Vec<ContestOutcome>,
@@ -81,51 +80,43 @@ impl<'a> ContestInfo {
         Ok(())
     }
 
-    pub fn find_outcome(&self, id: u8)-> Result<ContestOutcome, ContestError>{
+    pub fn find_outcome(&self, id: u8) -> Result<ContestOutcome, ContestError> {
         let option: Option<ContestOutcome> = self
             .options
             .iter()
             .find(|&outcome| outcome.id == id)
             .cloned();
-        option.ok_or(ContestError::OutcomeNotFound { contest_id: self.id(), outcome_id: id })
+        option.ok_or(ContestError::OutcomeNotFound {
+            contest_id: self.id(),
+            outcome_id: id,
+        })
     }
 
     pub fn validate_contest(&self) -> Result<(), ContestError> {
         if self.options.iter().any(|outcome| outcome.id == 0) {
-            return Err(ContestError::InvalidOutcomeId { contest_id: self.id });
+            return Err(ContestError::InvalidOutcomeId {
+                contest_id: self.id,
+            });
         }
         Ok(())
     }
-    
 }
 
-static CONTESTS: Keymap<u32, ContestInfo> = Keymap::new(CONTEST_CONFIG_KEY);
+impl Identifiable for ContestInfo {
+    type ID = u32;
 
-pub fn save_contest(storage: &mut dyn Storage, contest_info: &ContestInfo) {
-    let key = contest_info.id;
-    CONTESTS
-        .insert(storage, &key, &contest_info)
-        .expect(CONNTEST_SAVE_ERROR_MESSAGE);
+    fn id(&self) -> Self::ID {
+        self.id
+    } // Or another type that implements Serialize + DeserializeOwned
 }
-
-pub fn get_contest(storage: &dyn Storage, contest_id: u32) -> Option<ContestInfo> {
-    return CONTESTS.get(storage, &contest_id);
-}
-
-
-
-
-
-
-
 
 pub fn verify_contest(
     storage: &dyn Storage,
-    contest_id: u32,
+    contest_id: &u32,
     outcome_id: u8,
 ) -> Result<ContestInfo, ContestError> {
-    let contest = get_contest(storage, contest_id);
-    
+    let contest = ContestInfo::keymap_get_by_id(storage, contest_id);
+
     // Check if the contest exists
     if let Some(contest) = contest {
         // Check if the option_id exists within the contest's options
