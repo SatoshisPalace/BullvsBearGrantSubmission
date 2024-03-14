@@ -40,6 +40,9 @@ pub enum ExecuteMsg {
         key: String,
         padding: Option<String>,
     },
+    SetMinBet {
+        amount: Uint128,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
@@ -76,6 +79,7 @@ pub enum QueryMsg {
     GetContestResult {
         contest_id: u32,
     },
-    GetSnip20s {},
-    //Contract specific snip-20s
+    GetMinBet {},
+
+    GetSnip20 {},
 }

@@ -1,7 +1,8 @@
 use crate::answer::ExecuteAnswer;
 use crate::answer::ResponseStatus::Success;
 use crate::contest::actions::{try_bet_on_contest, try_claim, try_create_contest};
-use crate::contest::queries::{query_contest, query_contests, query_user_bet};
+use crate::contest::admin_actions::try_set_minimum_bet;
+use crate::contest::queries::{query_contest, query_contests, query_minimum_bet, query_user_bet};
 use crate::error::ContractError;
 use crate::integrations::oracle::oracle::query_contest_result;
 use crate::integrations::oracle::state::initialize_orace_state;
@@ -11,7 +12,7 @@ use crate::state::State;
 use crate::viewingkeys::viewing_keys::{try_set_key, validate_query};
 
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
 use sp_secret_toolkit::snip20::Snip20;
 
@@ -22,10 +23,11 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
-    let state = State {
-        satoshis_palace: msg.satoshis_palace,
-        owner: deps.api.addr_canonicalize(info.sender.as_str())?,
-    };
+    let state = State::new(
+        msg.satoshis_palace,
+        info.clone().sender,
+        Uint128::from(1u128), // Set minimum_bet to 1
+    );
     state.singleton_save(deps.storage)?;
 
     let snip_20 = Snip20::new(deps, &env, &info, &msg.snip20, &msg.entropy);
@@ -64,7 +66,8 @@ pub fn execute<'a>(
         } => try_receive(deps, env, info, amount, msg),
         //Viewing Keys
         ExecuteMsg::SetViewingKey { key, .. } => try_set_key(deps, info, key),
-        //
+        //Admin
+        ExecuteMsg::SetMinBet { amount } => try_set_minimum_bet(deps, info, amount),
     }
 }
 
@@ -114,7 +117,7 @@ pub fn execute_from_snip_20(
 #[entry_point]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetSnip20s {} => get_supported_snip20(deps),
+        QueryMsg::GetSnip20 {} => get_supported_snip20(deps),
         QueryMsg::GetContest { contest_id } => to_binary(&query_contest(deps, &env, contest_id)?),
         QueryMsg::GetContests { contest_ids } => {
             to_binary(&query_contests(deps, &env, contest_ids)?)
@@ -124,6 +127,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             deps.storage,
             contest_id as u64,
         )?),
+        QueryMsg::GetMinBet {} => query_minimum_bet(&deps),
         _ => viewing_keys_queries(deps, msg),
     }
 }

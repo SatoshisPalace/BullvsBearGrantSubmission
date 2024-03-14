@@ -1,3 +1,4 @@
+use cosmwasm_std::Uint128;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -39,6 +40,11 @@ impl ContestsQueryResponse {
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct UserBetQueryResponse {
     pub bet: Bet,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
+pub struct MinimumBetResponse {
+    pub minimum_bet: Uint128,
 }
 
 // Enum to encapsulate each query response type

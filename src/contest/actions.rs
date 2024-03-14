@@ -27,7 +27,7 @@ pub fn try_create_contest<'a>(
     let contest_info_json: String = contest_info.to_json();
     is_valid_signature(
         deps.api,
-        state.satoshis_palace.as_str(),
+        state.get_satoshis_palace_signing_address().as_str(),
         &contest_info_json,
         &contest_info_signature_hex,
     )?;
@@ -55,6 +55,9 @@ pub fn try_bet_on_contest(
     user: Addr,
     amount: Option<Uint128>,
 ) -> Result<(), ContestError> {
+    let state = State::singleton_load(deps.storage)?;
+    state.assert_minimum_bet(&amount.unwrap())?;
+
     let contest_info = verify_contest(deps.storage, &contest_id, outcome_id)?;
     contest_info.assert_time_of_close_not_passed(env.block.time.seconds())?;
 

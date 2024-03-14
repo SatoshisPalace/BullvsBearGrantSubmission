@@ -1,6 +1,6 @@
-use cosmwasm_std::{Deps, Env, StdResult};
+use cosmwasm_std::{to_binary, Binary, Deps, Env, StdResult};
 
-use crate::integrations::oracle::constants::NULL_AND_VOID_CONTEST_RESULT;
+use crate::{integrations::oracle::constants::NULL_AND_VOID_CONTEST_RESULT, state::State};
 
 use super::{
     data::{
@@ -9,7 +9,9 @@ use super::{
         contest_info::{ContestInfo, ContestOutcome},
     },
     error::ContestError,
-    response::{ContestQueryResponse, ContestsQueryResponse, UserBetQueryResponse},
+    response::{
+        ContestQueryResponse, ContestsQueryResponse, MinimumBetResponse, UserBetQueryResponse,
+    },
 };
 
 pub fn query_contest(deps: Deps, env: &Env, contest_id: u32) -> StdResult<ContestQueryResponse> {
@@ -78,4 +80,12 @@ pub fn query_user_bet(deps: &Deps, user_contest: UserContest) -> StdResult<UserB
         Some(bet) => Ok(UserBetQueryResponse { bet }),
         None => Err(ContestError::NoBetForUserContest { user_contest }.into()),
     }
+}
+
+pub fn query_minimum_bet(deps: &Deps) -> StdResult<Binary> {
+    let state = State::singleton_load(deps.storage)?;
+    let response: MinimumBetResponse = MinimumBetResponse {
+        minimum_bet: state.get_minimum_bet().to_owned(),
+    };
+    Ok(to_binary(&response)?)
 }
