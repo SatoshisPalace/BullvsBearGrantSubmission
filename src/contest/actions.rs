@@ -6,12 +6,9 @@ use super::{
     },
     error::ContestError,
 };
-use crate::{
-    cryptography::cryptography::is_valid_signature,
-    integrations::oracle::constants::NULL_AND_VOID_CONTEST_RESULT, state::State,
-};
+use crate::{integrations::oracle::constants::NULL_AND_VOID_CONTEST_RESULT, state::State};
 use cosmwasm_std::{Addr, DepsMut, Env, Response, StdResult, Uint128};
-use sp_secret_toolkit::snip20::Snip20;
+use sp_secret_toolkit::{cryptography::cryptography::is_valid_signature, snip20::Snip20};
 
 pub fn try_create_contest<'a>(
     deps: &mut DepsMut,

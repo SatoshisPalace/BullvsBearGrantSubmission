@@ -1,7 +1,6 @@
 use cosmwasm_std::Uint128;
+use sp_secret_toolkit::cryptography::error::CryptographyError;
 use thiserror::Error;
-
-use crate::cryptography::error::CryptographyError;
 
 use super::data::bets::UserContest;
 

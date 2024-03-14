@@ -42,13 +42,12 @@ secret-toolkit = { git = "https://github.com/scrtlabs/secret-toolkit", version =
     "crypto",
     "snip20",
 ] }
-hex = "0.4"
-sha2 = "0.10"
 
 sp-secret-toolkit = { git = "ssh://git@github.com/SatoshisPalace/SP-Secret-Toolkit.git", branch = "master", features = [
     "macros",
     "snip20",
     "contract",
+    "cryptography",
 ] }
 
 [[bin]]
