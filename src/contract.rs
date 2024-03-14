@@ -5,9 +5,7 @@ use crate::contest::queries::{query_contest, query_contests, query_user_bet};
 use crate::error::ContractError;
 use crate::integrations::oracle::oracle::query_contest_result;
 use crate::integrations::oracle::state::initialize_orace_state;
-use crate::integrations::snip_20::query_state::get_registered_snip_20s;
-use crate::integrations::snip_20::snip_20::{try_create_register_snip20_msg, try_receive};
-use crate::integrations::snip_20::update_state::initialize_snip_20_state;
+use crate::integrations::snip_20::{get_supported_snip20, try_receive};
 use crate::msg::{ExecuteMsg, InstantiateMsg, InvokeMsg, QueryMsg};
 use crate::state::State;
 use crate::viewingkeys::viewing_keys::{try_set_key, validate_query};
@@ -15,10 +13,11 @@ use crate::viewingkeys::viewing_keys::{try_set_key, validate_query};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
+use sp_secret_toolkit::snip20::Snip20;
 
 #[entry_point]
 pub fn instantiate(
-    deps: DepsMut,
+    deps: &mut DepsMut,
     env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
@@ -29,11 +28,14 @@ pub fn instantiate(
     };
     state.singleton_save(deps.storage)?;
 
-    initialize_orace_state(deps.storage, msg.oracle_contract_info);
-    initialize_snip_20_state(deps.storage);
-    let msg = try_create_register_snip20_msg(deps, env, msg.snip20.address, msg.snip20.code_hash)?;
+    let snip_20 = Snip20::new(deps, &env, &info, &msg.snip20, &msg.entropy);
+    snip_20.singleton_save(deps.storage)?;
 
-    Ok(Response::default().add_message(msg))
+    initialize_orace_state(deps.storage, msg.oracle_contract_info);
+
+    Ok(Response::default()
+        .add_message(snip_20.create_register_receive_msg(&env)?)
+        .add_message(snip_20.create_set_view_key_msg()?))
 }
 
 #[entry_point]
@@ -54,12 +56,12 @@ pub fn execute<'a>(
         }
         // SNIP-20 Msgs
         ExecuteMsg::Receive {
-            sender,
-            from,
+            sender: _,
+            from: _,
             amount,
             memo: _,
             msg,
-        } => try_receive(deps, env, info, sender, from, amount, msg),
+        } => try_receive(deps, env, info, amount, msg),
         //Viewing Keys
         ExecuteMsg::SetViewingKey { key, .. } => try_set_key(deps, info, key),
         //
@@ -112,7 +114,7 @@ pub fn execute_from_snip_20(
 #[entry_point]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetSnip20s {} => get_registered_snip_20s(deps.storage),
+        QueryMsg::GetSnip20s {} => get_supported_snip20(deps),
         QueryMsg::GetContest { contest_id } => to_binary(&query_contest(deps, &env, contest_id)?),
         QueryMsg::GetContests { contest_ids } => {
             to_binary(&query_contests(deps, &env, contest_ids)?)

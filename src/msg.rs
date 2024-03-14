@@ -9,6 +9,7 @@ pub struct InstantiateMsg {
     pub satoshis_palace: Addr,
     pub oracle_contract_info: ContractInfo,
     pub snip20: ContractInfo,
+    pub entropy: Binary,
 }
 
 #[derive(Serialize, Deserialize, Clone, JsonSchema, Debug)]

@@ -2,7 +2,7 @@
 #[cfg(test)]
 
 pub mod tests{
-	use cosmwasm_std::{testing::{mock_dependencies, mock_env, mock_info, MockStorage, MockApi, MockQuerier}, Addr, coins, OwnedDeps, Empty, ContractInfo};
+	use cosmwasm_std::{coins, testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage}, to_binary, Addr, ContractInfo, Empty, OwnedDeps};
 
 	use crate::{msg::InstantiateMsg, contract::instantiate};
 	
@@ -24,12 +24,13 @@ pub mod tests{
 				address: Addr::unchecked("Snip20"),
 				code_hash: "Codehash".to_owned()
 			},
+    		entropy: to_binary("data").unwrap(),
 		};
 
 		let info = mock_info("creator", &coins(1000, "earth"));
 
-		let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-		assert_eq!(1, res.messages.len());
+		let res = instantiate(&mut deps.as_mut(), mock_env(), info, msg).unwrap();
+		assert_eq!(2, res.messages.len());
 	}
 }
 

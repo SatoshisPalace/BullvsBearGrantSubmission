@@ -1,3 +1,7 @@
+use cosmwasm_std::{Binary, Uint128};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+
 #[cfg(test)]
 pub mod tests {
     use cosmwasm_std::{
@@ -8,12 +12,9 @@ pub mod tests {
 
     use crate::{
         contract::execute,
-        integrations::{
-            oracle::oracle::{
-                assert_query_contest_result_call_count, reset_query_contest_result_call_count,
-                set_mock_result,
-            },
-            snip_20::snip_20_msg::Snip20Msg,
+        integrations::oracle::oracle::{
+            assert_query_contest_result_call_count, reset_query_contest_result_call_count,
+            set_mock_result,
         },
         msg::{ExecuteMsg, InvokeMsg},
         tests::{
@@ -24,6 +25,8 @@ pub mod tests {
             query_contest_summary::tests::calculate_user_share,
         },
     };
+
+    use super::HandleMsg;
 
     ////////TESTS////////
     #[test]
@@ -245,7 +248,7 @@ pub mod tests {
 
     fn is_send_msg(msg: &Binary) -> Option<(String, u128)> {
         // Attempt to deserialize the Binary message into Snip20Msg
-        if let Ok(Snip20Msg::Send {
+        if let Ok(HandleMsg::Send {
             recipient, amount, ..
         }) = from_binary(msg)
         {
@@ -299,4 +302,16 @@ pub mod tests {
         let res = execute(deps.as_mut(), env.clone(), info.clone(), claim_msg);
         assert!(res.is_err(), "Expected an error but got {:?}", res);
     }
+}
+#[derive(Deserialize, Serialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum HandleMsg {
+    Send {
+        recipient: String,
+        recipient_code_hash: Option<String>,
+        amount: Uint128,
+        msg: Option<Binary>,
+        memo: Option<String>,
+        padding: Option<String>,
+    },
 }

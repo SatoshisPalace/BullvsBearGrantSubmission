@@ -8,10 +8,10 @@ use super::{
 };
 use crate::{
     cryptography::cryptography::is_valid_signature,
-    integrations::{oracle::constants::NULL_AND_VOID_CONTEST_RESULT, snip_20::snip_20::send},
-    state::State,
+    integrations::oracle::constants::NULL_AND_VOID_CONTEST_RESULT, state::State,
 };
 use cosmwasm_std::{Addr, DepsMut, Env, Response, StdResult, Uint128};
+use sp_secret_toolkit::snip20::Snip20;
 
 pub fn try_create_contest<'a>(
     deps: &mut DepsMut,
@@ -146,7 +146,9 @@ fn handle_winning_claim(
             )?;
             bet.mark_paid();
             bet.keymap_save(deps.storage)?;
-            return send(deps, sender.to_string(), user_share);
+            let snip20 = Snip20::singleton_load(deps.storage)?;
+            Ok(Response::default()
+                .add_message(snip20.create_send_msg(&sender.to_string(), &user_share)?))
         }
         None => Err(ContestError::ContestNotFound(contest_id).into()),
     }
@@ -161,6 +163,7 @@ fn handle_null_and_void_contest(
     bet.mark_paid();
     bet.keymap_save(deps.storage)?;
 
-    // Use the send function to refund the full original bet
-    return send(deps, sender.to_string(), bet.get_amount().to_owned());
+    let snip20 = Snip20::singleton_load(deps.storage)?;
+    Ok(Response::default()
+        .add_message(snip20.create_send_msg(&sender.to_string(), bet.get_amount())?))
 }

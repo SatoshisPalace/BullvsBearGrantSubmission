@@ -29,23 +29,26 @@ backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
 lazy_static = "1.4.0"
-cosmwasm-std = { git = "https://github.com/scrtlabs/cosmwasm", tag = "v1.1.9-secret" }
-cosmwasm-storage = { git = "https://github.com/scrtlabs/cosmwasm", tag = "v1.1.9-secret" }
+cosmwasm-storage = { package = "secret-cosmwasm-storage", version = "1.1.11" }
+cosmwasm-std = { package = "secret-cosmwasm-std", version = "1.1.11" }
 schemars = { version = "0.8.11" }
 serde = { version = "1.0" }
 serde_json = "1.0"
 thiserror = { version = "1.0" }
-cosmwasm-schema = "1.0.0"
-secret-toolkit = { git = "https://github.com/scrtlabs/secret-toolkit", tag = "v0.8.0", features = [
+cosmwasm-schema = "2.0.0"
+secret-toolkit = { git = "https://github.com/scrtlabs/secret-toolkit", version = "0.10.0", features = [
     "storage",
     "viewing-key",
     "crypto",
+    "snip20",
 ] }
 hex = "0.4"
 sha2 = "0.10"
 
 sp-secret-toolkit = { git = "ssh://git@github.com/SatoshisPalace/SP-Secret-Toolkit.git", branch = "master", features = [
     "macros",
+    "snip20",
+    "contract",
 ] }
 
 [[bin]]

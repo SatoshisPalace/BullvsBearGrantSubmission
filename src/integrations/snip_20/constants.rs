@@ -1,1 +1,0 @@
-pub static SNIP20_REGISTER_SUB_MSG_ID: u64 = 1;
