@@ -1,6 +1,6 @@
 use cosmwasm_std::{to_binary, Binary, Deps, Env, StdResult};
 
-use crate::{integrations::oracle::constants::NULL_AND_VOID_CONTEST_RESULT, state::State};
+use crate::{integrations::oracle::oracle::NULL_AND_VOID_CONTEST_RESULT, state::State};
 
 use super::{
     data::{

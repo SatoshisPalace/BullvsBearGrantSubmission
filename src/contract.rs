@@ -5,7 +5,6 @@ use crate::contest::admin_actions::try_set_minimum_bet;
 use crate::contest::queries::{query_contest, query_contests, query_minimum_bet, query_user_bet};
 use crate::error::ContractError;
 use crate::integrations::oracle::oracle::query_contest_result;
-use crate::integrations::oracle::state::initialize_orace_state;
 use crate::integrations::snip_20::{get_supported_snip20, try_receive};
 use crate::msg::{ExecuteMsg, InstantiateMsg, InvokeMsg, QueryMsg};
 use crate::state::State;
@@ -14,6 +13,7 @@ use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
 use sp_secret_toolkit::master_viewing_key::MasterViewingKey;
+use sp_secret_toolkit::oracle::Oracle;
 use sp_secret_toolkit::snip20::Snip20;
 
 #[entry_point]
@@ -33,10 +33,8 @@ pub fn instantiate(
     let snip_20 = Snip20::new(&mut deps, &env, &info, &msg.snip20, &msg.entropy);
     snip_20.singleton_save(deps.storage)?;
 
-    let master_viewing_key_contract = MasterViewingKey::new(msg.master_viewing_key_contract);
-    master_viewing_key_contract.singleton_save(deps.storage)?;
-
-    initialize_orace_state(deps.storage, msg.oracle_contract_info);
+    MasterViewingKey::new(msg.master_viewing_key_contract).singleton_save(deps.storage)?;
+    Oracle::new(msg.oracle_contract_info).singleton_save(deps.storage)?;
 
     Ok(Response::default()
         .add_message(snip_20.create_register_receive_msg(&env)?)
@@ -126,13 +124,14 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetContestResult { contest_id } => to_binary(&query_contest_result(
             &deps.querier,
             deps.storage,
-            contest_id as u64,
+            &(contest_id as u64),
         )?),
         QueryMsg::GetMinBet {} => query_minimum_bet(&deps),
         _ => viewing_keys_queries(deps, msg),
     }
 }
 
+#[allow(unused)]
 pub fn viewing_keys_queries(deps: Deps, msg: QueryMsg) -> StdResult<Binary> {
     return match msg {
         QueryMsg::GetUserBet {
@@ -143,7 +142,7 @@ pub fn viewing_keys_queries(deps: Deps, msg: QueryMsg) -> StdResult<Binary> {
             {
                 let master_viewing_key_contract = MasterViewingKey::singleton_load(deps.storage)?;
                 master_viewing_key_contract.assert_viewing_key_is_valid(
-                    &deps,
+                    &deps.querier,
                     user_contest.get_address(),
                     &viewing_key,
                 )?;

@@ -25,7 +25,6 @@ testing = []
 
 # for quicker tests, cargo test --lib
 # for more explicit tests, cargo test --features=backtraces
-backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
 lazy_static = "1.4.0"
@@ -49,6 +48,7 @@ sp-secret-toolkit = { git = "ssh://git@github.com/SatoshisPalace/SP-Secret-Toolk
     "contract",
     "cryptography",
     "master-viewing-key",
+    "oracle",
 ] }
 
 [[bin]]

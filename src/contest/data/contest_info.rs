@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use sp_secret_toolkit::macros::{identifiable::Identifiable, keymap::KeymapStorage};
 
 use crate::{
-    contest::error::ContestError, integrations::oracle::constants::NULL_AND_VOID_CONTEST_RESULT,
+    contest::error::ContestError, integrations::oracle::oracle::NULL_AND_VOID_CONTEST_RESULT,
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema, KeymapStorage)]

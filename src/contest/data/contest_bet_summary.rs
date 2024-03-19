@@ -1,17 +1,17 @@
 use cosmwasm_std::{QuerierWrapper, Storage, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use sp_secret_toolkit::macros::{identifiable::Identifiable, keymap::KeymapStorage};
+use sp_secret_toolkit::{
+    macros::{identifiable::Identifiable, keymap::KeymapStorage},
+    oracle::response::GetContestResultResponse,
+};
 
 use crate::{
     contest::{
         constants::{FEE_PERCENTAGE, PERCENTAGE_BASE},
         error::ContestError,
     },
-    integrations::oracle::{
-        constants::NULL_AND_VOID_CONTEST_RESULT, oracle::query_contest_result,
-        response::GetContestResultResponse,
-    },
+    integrations::oracle::oracle::{query_contest_result, NULL_AND_VOID_CONTEST_RESULT},
 };
 
 use super::contest_info::{ContestInfo, ContestOutcome};
@@ -70,7 +70,7 @@ impl ContestBetSummary {
             None => {
                 // Query oracle if the outcome is not resolved
                 let oracle_result: GetContestResultResponse =
-                    query_contest_result(querier, storage, contest_id as u64)?;
+                    query_contest_result(querier, storage, &(contest_id as u64))?;
                 if oracle_result.result == NULL_AND_VOID_CONTEST_RESULT {
                     return Ok(ContestOutcome::nullified_result());
                 }
