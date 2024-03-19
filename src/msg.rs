@@ -6,6 +6,7 @@ use crate::contest::data::{bets::UserContest, contest_info::ContestInfo};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
+    pub master_viewing_key_contract: ContractInfo,
     pub satoshis_palace: Addr,
     pub oracle_contract_info: ContractInfo,
     pub snip20: ContractInfo,
@@ -26,6 +27,10 @@ pub enum ExecuteMsg {
     Claim {
         contest_id: u32,
     },
+    // Admin
+    SetMinBet {
+        amount: Uint128,
+    },
     // SNIP-20 MSGs
     Receive {
         sender: Addr,
@@ -34,14 +39,6 @@ pub enum ExecuteMsg {
         #[serde(skip_serializing_if = "Option::is_none")]
         memo: Option<String>,
         msg: Binary,
-    },
-    // Viewing Keys
-    SetViewingKey {
-        key: String,
-        padding: Option<String>,
-    },
-    SetMinBet {
-        amount: Uint128,
     },
 }
 
@@ -74,7 +71,7 @@ pub enum QueryMsg {
     },
     GetUserBet {
         user_contest: UserContest,
-        key: String,
+        viewing_key: String,
     },
     GetContestResult {
         contest_id: u32,

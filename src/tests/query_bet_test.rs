@@ -14,7 +14,6 @@ pub mod tests {
             bet_contest_test::tests::{_bet_contest_test, _get_valid_bet_contest_msg},
             contract_init_test::tests::_initialize_test,
             create_contest_test::tests::{_create_contest_test, _get_valid_create_contest_msg},
-            viewing_key_test::tests::_set_viewing_key_test,
         },
     };
 
@@ -32,7 +31,6 @@ pub mod tests {
         msg = _get_valid_create_contest_msg();
 
         let viewing_key = "api_key_/WMIRnqFsFmb6KuvRSX8LQGSz3umCjcXcptco4gl3Lg=";
-        _set_viewing_key_test(&mut deps, viewing_key);
 
         if let InvokeMsg::CreateContest {
             contest_info,
@@ -64,38 +62,8 @@ pub mod tests {
 
         // Set Viewing Key
         let viewing_key = "api_key_/WMIRnqFsFmb6KuvRSX8LQGSz3umCjcXcptco4gl3Lg=";
-        _set_viewing_key_test(&mut deps, viewing_key);
 
         _query_bet_after_betting_twice_test(&mut deps, viewing_key)
-    }
-
-    #[test]
-    fn query_bet_bad_viewing_key() {
-        let mut deps: OwnedDeps<cosmwasm_std::MemoryStorage, MockApi, MockQuerier> =
-            mock_dependencies();
-
-        _initialize_test(&mut deps);
-
-        let mut msg = _get_valid_create_contest_msg();
-        _create_contest_test(&mut deps, msg);
-
-        msg = _get_valid_create_contest_msg();
-
-        let viewing_key = "api_key_/WMIRnqFsFmb6KuvRSX8LQGSz3umCjcXcptco4gl3Lg=";
-        _set_viewing_key_test(&mut deps, viewing_key);
-
-        if let InvokeMsg::CreateContest {
-            contest_info,
-            contest_info_signature_hex: _,
-            outcome_id: _,
-            user: _,
-            amount: _,
-        } = msg
-        {
-            _query_bet_test_invalid_viewing_key(&mut deps, contest_info.id)
-        } else {
-            panic!("This isnt supposed to happen")
-        }
     }
 
     ////////INNER TESTS////////
@@ -127,23 +95,6 @@ pub mod tests {
         _query_bet_test(deps, contest_id, viewing_key, expected_amount)
     }
 
-    fn _query_bet_test_invalid_viewing_key(
-        deps: &mut OwnedDeps<MockStorage, MockApi, MockQuerier, Empty>,
-        contest_id: u32,
-    ) {
-        let viewing_key = "api_key_literally_not_a_viewing_key";
-
-        let env = mock_env();
-        let msg = _get_query_bet_msg(env.contract.address.as_str(), contest_id, viewing_key);
-
-        // Execute the query and get the Binary result
-        let res: StdResult<Binary> = query(deps.as_ref(), env, msg);
-        // let binary_data = res.unwrap();
-
-        // Check if the result is an error
-        assert!(res.is_err(), "Expected an error but got a result");
-    }
-
     fn _query_bet_test(
         deps: &mut OwnedDeps<MockStorage, MockApi, MockQuerier, Empty>,
         contest_id: u32,
@@ -173,7 +124,7 @@ pub mod tests {
         // Create a GetUserBet message
         QueryMsg::GetUserBet {
             user_contest,
-            key: viewing_key.to_string(),
+            viewing_key: viewing_key.to_string(),
         }
     }
 }

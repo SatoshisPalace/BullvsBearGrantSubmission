@@ -25,11 +25,15 @@ pub mod tests{
 				code_hash: "Codehash".to_owned()
 			},
     		entropy: to_binary("data").unwrap(),
+    		master_viewing_key_contract: ContractInfo{
+				address: Addr::unchecked("Master Viewing Key Contract Address"),
+				code_hash: "Master Viewing Key Contract CodeHash".to_owned(),
+			},
 		};
 
 		let info = mock_info("creator", &coins(1000, "earth"));
 
-		let res = instantiate(&mut deps.as_mut(), mock_env(), info, msg).unwrap();
+		let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 		assert_eq!(2, res.messages.len());
 	}
 }

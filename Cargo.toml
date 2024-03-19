@@ -48,6 +48,7 @@ sp-secret-toolkit = { git = "ssh://git@github.com/SatoshisPalace/SP-Secret-Toolk
     "snip20",
     "contract",
     "cryptography",
+    "master-viewing-key",
 ] }
 
 [[bin]]

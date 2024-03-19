@@ -9,16 +9,16 @@ use crate::integrations::oracle::state::initialize_orace_state;
 use crate::integrations::snip_20::{get_supported_snip20, try_receive};
 use crate::msg::{ExecuteMsg, InstantiateMsg, InvokeMsg, QueryMsg};
 use crate::state::State;
-use crate::viewingkeys::viewing_keys::{try_set_key, validate_query};
 
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
+use sp_secret_toolkit::master_viewing_key::MasterViewingKey;
 use sp_secret_toolkit::snip20::Snip20;
 
 #[entry_point]
 pub fn instantiate(
-    deps: &mut DepsMut,
+    mut deps: DepsMut,
     env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
@@ -30,8 +30,11 @@ pub fn instantiate(
     );
     state.singleton_save(deps.storage)?;
 
-    let snip_20 = Snip20::new(deps, &env, &info, &msg.snip20, &msg.entropy);
+    let snip_20 = Snip20::new(&mut deps, &env, &info, &msg.snip20, &msg.entropy);
     snip_20.singleton_save(deps.storage)?;
+
+    let master_viewing_key_contract = MasterViewingKey::new(msg.master_viewing_key_contract);
+    master_viewing_key_contract.singleton_save(deps.storage)?;
 
     initialize_orace_state(deps.storage, msg.oracle_contract_info);
 
@@ -64,8 +67,6 @@ pub fn execute<'a>(
             memo: _,
             msg,
         } => try_receive(deps, env, info, amount, msg),
-        //Viewing Keys
-        ExecuteMsg::SetViewingKey { key, .. } => try_set_key(deps, info, key),
         //Admin
         ExecuteMsg::SetMinBet { amount } => try_set_minimum_bet(deps, info, amount),
     }
@@ -133,10 +134,20 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 pub fn viewing_keys_queries(deps: Deps, msg: QueryMsg) -> StdResult<Binary> {
-    validate_query(&deps, &msg)?;
-
     return match msg {
-        QueryMsg::GetUserBet { user_contest, .. } => {
+        QueryMsg::GetUserBet {
+            user_contest,
+            viewing_key,
+        } => {
+            #[cfg(not(feature = "testing"))]
+            {
+                let master_viewing_key_contract = MasterViewingKey::singleton_load(deps.storage)?;
+                master_viewing_key_contract.assert_viewing_key_is_valid(
+                    &deps,
+                    user_contest.get_address(),
+                    &viewing_key,
+                )?;
+            }
             to_binary(&query_user_bet(&deps, user_contest)?)
         }
         _ => Err(ContractError::QueryDoesNotRequireAuthentication.into()),
