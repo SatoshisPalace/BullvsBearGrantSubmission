@@ -8,7 +8,9 @@ pub mod tests {
     };
 
     use crate::{
-        contest::response::{ContestQueryResponse, ContestsQueryResponse},
+        contest::responses::query::contest_response::{
+            ContestInfoAndSummaryQueryResponse, ContestsQueryResponse,
+        },
         contract::query,
         msg::QueryMsg,
         tests::{
@@ -71,7 +73,7 @@ pub mod tests {
         };
 
         let res = query(deps.as_ref(), mock_env(), msg).unwrap();
-        let contest_query_response: ContestQueryResponse = from_binary(&res).unwrap();
+        let contest_query_response: ContestInfoAndSummaryQueryResponse = from_binary(&res).unwrap();
         assert_eq!(1, contest_query_response.contest_info.id());
         assert_eq!(
             4102462800u64,
@@ -92,9 +94,10 @@ pub mod tests {
         let res = query(deps.as_ref(), mock_env(), msg).unwrap();
         let contests_query_response: ContestsQueryResponse = from_binary(&res).unwrap();
 
-        assert_eq!(1, contests_query_response.len()); // Should have one contest in the response
+        assert_eq!(1, contests_query_response.contests.len()); // Should have one contest in the response
 
         let contest_query_response = contests_query_response
+            .contests
             .get(0)
             .expect("Expected a contest at index 0");
         assert_eq!(1, contest_query_response.contest_info.id());

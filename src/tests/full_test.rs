@@ -6,6 +6,7 @@ pub mod tests {
     };
 
     use crate::{
+        integrations::oracle::oracle::reset_query_contest_result_call_count,
         msg::InvokeMsg,
         tests::{
             bet_contest_test::tests::_bet_contest_test_with_sender_outcome,
@@ -125,6 +126,7 @@ pub mod tests {
             2,
             contest_better3_bet_amount,
         );
+        reset_query_contest_result_call_count(); // Reset call count before the test
 
         // Try to claim rewards before time_of_resolve
         claim_after_nullification_test(
@@ -133,12 +135,14 @@ pub mod tests {
             contest_creator_bet_on_1,
             contest_creator_bet_amount.into(),
         );
+
         claim_after_nullification_test(
             &mut deps,
             contest_id,
             contest_better1_bet_on_1,
             contest_better1_bet_amount.into(),
         );
+
         claim_after_nullification_test(
             &mut deps,
             contest_id,

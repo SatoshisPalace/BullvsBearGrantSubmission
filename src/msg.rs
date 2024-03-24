@@ -73,6 +73,10 @@ pub enum QueryMsg {
         user_contest: UserContest,
         viewing_key: String,
     },
+    GetUsersBets {
+        user: Addr,
+        viewing_key: String,
+    },
     GetContestResult {
         contest_id: u32,
     },

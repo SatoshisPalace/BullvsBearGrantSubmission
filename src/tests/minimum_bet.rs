@@ -9,7 +9,7 @@ pub mod tests {
     };
 
     use crate::{
-        contest::response::MinimumBetResponse,
+        contest::responses::query::state_response::MinimumBetResponse,
         contract::{execute, query},
         msg::{ExecuteMsg, InvokeMsg, QueryMsg},
         tests::{

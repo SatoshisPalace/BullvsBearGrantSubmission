@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use cosmwasm_std::{Addr, Uint128};
 use sp_secret_toolkit::macros::singleton::SingletonStorage;
 
-use crate::{contest::error::ContestError, error::ContractError};
+use crate::{contest::error::contest_info_error::ContestInfoError, error::ContractError};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema, SingletonStorage)]
 pub struct State {
@@ -60,11 +60,11 @@ impl State {
             })
         }
     }
-    pub fn assert_minimum_bet(&self, bet_amount: &Uint128) -> Result<(), ContestError> {
+    pub fn assert_minimum_bet(&self, bet_amount: &Uint128) -> Result<(), ContestInfoError> {
         if bet_amount >= self.get_minimum_bet() {
             Ok(())
         } else {
-            Err(ContestError::BetBelowMinimum {
+            Err(ContestInfoError::BetBelowMinimum {
                 attempted: bet_amount.to_owned(),
                 minimum: self.get_minimum_bet().to_owned(),
             })

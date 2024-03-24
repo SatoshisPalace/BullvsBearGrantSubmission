@@ -83,14 +83,8 @@ pub mod tests {
         let invalid_contest_info = ContestInfo {
             id: 1,
             options: vec![
-                ContestOutcome {
-                    id: 0, // Invalid outcome ID
-                    name: "option1".to_string(),
-                },
-                ContestOutcome {
-                    id: 1,
-                    name: "option2".to_string(),
-                },
+                ContestOutcome::new(0, "option1".to_string()),
+                ContestOutcome::new(1, "option2".to_string()),
             ],
             event_details: "Example event details".to_string(),
             time_of_close: FAR_IN_THE_FUTURE,
@@ -180,14 +174,8 @@ pub mod tests {
 			contest_info: ContestInfo{
 				id: 1,
 				options: vec![
-					ContestOutcome {
-						id: 1,
-						name: "option1".to_string(),
-					},
-					ContestOutcome {
-						id: 2,
-						name: "option2".to_string(),
-					}
+					ContestOutcome::new(1, "option1".to_string()),
+					ContestOutcome::new(2, "option2".to_string()),
 				],
                 event_details: "Example event details".to_string(),
 				time_of_close: FAR_IN_THE_FUTURE,
@@ -242,14 +230,8 @@ pub mod tests {
         return ContestInfo {
             id: 2,
             options: vec![
-                ContestOutcome {
-                    id: 1,
-                    name: "option1".to_string(),
-                },
-                ContestOutcome {
-                    id: 2,
-                    name: "option2".to_string(),
-                },
+                ContestOutcome::new(1, "option1".to_string()),
+                ContestOutcome::new(2, "option2".to_string()),
             ],
             event_details: "Example event details".to_string(),
             time_of_close: FAR_IN_THE_PAST,
@@ -261,14 +243,8 @@ pub mod tests {
         return ContestInfo {
             id: 1,
             options: vec![
-                ContestOutcome {
-                    id: 1,
-                    name: "option1".to_string(),
-                },
-                ContestOutcome {
-                    id: 2,
-                    name: "option2".to_string(),
-                },
+                ContestOutcome::new(1, "option1".to_string()),
+                ContestOutcome::new(2, "option2".to_string()),
             ],
             event_details: "Example event details".to_string(),
             time_of_close: FAR_IN_THE_FUTURE,

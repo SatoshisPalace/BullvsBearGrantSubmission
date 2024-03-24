@@ -7,7 +7,7 @@ pub mod tests {
     };
 
     use crate::{
-        contest::{data::bets::UserContest, response::UserBetQueryResponse},
+        contest::{data::bets::UserContest, responses::query::bet_response::UserBetQueryResponse},
         contract::query,
         msg::{InvokeMsg, QueryMsg},
         tests::{

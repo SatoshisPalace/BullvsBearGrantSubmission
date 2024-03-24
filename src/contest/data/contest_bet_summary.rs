@@ -1,17 +1,11 @@
-use cosmwasm_std::{QuerierWrapper, Storage, Uint128};
+use cosmwasm_std::Uint128;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use sp_secret_toolkit::{
-    macros::{identifiable::Identifiable, keymap::KeymapStorage},
-    oracle::response::GetContestResultResponse,
-};
+use sp_secret_toolkit::macros::{identifiable::Identifiable, keymap::KeymapStorage};
 
-use crate::{
-    contest::{
-        constants::{FEE_PERCENTAGE, PERCENTAGE_BASE},
-        error::ContestError,
-    },
-    integrations::oracle::oracle::{query_contest_result, NULL_AND_VOID_CONTEST_RESULT},
+use crate::contest::{
+    constants::{FEE_PERCENTAGE, PERCENTAGE_BASE},
+    error::contest_bet_summary_error::ContestBetSummaryError,
 };
 
 use super::contest_info::{ContestInfo, ContestOutcome};
@@ -24,7 +18,7 @@ pub struct ContestBetSummary {
 }
 
 impl ContestBetSummary {
-    pub fn initialize(contest_info: &ContestInfo) -> Self {
+    pub fn new(contest_info: &ContestInfo) -> Self {
         let options = contest_info
             .options
             .iter()
@@ -49,35 +43,12 @@ impl ContestBetSummary {
         &self.outcome
     }
 
-    fn set_outcome(&mut self, outcome: &ContestOutcome) -> Result<(), ContestError> {
+    pub fn set_outcome(&mut self, outcome: &ContestOutcome) -> Result<(), ContestBetSummaryError> {
         if self.outcome.is_none() {
             self.outcome = Some(outcome.clone());
             Ok(())
         } else {
-            Err(ContestError::CannotResetOutcome)
-        }
-    }
-
-    pub fn query_set_outcome(
-        &mut self,
-        querier: &QuerierWrapper,
-        storage: &dyn Storage,
-        contest_info: &ContestInfo,
-        contest_id: u32,
-    ) -> Result<ContestOutcome, ContestError> {
-        match self.outcome {
-            Some(ref outcome) => Ok(outcome.clone()),
-            None => {
-                // Query oracle if the outcome is not resolved
-                let oracle_result: GetContestResultResponse =
-                    query_contest_result(querier, storage, &(contest_id as u64))?;
-                if oracle_result.result == NULL_AND_VOID_CONTEST_RESULT {
-                    return Ok(ContestOutcome::nullified_result());
-                }
-                let outcome: ContestOutcome = contest_info.find_outcome(oracle_result.result)?;
-                self.set_outcome(&outcome)?;
-                Ok(outcome)
-            }
+            Err(ContestBetSummaryError::CannotResetOutcome)
         }
     }
 
@@ -88,33 +59,33 @@ impl ContestBetSummary {
         }
         total
     }
-    pub fn get_allocation(&self, outcome_id: u8) -> Result<Uint128, ContestError> {
+    pub fn get_allocation(&self, outcome_id: u8) -> Result<Uint128, ContestBetSummaryError> {
         for option in &self.options {
-            if option.option.id == outcome_id {
+            if option.option.get_id() == &outcome_id {
                 return Ok(option.bet_allocation);
             }
         }
-        Err(ContestError::OutcomeDNE)
+        Err(ContestBetSummaryError::OutcomeDNE)
     }
     pub fn add_bet_to_option(
         &mut self,
-        outcome_id: u8,
-        amount: Uint128,
-    ) -> Result<(), ContestError> {
+        outcome_id: &u8,
+        amount: &Uint128,
+    ) -> Result<(), ContestBetSummaryError> {
         for option_summary in &mut self.options {
-            if option_summary.option.id == outcome_id {
+            if option_summary.option.get_id() == outcome_id {
                 option_summary.bet_allocation += amount;
                 return Ok(());
             }
         }
-        Err(ContestError::OutcomeDNE)
+        Err(ContestBetSummaryError::OutcomeDNE)
     }
 
     pub fn calculate_user_share(
         &self,
         user_bet_amount: Uint128,
         outcome_id: u8,
-    ) -> Result<Uint128, ContestError> {
+    ) -> Result<Uint128, ContestBetSummaryError> {
         // Calculate the total pool
         let total_pool = self.calc_total_pool();
 

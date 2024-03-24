@@ -5,7 +5,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sp_secret_toolkit::macros::{identifiable::Identifiable, keymap::KeymapStorage};
 
-use crate::contest::error::ContestError;
+use crate::contest::error::bet_error::BetError;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema, KeymapStorage)]
 pub struct Bet {
@@ -58,9 +58,9 @@ impl Bet {
         self.amount += additional_amount;
     }
 
-    pub fn assert_not_paid(&self) -> Result<(), ContestError> {
+    pub fn assert_not_paid(&self) -> Result<(), BetError> {
         if self.has_been_paid {
-            Err(ContestError::BetAlreadyPaid)
+            Err(BetError::BetAlreadyPaid)
         } else {
             Ok(())
         }

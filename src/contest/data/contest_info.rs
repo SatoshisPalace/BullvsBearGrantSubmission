@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 use sp_secret_toolkit::macros::{identifiable::Identifiable, keymap::KeymapStorage};
 
 use crate::{
-    contest::error::ContestError, integrations::oracle::oracle::NULL_AND_VOID_CONTEST_RESULT,
+    contest::error::{
+        contest_info_error::ContestInfoError, real_contest_info_error::RealContestInfoError,
+    },
+    integrations::oracle::oracle::NULL_AND_VOID_CONTEST_RESULT,
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema, KeymapStorage)]
@@ -17,19 +20,28 @@ pub struct ContestInfo {
 }
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct ContestOutcome {
-    pub id: u8,
-    pub name: String,
+    id: u8,
+    name: String,
 }
 impl ContestOutcome {
+    pub fn new(id: u8, name: String) -> Self {
+        ContestOutcome { id, name }
+    }
     pub fn nullified_result() -> Self {
         ContestOutcome {
             id: NULL_AND_VOID_CONTEST_RESULT,
             name: "Nullified Result".to_string(),
         }
     }
+    pub fn get_id(&self) -> &u8 {
+        &self.id
+    }
+    pub fn get_name(&self) -> &String {
+        &self.name
+    }
 }
 
-impl<'a> ContestInfo {
+impl ContestInfo {
     pub fn new(
         id: u32,
         time_of_close: u64,
@@ -61,17 +73,23 @@ impl<'a> ContestInfo {
         let raw_json = serde_json::to_string(&self).expect("Failed to serialize struct to JSON");
         return raw_json.replace("\\", "");
     }
-    pub fn assert_time_of_close_not_passed(&self, current_time: u64) -> Result<(), ContestError> {
+    pub fn assert_time_of_close_not_passed(
+        &self,
+        current_time: u64,
+    ) -> Result<(), RealContestInfoError> {
         if current_time >= self.time_of_close {
-            Err(ContestError::TimeOfClosePassed(self.id))
+            Err(RealContestInfoError::TimeOfClosePassed(self.id))
         } else {
             Ok(())
         }
     }
 
-    pub fn assert_time_of_resolve_is_passed(&self, current_time: u64) -> Result<(), ContestError> {
+    pub fn assert_time_of_resolve_is_passed(
+        &self,
+        current_time: u64,
+    ) -> Result<(), RealContestInfoError> {
         if current_time < self.time_of_resolve {
-            return Err(ContestError::TimeOfResolveHasYetToPassed {
+            return Err(RealContestInfoError::TimeOfResolveHasYetToPassed {
                 contest_id: self.id,
                 time_of_resolve: self.time_of_resolve,
                 current_time,
@@ -80,21 +98,21 @@ impl<'a> ContestInfo {
         Ok(())
     }
 
-    pub fn find_outcome(&self, id: u8) -> Result<ContestOutcome, ContestError> {
+    pub fn find_outcome(&self, id: u8) -> Result<ContestOutcome, RealContestInfoError> {
         let option: Option<ContestOutcome> = self
             .options
             .iter()
             .find(|&outcome| outcome.id == id)
             .cloned();
-        option.ok_or(ContestError::OutcomeNotFound {
+        option.ok_or(RealContestInfoError::OutcomeNotFound {
             contest_id: self.id(),
             outcome_id: id,
         })
     }
 
-    pub fn validate_contest(&self) -> Result<(), ContestError> {
+    pub fn validate_contest(&self) -> Result<(), RealContestInfoError> {
         if self.options.iter().any(|outcome| outcome.id == 0) {
-            return Err(ContestError::InvalidOutcomeId {
+            return Err(RealContestInfoError::InvalidOutcomeId {
                 contest_id: self.id,
             });
         }
@@ -114,7 +132,7 @@ pub fn verify_contest(
     storage: &dyn Storage,
     contest_id: &u32,
     outcome_id: u8,
-) -> Result<ContestInfo, ContestError> {
+) -> Result<ContestInfo, ContestInfoError> {
     let contest = ContestInfo::keymap_get_by_id(storage, contest_id);
 
     // Check if the contest exists
@@ -127,9 +145,9 @@ pub fn verify_contest(
         {
             Ok(contest)
         } else {
-            Err(ContestError::OutcomeDNE)
+            Err(ContestInfoError::OutcomeDNE)
         }
     } else {
-        Err(ContestError::ContestDNE)
+        Err(ContestInfoError::ContestDNE)
     }
 }

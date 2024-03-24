@@ -10,4 +10,3 @@ pub mod integrations;
 pub mod msg;
 pub mod state;
 pub mod tests;
-pub mod utils;

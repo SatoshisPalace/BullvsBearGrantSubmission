@@ -2,7 +2,7 @@ use cosmwasm_std::{DepsMut, MessageInfo, Response, StdResult, Uint128};
 
 use crate::state::State;
 
-pub fn try_set_minimum_bet(
+pub fn handle_set_minimum_bet(
     deps: DepsMut,
     info: MessageInfo,
     min_bet_amount: Uint128,

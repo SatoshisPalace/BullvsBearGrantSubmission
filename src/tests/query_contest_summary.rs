@@ -9,8 +9,8 @@ pub mod tests {
     use crate::{
         contest::{
             constants::{FEE_PERCENTAGE, PERCENTAGE_BASE},
-            error::ContestError,
-            response::ContestQueryResponse,
+            error::contest_bet_summary_error::ContestBetSummaryError,
+            responses::query::contest_response::ContestInfoAndSummaryQueryResponse,
         },
         contract::query,
         msg::{InvokeMsg, QueryMsg},
@@ -73,7 +73,7 @@ pub mod tests {
         };
 
         let res = query(deps.as_ref(), mock_env(), msg).unwrap();
-        let contest_query_response: ContestQueryResponse = from_binary(&res).unwrap();
+        let contest_query_response: ContestInfoAndSummaryQueryResponse = from_binary(&res).unwrap();
 
         assert_eq!(
             contest_info.options.len(),
@@ -94,7 +94,7 @@ pub mod tests {
     ) -> Uint128 {
         let msg = QueryMsg::GetContest { contest_id };
         let res = query(deps.as_ref(), mock_env(), msg).unwrap();
-        let contest_query_response: ContestQueryResponse = from_binary(&res).unwrap();
+        let contest_query_response: ContestInfoAndSummaryQueryResponse = from_binary(&res).unwrap();
         contest_query_response.contest_bet_summary.calc_total_pool() // This should return Uint128
     }
 
@@ -105,11 +105,11 @@ pub mod tests {
         contest_id: u32,
         user_bet_amount: u128,
         outcome_id: u8,
-    ) -> Result<u128, ContestError> {
+    ) -> Result<u128, ContestBetSummaryError> {
         // Query contest details to get total pool and allocation for the specific outcome
         let msg = QueryMsg::GetContest { contest_id };
         let res = query(deps.as_ref(), mock_env(), msg).unwrap();
-        let contest_query_response: ContestQueryResponse = from_binary(&res).unwrap();
+        let contest_query_response: ContestInfoAndSummaryQueryResponse = from_binary(&res).unwrap();
 
         // Extract total pool
         let total_pool = contest_query_response
@@ -161,7 +161,7 @@ pub mod tests {
         };
 
         let res = query(deps.as_ref(), mock_env(), msg).unwrap();
-        let contest_query_response: ContestQueryResponse = from_binary(&res).unwrap();
+        let contest_query_response: ContestInfoAndSummaryQueryResponse = from_binary(&res).unwrap();
 
         assert_eq!(
             contest_info.options.len(),

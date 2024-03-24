@@ -1,6 +1,7 @@
 pub mod bet_contest_test;
 pub mod claim_rewards_test;
 pub mod constants;
+pub mod contest_infos;
 pub mod contract_init_test;
 pub mod create_contest_test;
 pub mod full_test;
@@ -8,3 +9,5 @@ pub mod minimum_bet;
 pub mod query_bet_test;
 pub mod query_contest_summary;
 pub mod query_contest_test;
+pub mod test_env;
+pub mod user_info;

@@ -123,8 +123,6 @@ pub mod tests {
         sender: &str,
         amount_bet: u128, // Added parameter for the bet amount
     ) {
-        reset_query_contest_result_call_count(); // Reset call count before the test
-
         let mut env = mock_env();
         env.block.time = Timestamp::from_seconds(FAR_IN_THE_FUTURE);
         let claim_msg = ExecuteMsg::Claim { contest_id };
@@ -178,8 +176,7 @@ pub mod tests {
             winning_result, // Ensure you have this information
         )
         .unwrap(); // Adjusted winning claim test example:
-        print!("USER SHARE{}", user_share);
-        // Adjusted winning claim test example:
+
         let result = contains_snip20_send_msg(&response, sender, user_share);
         let (actual_recipient, actual_amount) = result.clone().unwrap_or_default();
         assert!(
