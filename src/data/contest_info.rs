@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use sp_secret_toolkit::macros::{identifiable::Identifiable, keymap::KeymapStorage};
 
 use crate::{
-    error::real_contest_info_error::RealContestInfoError,
+    error::contest_info_error::ContestInfoError,
     services::integrations::oracle_service::oracle::NULL_AND_VOID_CONTEST_RESULT,
 };
 
@@ -71,13 +71,13 @@ impl ContestInfo {
         return raw_json.replace("\\", "");
     }
 
-    pub fn find_outcome(&self, id: &u8) -> Result<ContestOutcome, RealContestInfoError> {
+    pub fn find_outcome(&self, id: &u8) -> Result<ContestOutcome, ContestInfoError> {
         let option: Option<ContestOutcome> = self
             .options
             .iter()
             .find(|&outcome| outcome.id == *id)
             .cloned();
-        option.ok_or(RealContestInfoError::OutcomeNotFound {
+        option.ok_or(ContestInfoError::OutcomeNotFound {
             contest_id: self.get_id(),
             outcome_id: *id,
         })

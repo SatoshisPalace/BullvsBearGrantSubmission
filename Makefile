@@ -45,8 +45,7 @@ compress-wasm:
 
 .PHONY: schema
 schema:
-	cargo run --example schema
-
+	cargo schema
 # Run local development chain with four funded accounts (named a, b, c, and d)
 .PHONY: start-server
 start-server: # CTRL+C to stop

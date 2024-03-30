@@ -2,20 +2,17 @@ use thiserror::Error;
 
 use super::{
     contest_bet_summary_error::ContestBetSummaryError, contest_info_error::ContestInfoError,
-    real_contest_info_error::RealContestInfoError, state_error::StateError,
-    user_info_error::UserInfoError,
+    state_error::StateError, user_info_error::UserInfoError,
 };
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ContestError {
     #[error(transparent)]
-    ContestInfo(#[from] ContestInfoError),
-    #[error(transparent)]
     ContestBetSummary(#[from] ContestBetSummaryError),
     #[error(transparent)]
     StandardError(#[from] cosmwasm_std::StdError),
     #[error(transparent)]
-    RealContestInfoError(#[from] RealContestInfoError),
+    RealContestInfoError(#[from] ContestInfoError),
     #[error(transparent)]
     StateError(#[from] StateError),
     #[error(transparent)]

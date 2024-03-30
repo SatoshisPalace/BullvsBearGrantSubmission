@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use super::real_contest_info_error::RealContestInfoError;
+use super::contest_info_error::ContestInfoError;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ContestBetSummaryError {
@@ -20,7 +20,7 @@ pub enum ContestBetSummaryError {
     OracleQueryFailed(String),
 
     #[error(transparent)]
-    ContestInfoError(#[from] RealContestInfoError),
+    ContestInfoError(#[from] ContestInfoError),
 }
 
 impl From<ContestBetSummaryError> for cosmwasm_std::StdError {

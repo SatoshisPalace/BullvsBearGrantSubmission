@@ -1,20 +1,18 @@
 // contest_info_service.rs
 use cosmwasm_std::{DepsMut, Env, Storage};
 
-use crate::{
-    data::contest_info::ContestInfo, error::real_contest_info_error::RealContestInfoError,
-};
+use crate::{data::contest_info::ContestInfo, error::contest_info_error::ContestInfoError};
 
 pub fn create_new_contest(
     deps: &mut DepsMut,
     contest_info: &ContestInfo,
-) -> Result<(), RealContestInfoError> {
+) -> Result<(), ContestInfoError> {
     validate_contest(contest_info)?;
 
     // Contests cannot be recreated
     let contest_id = contest_info.get_id();
     if ContestInfo::keymap_verify_exists(deps.storage, &contest_id).is_ok() {
-        return Err(RealContestInfoError::ContestAlreadyExist(contest_id).into());
+        return Err(ContestInfoError::ContestAlreadyExist(contest_id).into());
     }
 
     contest_info.keymap_save(deps.storage)?;
@@ -24,17 +22,17 @@ pub fn create_new_contest(
 pub fn get_contest_info(
     storage: &dyn Storage,
     contest_id: &String,
-) -> Result<ContestInfo, RealContestInfoError> {
+) -> Result<ContestInfo, ContestInfoError> {
     match ContestInfo::keymap_get_by_id(storage, contest_id) {
         Some(contest_info) => Ok(contest_info),
-        None => Err(RealContestInfoError::ContestNotFound(contest_id.clone())),
+        None => Err(ContestInfoError::ContestNotFound(contest_id.clone())),
     }
 }
 
 pub fn get_contest_infos_for_ids(
     storage: &dyn Storage,
     contest_ids: &Vec<String>,
-) -> Result<Vec<ContestInfo>, RealContestInfoError> {
+) -> Result<Vec<ContestInfo>, ContestInfoError> {
     let mut contest_infos: Vec<ContestInfo> = Vec::new();
 
     for contest_id in contest_ids {
@@ -67,11 +65,11 @@ pub fn assert_contest_ready_to_be_claimed(
     storage: &dyn Storage,
     env: &Env,
     contest_id: &String,
-) -> Result<ContestInfo, RealContestInfoError> {
+) -> Result<ContestInfo, ContestInfoError> {
     let contest_info = get_contest_info(storage, contest_id)?;
     let current_time = env.block.time.seconds();
     if current_time < contest_info.get_time_of_resolve() {
-        return Err(RealContestInfoError::TimeOfResolveHasYetToPassed {
+        return Err(ContestInfoError::TimeOfResolveHasYetToPassed {
             contest_id: contest_info.get_id(),
             time_of_resolve: contest_info.get_time_of_resolve(),
             current_time,
@@ -83,7 +81,7 @@ pub fn assert_contest_ready_to_be_claimed(
 pub fn assert_outcome_is_on_contest(
     contest_info: &ContestInfo,
     outcome_id: &u8,
-) -> Result<(), RealContestInfoError> {
+) -> Result<(), ContestInfoError> {
     if contest_info
         .get_options()
         .iter()
@@ -91,31 +89,29 @@ pub fn assert_outcome_is_on_contest(
     {
         Ok(())
     } else {
-        Err(RealContestInfoError::OutcomeDNE)
+        Err(ContestInfoError::OutcomeDNE)
     }
 }
 
 pub fn assert_time_of_close_not_passed(
     contest_info: &ContestInfo,
     env: &Env,
-) -> Result<(), RealContestInfoError> {
+) -> Result<(), ContestInfoError> {
     let current_time = env.block.time.seconds();
     if current_time >= contest_info.get_time_of_close() {
-        Err(RealContestInfoError::TimeOfClosePassed(
-            contest_info.get_id(),
-        ))
+        Err(ContestInfoError::TimeOfClosePassed(contest_info.get_id()))
     } else {
         Ok(())
     }
 }
 
-pub fn validate_contest(contest_info: &ContestInfo) -> Result<(), RealContestInfoError> {
+pub fn validate_contest(contest_info: &ContestInfo) -> Result<(), ContestInfoError> {
     if contest_info
         .get_options()
         .iter()
         .any(|outcome| outcome.get_id() == &0u8)
     {
-        return Err(RealContestInfoError::InvalidOutcomeId {
+        return Err(ContestInfoError::InvalidOutcomeId {
             contest_id: contest_info.get_id(),
         });
     }
