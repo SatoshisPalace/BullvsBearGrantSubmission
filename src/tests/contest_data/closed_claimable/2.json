@@ -1,0 +1,36 @@
+{
+    "contest_info": {
+        "id": "5c4350a74ecc5643a9ba56dd423579616b9916b89b29fd05e827ac4b5052a5f3",
+        "options": [
+            {
+                "id": 1,
+                "name": "Los Angeles Dodgers"
+            },
+            {
+                "id": 2,
+                "name": "Los Angeles Angels"
+            }
+        ],
+        "time_of_close": 0,
+        "time_of_resolve": 86400,
+        "event_details": "MLB153215"
+    },
+    "title": "Los Angeles Dodgers vs Los Angeles Angels",
+    "description": "MLB Los Angeles Dodgers vs Los Angeles Angels. Betting on Los Angeles Dodgers will allow you to claim your share of Los Angeles Angels bets if Los Angeles Dodgers wins, and vice-versa betting on Los Angeles Angels will allow you to claim your share of Los Angeles Dodgers bets if Los Angeles Angels wins.",
+    "pictureID": "/Prediction/MLB/los_angeles_dodgers.png,/Prediction/MLB/los_angeles_angels.png",
+    "colors": [
+        {
+            "id": 1,
+            "color": "rgba(0, 255, 0, 1)"
+        },
+        {
+            "id": 2,
+            "color": "rgba(255, 0, 0, 1)"
+        }
+    ],
+    "categories": [
+        "Sports",
+        "MLB"
+    ],
+    "contest_info_signature_hex": "91dea3789812929b935705979d2a6d75f5baea8282263db318a3d88b05f99b2b5abe4a7ea33836eb4fa14881da213ee4108c354ff9876214ef713ff92ebf12bf"
+}

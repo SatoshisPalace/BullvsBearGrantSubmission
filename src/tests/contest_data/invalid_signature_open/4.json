@@ -1,0 +1,19 @@
+{
+    "contest_info": {
+        "id": "43bc8b6aec2d57a6bad20e0d5c8f0d32e71d8b15c20f8b2f4d0ab02fd0bb5788",
+        "options": [
+            {
+                "id": 1,
+                "name": "Oakland Athletics"
+            },
+            {
+                "id": 2,
+                "name": "San Francisco Giants"
+            }
+        ],
+        "time_of_close": 4102462800,
+        "time_of_resolve": 4102549200,
+        "event_details": "MLB153216"
+    },
+    "contest_info_signature_hex": "00008079e699b174ce9658d189777ba024240a132c7ed3a00b9ab21cb16bdbd03ee0e3657ce9b3c145cb44dc22de7c6326d79c12aff15e83297e519245230000"
+}

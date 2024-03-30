@@ -1,0 +1,19 @@
+{
+    "contest_info": {
+        "id": "0e1d4a107ffdf36c73c826062b7ab9723bba51f734ba4f6e64e7cb889760b94c",
+        "options": [
+            {
+                "id": 1,
+                "name": "Los Angeles Dodgers"
+            },
+            {
+                "id": 2,
+                "name": "Los Angeles Angels"
+            }
+        ],
+        "time_of_close": 4102462800,
+        "time_of_resolve": 4102549200,
+        "event_details": "MLB153215"
+    },
+    "contest_info_signature_hex": "f5602703e527f7e72288a6e0d8ba377ec9f28fd5d8cff2bf1af6d48ca2d3ef6f57f445000a1778d6189598011f4b5b9ca0df8026dce8a65267d472d14670a3a7"
+}

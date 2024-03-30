@@ -1,0 +1,36 @@
+{
+    "contest_info": {
+        "id": "300a6b54c5531ee07fe910f8d23583159f3afc710da93eb907606fcd5c5c9f72",
+        "options": [
+            {
+                "id": 1,
+                "name": "Texas Rangers"
+            },
+            {
+                "id": 2,
+                "name": "Boston Red Sox"
+            }
+        ],
+        "time_of_close": 0,
+        "time_of_resolve": 86400,
+        "event_details": "MLB153214"
+    },
+    "title": "Texas Rangers vs Boston Red Sox",
+    "description": "MLB Texas Rangers vs Boston Red Sox. Betting on Texas Rangers will allow you to claim your share of Boston Red Sox bets if Texas Rangers wins, and vice-versa betting on Boston Red Sox will allow you to claim your share of Texas Rangers bets if Boston Red Sox wins.",
+    "pictureID": "/Prediction/MLB/texas_rangers.png,/Prediction/MLB/boston_red_sox.png",
+    "colors": [
+        {
+            "id": 1,
+            "color": "rgba(0, 255, 0, 1)"
+        },
+        {
+            "id": 2,
+            "color": "rgba(255, 0, 0, 1)"
+        }
+    ],
+    "categories": [
+        "Sports",
+        "MLB"
+    ],
+    "contest_info_signature_hex": "c774897b95b97be4b4686159e18feea5a9d80b8f84c921e231460f74ead33fff34dbeca969340d6f14db4c772dd201532856b395cbc91cb802a81ecdf77f417c"
+}

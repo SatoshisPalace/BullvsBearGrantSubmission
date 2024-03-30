@@ -1,44 +1,40 @@
-use std::collections::HashMap;
+use std::{fs, io, path::Path};
 
-use crate::contest::data::contest_info::{ContestInfo, ContestOutcome};
+use crate::data::contest_info::ContestInfo;
 
-use super::constants::FAR_IN_THE_FUTURE;
+fn read_contest_data(folder: &str, file_number: u8) -> io::Result<(ContestInfo, String)> {
+    let path = Path::new(folder).join(format!("{}.json", file_number));
+    let data = fs::read_to_string(path)?;
 
-#[derive(Debug, Clone)]
-pub struct ContestInfoWithSignature {
-    pub contest_info: ContestInfo,
-    pub signature_hex: String,
+    let json: serde_json::Value = serde_json::from_str(&data)?;
+    let contest_info: ContestInfo = serde_json::from_value(json["contest_info"].clone())?;
+    let contest_info_signature_hex = json["contest_info_signature_hex"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
+
+    Ok((contest_info, contest_info_signature_hex))
 }
 
-pub fn get_contest_infos_with_signatures() -> HashMap<u32, ContestInfoWithSignature> {
-    let mut contest_infos = HashMap::new();
-
-    // Example of inserting a ContestInfoWithSignature
-    contest_infos.insert(1, ContestInfoWithSignature {
-        contest_info: ContestInfo {
-            id: 1,
-            options: vec![
-                ContestOutcome::new(1, "option1".to_string()),
-                ContestOutcome::new(2, "option2".to_string()),
-            ],
-            event_details: "Example event details".to_string(),
-            time_of_close: FAR_IN_THE_FUTURE,
-            time_of_resolve: FAR_IN_THE_FUTURE,
-        },
-        signature_hex: "b5876a3fc9f0ff470fd2d5d446dbdac994486eb2c7db61ebc2bd6e96a5fb05f7773b3eb0e59d1a4dc80e317e4e69bb6bbb7635084c29dd1bedeabcd4544a9d40".to_string(),
-    });
-
-    // Add more ContestInfoWithSignature objects to the HashMap as needed
-
-    contest_infos
+// Example functions to read from each specific folder
+pub fn get_contest_closed_awaiting_results(file_number: u8) -> io::Result<(ContestInfo, String)> {
+    read_contest_data(
+        "./src/tests/contest_data/closed_awaiting_results",
+        file_number,
+    )
 }
 
-pub fn get_contest_info_and_signature_by_id(id: u32) -> Option<(ContestInfo, String)> {
-    let contest_infos = get_contest_infos_with_signatures();
-    contest_infos.get(&id).map(|info_with_sig| {
-        (
-            info_with_sig.contest_info.clone(),
-            info_with_sig.signature_hex.clone(),
-        )
-    })
+pub fn get_contest_closed_claimable(file_number: u8) -> io::Result<(ContestInfo, String)> {
+    read_contest_data("./src/tests/contest_data/closed_claimable", file_number)
+}
+
+pub fn get_contest_open(file_number: u8) -> io::Result<(ContestInfo, String)> {
+    read_contest_data("./src/tests/contest_data/open", file_number)
+}
+
+pub fn get_contest_invalid_signature(file_number: u8) -> io::Result<(ContestInfo, String)> {
+    read_contest_data(
+        "./src/tests/contest_data/invalid_signature_open",
+        file_number,
+    )
 }

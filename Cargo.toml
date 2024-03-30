@@ -1,7 +1,7 @@
 [package]
-name = "sp_contest"
-version = "0.1.0"
-authors = ["SecretTemplateExample"]
+name = "satoshis_palace_contests"
+version = "2.0.0"
+authors = ["SatoshisPalace"]
 edition = "2021"
 
 [lib]

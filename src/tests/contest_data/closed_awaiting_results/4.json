@@ -1,0 +1,36 @@
+{
+    "contest_info": {
+        "id": "4202b61a351763dd58d75ae7f5e3b92ae8db69ed40161fc4f2fab06e1fff18b3",
+        "options": [
+            {
+                "id": 1,
+                "name": "Oakland Athletics"
+            },
+            {
+                "id": 2,
+                "name": "San Francisco Giants"
+            }
+        ],
+        "time_of_close": 0,
+        "time_of_resolve": 4102549200,
+        "event_details": "MLB153216"
+    },
+    "title": "Oakland Athletics vs San Francisco Giants",
+    "description": "MLB Oakland Athletics vs San Francisco Giants. Betting on Oakland Athletics will allow you to claim your share of San Francisco Giants bets if Oakland Athletics wins, and vice-versa betting on San Francisco Giants will allow you to claim your share of Oakland Athletics bets if San Francisco Giants wins.",
+    "pictureID": "/Prediction/MLB/oakland_athletics.png,/Prediction/MLB/san_francisco_giants.png",
+    "colors": [
+        {
+            "id": 1,
+            "color": "rgba(0, 255, 0, 1)"
+        },
+        {
+            "id": 2,
+            "color": "rgba(255, 0, 0, 1)"
+        }
+    ],
+    "categories": [
+        "Sports",
+        "MLB"
+    ],
+    "contest_info_signature_hex": "b6813d0b9e3cdbeed1159b67b0390d03408d547905eca47de9ff887e92ecfa357e19c1b839f80f0245be0e0709c21ce0e792d17da2c4a5faecef925b0d718226"
+}

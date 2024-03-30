@@ -1,0 +1,19 @@
+{
+    "contest_info": {
+        "id": "670f802c501334fd36fc9ea6b31223199c0d04202aff447126100599c64cf118",
+        "options": [
+            {
+                "id": 1,
+                "name": "San Diego Padres"
+            },
+            {
+                "id": 2,
+                "name": "Seattle Mariners"
+            }
+        ],
+        "time_of_close": 4102462800,
+        "time_of_resolve": 4102549200,
+        "event_details": "MLB153217"
+    },
+    "contest_info_signature_hex": "00008079e699b174ce9658d189777ba024240a132c7ed3a00b9ab21cb16bdbd03ee0e3657ce9b3c145cb44dc22de7c6326d79c12aff15e83297e519245230000"
+}

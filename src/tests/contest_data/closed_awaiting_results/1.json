@@ -1,0 +1,19 @@
+{
+    "contest_info": {
+        "id": "352ee7b815f80180f5fff36d0dd88321d3df30ba25c2fdbbfe7512788da9c123",
+        "options": [
+            {
+                "id": 1,
+                "name": "Texas Rangers"
+            },
+            {
+                "id": 2,
+                "name": "Boston Red Sox"
+            }
+        ],
+        "time_of_close": 0,
+        "time_of_resolve": 4102549200,
+        "event_details": "MLB153214"
+    },
+    "contest_info_signature_hex": "0f82eb68dde3df49eb6c2012660cc8b18c8aaa7354c1d09626f7553df4f166c56ad4d89cc2e731ec0cc0e7d7672780a0c1d62abf92563c27fbe345b00584c22b"
+}

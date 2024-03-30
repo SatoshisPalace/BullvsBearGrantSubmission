@@ -2,11 +2,12 @@
 #[macro_use]
 extern crate lazy_static;
 
-pub mod answer;
-pub mod contest;
+pub mod command_handlers;
+pub mod constants;
 pub mod contract;
+pub mod data;
 pub mod error;
-pub mod integrations;
-pub mod msg;
-pub mod state;
+pub mod msgs;
+pub mod responses;
+pub mod services;
 pub mod tests;

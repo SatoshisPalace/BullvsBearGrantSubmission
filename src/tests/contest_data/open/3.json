@@ -1,0 +1,19 @@
+{
+    "contest_info": {
+        "id": "620e4a25dcdcd1d240225601ee7a62595e10d5806f44b540a556fb6513e91dc1",
+        "options": [
+            {
+                "id": 1,
+                "name": "Arizona Diamondbacks"
+            },
+            {
+                "id": 2,
+                "name": "Cleveland Guardians"
+            }
+        ],
+        "time_of_close": 4102462800,
+        "time_of_resolve": 4102549200,
+        "event_details": "MLB153210"
+    },
+    "contest_info_signature_hex": "d5436dc4e561a3aa0b3eff4e8a5a4a8fab997c53ea9676b82dd417dea49b19057fd34bfe1ea0ab40ab37fa7b09e83f1a20e9993aabf82485d0dd0305f5bd9d11"
+}

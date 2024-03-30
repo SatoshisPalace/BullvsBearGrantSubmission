@@ -1,0 +1,36 @@
+{
+    "contest_info": {
+        "id": "b9cf057274be15f7e2ee45d67cf029b87bbb0d3cb7d2f503e6d4775fc6ef4505",
+        "options": [
+            {
+                "id": 1,
+                "name": "Arizona Diamondbacks"
+            },
+            {
+                "id": 2,
+                "name": "Cleveland Guardians"
+            }
+        ],
+        "time_of_close": 0,
+        "time_of_resolve": 4102549200,
+        "event_details": "MLB153210"
+    },
+    "title": "Arizona Diamondbacks vs Cleveland Guardians",
+    "description": "MLB Arizona Diamondbacks vs Cleveland Guardians. Betting on Arizona Diamondbacks will allow you to claim your share of Cleveland Guardians bets if Arizona Diamondbacks wins, and vice-versa betting on Cleveland Guardians will allow you to claim your share of Arizona Diamondbacks bets if Cleveland Guardians wins.",
+    "pictureID": "/Prediction/MLB/arizona_diamondbacks.png,/Prediction/MLB/cleveland_guardians.png",
+    "colors": [
+        {
+            "id": 1,
+            "color": "rgba(0, 255, 0, 1)"
+        },
+        {
+            "id": 2,
+            "color": "rgba(255, 0, 0, 1)"
+        }
+    ],
+    "categories": [
+        "Sports",
+        "MLB"
+    ],
+    "contest_info_signature_hex": "ce22a58e5b9ae5d88596d27b65a1594916b783e49a4c760d6945c1e56739ed227ef1d747c086b1bb2d540d3f0371ad4576c2b7cd67c8b1f9444174e8f3b9c4d9"
+}

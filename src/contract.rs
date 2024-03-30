@@ -1,19 +1,18 @@
-use crate::contest::admin_execute_handlers::handle_set_minimum_bet;
-use crate::contest::execute_handlers::{
-    handle_bet_on_contest, handle_claim, handle_create_contest,
+use crate::command_handlers::admin_execute_handlers::handle_set_minimum_bet;
+use crate::command_handlers::execute_handlers::{handle_claim, handle_receive};
+use crate::command_handlers::invoke_handlers::{handle_bet_on_contest, handle_create_contest};
+use crate::command_handlers::query_handlers::{
+    handle_get_contest, handle_get_contests, handle_get_minimum_bet, handle_get_snip20,
+    handle_user_bet, handle_users_bets_query,
 };
-use crate::contest::query_handlers::{
-    handle_contest_query, handle_contests_query, handle_minimum_bet_query, handle_user_bet_query,
-    handle_users_bets_query,
-};
-use crate::error::ContractError;
-use crate::integrations::oracle::oracle::query_contest_result;
-use crate::integrations::snip_20::{get_supported_snip20, try_receive};
-use crate::msg::{ExecuteMsg, InstantiateMsg, InvokeMsg, QueryMsg};
-use crate::state::State;
+use crate::data::state::State;
+use crate::msgs::execute::execute_msg::ExecuteMsg;
+use crate::msgs::instantiate::InstantiateMsg;
+use crate::msgs::invoke::invoke_msg::InvokeMsg;
+use crate::msgs::query::query_msg::QueryMsg;
 
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
+    entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
 use sp_secret_toolkit::master_viewing_key::MasterViewingKey;
 use sp_secret_toolkit::oracle::Oracle;
@@ -45,87 +44,38 @@ pub fn instantiate(
 }
 
 #[entry_point]
-pub fn execute(
-    mut deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    msg: ExecuteMsg,
-) -> StdResult<Response> {
+pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
-        ExecuteMsg::Claim { contest_id } => handle_claim(&mut deps, env, contest_id, info.sender),
-        // SNIP-20 Msgs
-        ExecuteMsg::Receive {
-            sender: _,
-            from: _,
-            amount,
-            memo: _,
-            msg,
-        } => try_receive(deps, env, info, amount, msg),
-        //Admin
-        ExecuteMsg::SetMinBet { amount } => handle_set_minimum_bet(deps, info, amount),
+        ExecuteMsg::Claim(command) => handle_claim(deps, env, info, command),
+        ExecuteMsg::SetMinimumBet(command) => handle_set_minimum_bet(deps, info, command),
+        ExecuteMsg::Receive(command) => handle_receive(deps, env, info, command),
     }
 }
 
 /**
  * This method should only ever be called from integrations::snip_20::try_receive
  */
-pub fn execute_from_snip_20(
-    mut deps: DepsMut,
+pub fn invoke(
+    deps: DepsMut,
     env: Env,
     _info: MessageInfo,
     msg: InvokeMsg,
+    amount: Uint128,
 ) -> StdResult<Response> {
     match msg {
-        InvokeMsg::CreateContest {
-            contest_info,
-            contest_info_signature_hex,
-            outcome_id,
-            user: sender,
-            amount,
-        } => handle_create_contest(
-            &mut deps,
-            env,
-            contest_info,
-            contest_info_signature_hex,
-            outcome_id,
-            sender,
-            amount,
-        ),
-        InvokeMsg::BetContest {
-            contest_id,
-            outcome_id,
-            user: sender,
-            amount,
-        } => handle_bet_on_contest(&mut deps, &env, contest_id, outcome_id, sender, amount),
+        InvokeMsg::CreateContest(command) => handle_create_contest(deps, env, command, amount),
+        InvokeMsg::BetContest(command) => handle_bet_on_contest(deps, env, command, amount),
     }
 }
 
 #[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetSnip20 {} => get_supported_snip20(deps),
-        QueryMsg::GetContest { contest_id } => handle_contest_query(deps, contest_id),
-        QueryMsg::GetContests { contest_ids } => handle_contests_query(deps, contest_ids),
-        QueryMsg::GetContestResult { contest_id } => to_binary(&query_contest_result(
-            &deps.querier,
-            deps.storage,
-            &(contest_id as u64),
-        )?),
-        QueryMsg::GetMinBet {} => handle_minimum_bet_query(&deps),
-        _ => viewing_keys_queries(deps, msg),
+        QueryMsg::GetContest(command) => handle_get_contest(deps, command),
+        QueryMsg::GetContests(command) => handle_get_contests(deps, command),
+        QueryMsg::GetUserBet(command) => handle_user_bet(deps, command),
+        QueryMsg::GetUsersBets(command) => handle_users_bets_query(deps, command),
+        QueryMsg::GetMinBet(_) => handle_get_minimum_bet(deps),
+        QueryMsg::GetSnip20(_) => handle_get_snip20(deps),
     }
-}
-
-#[allow(unused)]
-pub fn viewing_keys_queries(deps: Deps, msg: QueryMsg) -> StdResult<Binary> {
-    return match msg {
-        QueryMsg::GetUserBet {
-            user_contest,
-            viewing_key,
-        } => handle_user_bet_query(&deps, user_contest, viewing_key),
-        QueryMsg::GetUsersBets { user, viewing_key } => {
-            handle_users_bets_query(deps, user, viewing_key)
-        }
-        _ => Err(ContractError::QueryDoesNotRequireAuthentication.into()),
-    };
 }
