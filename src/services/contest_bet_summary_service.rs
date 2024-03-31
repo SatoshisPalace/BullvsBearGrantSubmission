@@ -73,7 +73,7 @@ pub fn finalize_contest_outcome(
     deps: &mut DepsMut,
     env: &Env,
     contest_info: &ContestInfo,
-) -> Result<ContestBetSummary, ContestBetSummaryError> {
+) -> Result<(ContestBetSummary, bool), ContestBetSummaryError> {
     // Attempt to retrieve the ContestBetSummary from storage.
     let mut contest_bet_summary =
         ContestBetSummary::keymap_get_by_id(deps.storage, &contest_info.get_id())
@@ -81,7 +81,7 @@ pub fn finalize_contest_outcome(
 
     // Check if an outcome is already set.
     if let Some(_outcome) = contest_bet_summary.get_outcome() {
-        return Ok(contest_bet_summary);
+        return Ok((contest_bet_summary, false));
     }
 
     // If not, query the oracle for the contest result using the adjusted function.
@@ -99,7 +99,7 @@ pub fn finalize_contest_outcome(
     // Save the updated contest bet summary back to storage.
     contest_bet_summary.keymap_save(deps.storage)?;
 
-    Ok(contest_bet_summary)
+    Ok((contest_bet_summary, true))
 }
 
 pub fn get_contest_bet_summary(

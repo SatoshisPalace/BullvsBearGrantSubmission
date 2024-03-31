@@ -8,6 +8,7 @@ use crate::{
         contest_info::ContestInfo,
     },
     msgs::query::commands::{
+        get_active_contests::GetActiveContests,
         get_contest::GetContest,
         get_contests::GetContests,
         get_user_bet::GetUserBet,
@@ -26,6 +27,7 @@ use crate::{
     },
     services::{
         bet_service::{get_bets_for_user_and_contests, get_user_bet},
+        contest_activity_service::get_active_contests,
         contest_bet_summary_service::{
             get_contest_bet_summaries, get_contest_bet_summaries_ignore_missing,
             get_contest_bet_summary, update_contest_bet_summaries_with_results,
@@ -115,7 +117,7 @@ pub fn handle_get_contests(deps: Deps, command: GetContests) -> StdResult<Binary
     let response = QueryResponse::ContestDataList(ContestDataListResponse {
         contests: contest_infos_and_summaries,
     });
-    to_binary(&response)
+    return to_binary(&response);
 }
 
 pub fn handle_get_minimum_bet(deps: Deps) -> StdResult<Binary> {
@@ -184,4 +186,32 @@ pub fn filter_contests(
             }
         })
         .collect()
+}
+
+pub fn handle_get_active_contests(
+    deps: Deps,
+    env: Env,
+    command: GetActiveContests,
+) -> StdResult<Binary> {
+    let GetActiveContests {
+        page_num,
+        page_size,
+        sort_order,
+    } = command;
+
+    // Use the `?` operator to simplify error handling
+    let contest_pairs = get_active_contests(deps.storage, &env, page_num, page_size, sort_order)?;
+
+    // Transform the data into the response format
+    let contests: Vec<ContestDataResponse> = contest_pairs
+        .into_iter()
+        .map(|(contest_info, contest_bet_summary)| ContestDataResponse {
+            contest_info,
+            contest_bet_summary,
+        })
+        .collect();
+    let response = QueryResponse::ContestDataList(ContestDataListResponse { contests });
+
+    // Serialize the response into binary format and return
+    return to_binary(&response);
 }

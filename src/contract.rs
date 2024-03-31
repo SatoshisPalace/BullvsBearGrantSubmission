@@ -4,9 +4,10 @@ use crate::command_handlers::execute_handlers::{
 };
 use crate::command_handlers::invoke_handlers::{handle_bet_on_contest, handle_create_contest};
 use crate::command_handlers::query_handlers::{
-    handle_get_contest, handle_get_contests, handle_get_minimum_bet, handle_get_snip20,
-    handle_user_bet, handle_users_bets_query,
+    handle_get_active_contests, handle_get_contest, handle_get_contests, handle_get_minimum_bet,
+    handle_get_snip20, handle_user_bet, handle_users_bets_query,
 };
+use crate::data::contest_activity::ContestActivity;
 use crate::data::state::State;
 use crate::msgs::execute::execute_msg::ExecuteMsg;
 use crate::msgs::instantiate::InstantiateMsg;
@@ -39,6 +40,9 @@ pub fn instantiate(
 
     MasterViewingKey::new(msg.master_viewing_key_contract).singleton_save(deps.storage)?;
     Oracle::new(msg.oracle_contract_info).singleton_save(deps.storage)?;
+
+    let contest_activity = ContestActivity::new();
+    contest_activity.singleton_save(deps.storage)?;
 
     Ok(Response::default()
         .add_message(snip_20.create_register_receive_msg(&env)?)
@@ -76,6 +80,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetContest(command) => handle_get_contest(deps, command),
         QueryMsg::GetContests(command) => handle_get_contests(deps, command),
+        QueryMsg::GetActiveContests(command) => handle_get_active_contests(deps, env, command),
         QueryMsg::GetUserBet(command) => handle_user_bet(deps, command),
         QueryMsg::GetUsersBets(command) => handle_users_bets_query(deps, env, command),
         QueryMsg::GetMinBet(_) => handle_get_minimum_bet(deps),

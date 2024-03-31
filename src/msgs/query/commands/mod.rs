@@ -1,3 +1,4 @@
+pub mod get_active_contests;
 pub mod get_contest;
 pub mod get_contest_result;
 pub mod get_contests;

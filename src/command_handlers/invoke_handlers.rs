@@ -8,6 +8,7 @@ use crate::{
     },
     services::{
         bet_service::place_or_update_bet,
+        contest_activity_service::add_active_contest,
         contest_bet_summary_service::{add_bet_to_contest_summary, create_new_contest_bet_summary},
         contest_info_service::{
             assert_outcome_is_on_contest, assert_time_of_close_not_passed, create_new_contest,
@@ -46,6 +47,9 @@ pub fn handle_create_contest(
     create_new_contest_bet_summary(deps.storage, &contest_info)?;
 
     let contest_id = contest_info.get_id();
+
+    add_active_contest(deps.storage, &contest_id)?;
+
     assert_amount_is_greater_than_minimum_bet(deps.storage, &amount_bet)?;
     assert_outcome_is_on_contest(&contest_info, &outcome_id)?;
     place_or_update_bet(deps.storage, &user, &contest_id, &outcome_id, &amount_bet)?;

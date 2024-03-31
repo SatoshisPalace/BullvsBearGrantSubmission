@@ -13,8 +13,9 @@ pub mod tests {
             execute_handlers::{handle_claim, handle_claim_multiple},
             invoke_handlers::{handle_bet_on_contest, handle_create_contest},
             query_handlers::{
-                handle_get_contest, handle_get_contests, handle_get_minimum_bet, handle_get_snip20,
-                handle_user_bet, handle_users_bets_query,
+                handle_get_active_contests, handle_get_contest, handle_get_contests,
+                handle_get_minimum_bet, handle_get_snip20, handle_user_bet,
+                handle_users_bets_query,
             },
         },
         contract::instantiate,
@@ -26,6 +27,7 @@ pub mod tests {
             instantiate::InstantiateMsg,
             invoke::commands::{bet_contest::BetContest, create_contest::CreateContest},
             query::commands::{
+                get_active_contests::{ContestQuerySortOrder, GetActiveContests},
                 get_contest::GetContest,
                 get_contests::GetContests,
                 get_user_bet::GetUserBet,
@@ -727,6 +729,33 @@ pub mod tests {
                 }
             } else {
                 panic!("Expected UserBet response but received something else");
+            }
+        }
+
+        pub fn get_active_contests_success(
+            &self,
+            page_num: Option<u32>,
+            page_size: Option<u32>,
+            sort_order: Option<ContestQuerySortOrder>,
+            expected_length: usize,
+        ) {
+            let command = GetActiveContests {
+                page_num,
+                page_size,
+                sort_order,
+            };
+
+            let binary_response =
+                handle_get_active_contests(self.deps.as_ref(), self.env.clone(), command)
+                    .expect("Expected Get Active Contests to succeed but failed");
+            let response: QueryResponse =
+                from_binary(&binary_response).expect("Failed to deserialize QueryResponse");
+
+            if let QueryResponse::ContestDataList(contest_data_list_response) = response {
+                let contest_data_list = contest_data_list_response.contests;
+                assert_eq!(contest_data_list.len(), expected_length);
+            } else {
+                panic!("Expected ContestDataList response but received something else");
             }
         }
     }
