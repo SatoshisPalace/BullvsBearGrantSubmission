@@ -1,5 +1,7 @@
 use crate::command_handlers::admin_execute_handlers::handle_set_minimum_bet;
-use crate::command_handlers::execute_handlers::{handle_claim, handle_receive};
+use crate::command_handlers::execute_handlers::{
+    handle_claim, handle_claim_multiple, handle_receive,
+};
 use crate::command_handlers::invoke_handlers::{handle_bet_on_contest, handle_create_contest};
 use crate::command_handlers::query_handlers::{
     handle_get_contest, handle_get_contests, handle_get_minimum_bet, handle_get_snip20,
@@ -47,6 +49,7 @@ pub fn instantiate(
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
         ExecuteMsg::Claim(command) => handle_claim(deps, env, info, command),
+        ExecuteMsg::ClaimMultiple(command) => handle_claim_multiple(deps, env, info, command),
         ExecuteMsg::SetMinimumBet(command) => handle_set_minimum_bet(deps, info, command),
         ExecuteMsg::Receive(command) => handle_receive(deps, env, info, command),
     }

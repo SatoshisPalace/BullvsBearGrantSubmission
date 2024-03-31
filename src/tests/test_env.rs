@@ -10,7 +10,7 @@ pub mod tests {
     use crate::{
         command_handlers::{
             admin_execute_handlers::handle_set_minimum_bet,
-            execute_handlers::handle_claim,
+            execute_handlers::{handle_claim, handle_claim_multiple},
             invoke_handlers::{handle_bet_on_contest, handle_create_contest},
             query_handlers::{
                 handle_get_contest, handle_get_contests, handle_get_minimum_bet, handle_get_snip20,
@@ -20,7 +20,9 @@ pub mod tests {
         contract::instantiate,
         data::contest_info::ContestInfo,
         msgs::{
-            execute::commands::{claim::Claim, set_minimum_bet::SetMinimumBet},
+            execute::commands::{
+                claim::Claim, claim_multiple::ClaimMultiple, set_minimum_bet::SetMinimumBet,
+            },
             instantiate::InstantiateMsg,
             invoke::commands::{bet_contest::BetContest, create_contest::CreateContest},
             query::commands::{
@@ -452,6 +454,85 @@ pub mod tests {
                     false,
                     "Contest Info not found or already closed for betting"
                 )
+            }
+        }
+
+        pub fn claim_multiple_failure(&mut self, file_numbers: Vec<&u8>) {
+            let mut requested_ids = Vec::new();
+
+            // Loop through each file number to get contest info and signature.
+            for file_number in file_numbers {
+                let (contest_info, _contest_info_signature_hex) =
+                    Self::get_open_contest_from_file(file_number);
+
+                // Collect the id from contest_info.
+                requested_ids.push(contest_info.get_id());
+            }
+            let command = ClaimMultiple {
+                contest_ids: requested_ids,
+            };
+            let response_result = handle_claim_multiple(
+                self.deps.as_mut(),
+                self.env.clone(),
+                self.info.clone(),
+                command,
+            );
+            assert!(
+                response_result.is_err(),
+                "Expected Claim to Fail but Succeeded"
+            );
+        }
+
+        pub fn claim_multiple_success(
+            &mut self,
+            file_numbers: Vec<&u8>,
+            expected_amount: Option<&u128>,
+        ) {
+            let mut requested_ids = Vec::new();
+
+            // Loop through each file number to get contest info and signature.
+            for file_number in file_numbers {
+                let (contest_info, _contest_info_signature_hex) =
+                    Self::get_open_contest_from_file(file_number);
+
+                // Collect the id from contest_info.
+                requested_ids.push(contest_info.get_id());
+            }
+            let command = ClaimMultiple {
+                contest_ids: requested_ids,
+            };
+            let response_result = handle_claim_multiple(
+                self.deps.as_mut(),
+                self.env.clone(),
+                self.info.clone(),
+                command,
+            );
+            assert!(
+                response_result.is_ok(),
+                "Expected Claim to succeed but failed"
+            );
+            let response = response_result.unwrap();
+
+            if let Some(binary_data) = response.data {
+                match from_binary::<ExecuteResponse>(&binary_data) {
+                    Ok(claim_response) => match claim_response {
+                        ExecuteResponse::Claim(claim_response) => {
+                            // Successfully deserialized and matched the Claim variant.
+                            // You can now use `claim_data` here.
+                            if let Some(expected) = expected_amount {
+                                assert_eq!(
+                                    claim_response.amount,
+                                    Uint128::from(*expected),
+                                    "Claim Amount does not match expected"
+                                )
+                            }
+                        }
+                        _ => assert!(false, "Could not deserialize claim response"),
+                    },
+                    Err(_e) => assert!(false, "Could not deserialize claim response"),
+                }
+            } else {
+                assert!(false, "Could not deserialize claim response")
             }
         }
 

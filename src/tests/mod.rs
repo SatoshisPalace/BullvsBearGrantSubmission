@@ -1,14 +1,6 @@
-pub mod bet;
-pub mod claim;
 pub mod constants;
 pub mod contest_infos;
-pub mod create_contest;
-pub mod get_contest;
-pub mod get_contest_result;
-pub mod get_contests;
-pub mod get_minimum_bet;
-pub mod get_snip20;
-pub mod get_user_bet;
-pub mod get_users_bets;
-pub mod set_minimum_bet;
+pub mod execute;
+pub mod invoke;
+pub mod query;
 pub mod test_env;
