@@ -69,12 +69,12 @@ pub fn invoke(
 }
 
 #[entry_point]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetContest(command) => handle_get_contest(deps, command),
         QueryMsg::GetContests(command) => handle_get_contests(deps, command),
         QueryMsg::GetUserBet(command) => handle_user_bet(deps, command),
-        QueryMsg::GetUsersBets(command) => handle_users_bets_query(deps, command),
+        QueryMsg::GetUsersBets(command) => handle_users_bets_query(deps, env, command),
         QueryMsg::GetMinBet(_) => handle_get_minimum_bet(deps),
         QueryMsg::GetSnip20(_) => handle_get_snip20(deps),
     }

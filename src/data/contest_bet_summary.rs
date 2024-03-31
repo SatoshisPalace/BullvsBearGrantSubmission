@@ -29,6 +29,10 @@ impl ContestBetSummary {
         }
     }
 
+    pub fn get_contest_id(&self) -> &String {
+        &self.contest_id
+    }
+
     pub fn get_options(&self) -> &Vec<OptionBetSummary> {
         &self.options
     }

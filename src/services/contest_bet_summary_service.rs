@@ -1,5 +1,4 @@
-use cosmwasm_std::{DepsMut, StdResult, Storage, Uint128};
-use sp_secret_toolkit::oracle::response::GetContestResultResponse;
+use cosmwasm_std::{DepsMut, Env, QuerierWrapper, StdResult, Storage, Uint128};
 
 use crate::{
     data::{
@@ -9,8 +8,9 @@ use crate::{
     error::contest_bet_summary_error::ContestBetSummaryError,
 };
 
-use super::integrations::oracle_service::oracle::{
-    query_contest_result, NULL_AND_VOID_CONTEST_RESULT,
+use super::{
+    contest_info_service::assert_contest_ready_to_be_claimed,
+    integrations::oracle_service::oracle::{query_contest_result, NULL_AND_VOID_CONTEST_RESULT},
 }; // Make sure to adjust the import based on your actual storage handling
 
 /// Adds a bet to a contest summary.
@@ -71,6 +71,7 @@ pub fn create_new_contest_bet_summary(
 
 pub fn finalize_contest_outcome(
     deps: &mut DepsMut,
+    env: &Env,
     contest_info: &ContestInfo,
 ) -> Result<ContestBetSummary, ContestBetSummaryError> {
     // Attempt to retrieve the ContestBetSummary from storage.
@@ -83,20 +84,17 @@ pub fn finalize_contest_outcome(
         return Ok(contest_bet_summary);
     }
 
-    // If not, query the oracle for the contest result.
-    let oracle_result: GetContestResultResponse =
-        query_contest_result(&deps.querier, deps.storage, &contest_info.get_id())
-            .map_err(|_| ContestBetSummaryError::OracleQueryFailed(contest_info.get_id()))?;
+    // If not, query the oracle for the contest result using the adjusted function.
+    let oracle_result =
+        query_contest_result_oracle(deps.storage, &deps.querier, env, contest_info)?;
 
-    // Handle NULL_AND_VOID_CONTEST_RESULT or find the matching outcome.
-    let outcome = if oracle_result.result == NULL_AND_VOID_CONTEST_RESULT {
-        ContestOutcome::nullified_result()
+    if let Some(outcome) = oracle_result {
+        // Should certainly exist
+        // Set the outcome in the contest bet summary.
+        contest_bet_summary.set_outcome(&outcome)?;
     } else {
-        contest_info.find_outcome(&oracle_result.result)?
-    };
-
-    // Set the outcome in the contest bet summary.
-    contest_bet_summary.set_outcome(&outcome)?;
+        return Err(ContestBetSummaryError::OutcomeDNE);
+    }
 
     // Save the updated contest bet summary back to storage.
     contest_bet_summary.keymap_save(deps.storage)?;
@@ -129,4 +127,72 @@ pub fn get_contest_bet_summaries_ignore_missing(
     }
 
     return contest_bet_summaries;
+}
+
+pub fn get_contest_bet_summaries(
+    storage: &dyn Storage,
+    contest_ids: &Vec<String>,
+) -> Result<Vec<ContestBetSummary>, ContestBetSummaryError> {
+    let mut contest_bet_summaries: Vec<ContestBetSummary> = Vec::new();
+
+    for contest_id in contest_ids {
+        match ContestBetSummary::keymap_get_by_id(storage, contest_id) {
+            Some(contest_bet_summary) => {
+                contest_bet_summaries.push(contest_bet_summary);
+            }
+            None => return Err(ContestBetSummaryError::DNE(contest_id.to_owned())),
+        }
+    }
+
+    return Ok(contest_bet_summaries);
+}
+
+fn query_contest_result_oracle(
+    storage: &dyn Storage,
+    querier: &QuerierWrapper,
+    env: &Env,
+    contest_info: &ContestInfo,
+) -> Result<Option<ContestOutcome>, ContestBetSummaryError> {
+    assert_contest_ready_to_be_claimed(storage, env, &contest_info.get_id())?;
+    match query_contest_result(querier, storage, &contest_info.get_id()) {
+        Ok(response) => {
+            if response.result == NULL_AND_VOID_CONTEST_RESULT {
+                Ok(Some(ContestOutcome::nullified_result()))
+            } else {
+                // Use find_outcome to get the ContestOutcome from the contest_info
+                match contest_info.find_outcome(&response.result) {
+                    Ok(outcome) => Ok(Some(outcome)),
+                    Err(_) => Err(ContestBetSummaryError::OutcomeDNE),
+                }
+            }
+        }
+        Err(_) => Ok(None), // Query failed, assume result not available
+    }
+}
+
+pub fn update_contest_bet_summaries_with_results(
+    storage: &dyn Storage,
+    querier: &QuerierWrapper,
+    env: &Env,
+    contest_infos: &Vec<ContestInfo>, // Added vector of ContestInfos
+    contest_bet_summaries: &mut Vec<ContestBetSummary>,
+) -> Vec<ContestBetSummary> {
+    for (contest_info, contest_bet_summary) in
+        contest_infos.iter().zip(contest_bet_summaries.iter_mut())
+    {
+        // Check if an outcome is already set for this summary
+        if contest_bet_summary.get_outcome().is_some() {
+            continue; // Skip if already set
+        }
+
+        // Attempt to get the oracle result for the specific contest_info
+        if let Ok(Some(outcome)) = query_contest_result_oracle(storage, querier, env, contest_info)
+        {
+            // Update the contest bet summary with the new outcome
+            let _ = contest_bet_summary.set_outcome(&outcome);
+        }
+        // If the result is not available or the query fails, do not update the summary
+    }
+
+    contest_bet_summaries.to_vec() // Return the updated summaries
 }

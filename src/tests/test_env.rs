@@ -24,8 +24,10 @@ pub mod tests {
             instantiate::InstantiateMsg,
             invoke::commands::{bet_contest::BetContest, create_contest::CreateContest},
             query::commands::{
-                get_contest::GetContest, get_contests::GetContests, get_user_bet::GetUserBet,
-                get_users_bets::GetUsersBets,
+                get_contest::GetContest,
+                get_contests::GetContests,
+                get_user_bet::GetUserBet,
+                get_users_bets::{GetUsersBets, UsersBetsQueryFilters},
             },
         },
         responses::{
@@ -255,24 +257,37 @@ pub mod tests {
             }
         }
 
-        fn query_users_bets(&mut self) -> StdResult<UserBetsResponse> {
+        fn query_users_bets(
+            &mut self,
+            filters: Option<Vec<UsersBetsQueryFilters>>,
+        ) -> StdResult<UserBetsResponse> {
             let command = GetUsersBets {
                 user: self.info.sender.clone(),
                 viewing_key: "valid viewing key".to_owned(),
+                filters,
             };
-            let binary_respoonse = handle_users_bets_query(self.deps.as_ref(), command)?;
+            let binary_respoonse =
+                handle_users_bets_query(self.deps.as_ref(), self.env.clone(), command)?;
             from_binary(&binary_respoonse)
         }
 
-        pub fn users_bets_has_length(&mut self, expected_length: usize) {
-            let users_bets = self.query_users_bets().unwrap();
+        pub fn users_bets_has_length(
+            &mut self,
+            filters: Option<Vec<UsersBetsQueryFilters>>,
+            expected_length: usize,
+        ) {
+            let users_bets = self.query_users_bets(filters).unwrap();
             assert_eq!(users_bets.contests_bets.len(), expected_length);
         }
 
-        pub fn users_bets_includes_contest(&mut self, file_number: &u8) {
+        pub fn users_bets_includes_contest(
+            &mut self,
+            file_number: &u8,
+            filters: Option<Vec<UsersBetsQueryFilters>>,
+        ) {
             if let Ok((contest_info, _contest_info_signature_hex)) = get_contest_open(*file_number)
             {
-                let users_bets: UserBetsResponse = self.query_users_bets().unwrap();
+                let users_bets: UserBetsResponse = self.query_users_bets(filters).unwrap();
 
                 for user_contest_bet_info in users_bets.contests_bets.iter() {
                     if user_contest_bet_info.contest_info.id() == contest_info.id()

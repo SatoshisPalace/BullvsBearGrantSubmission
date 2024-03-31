@@ -22,11 +22,12 @@ pub fn handle_claim(
     mut deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    claim_command: Claim,
+    command: Claim,
 ) -> StdResult<Response> {
-    let contest_info =
-        assert_contest_ready_to_be_claimed(deps.storage, &env, &claim_command.contest_id)?;
-    let contest_bet_summary = finalize_contest_outcome(&mut deps, &contest_info)?;
+    let Claim { contest_id } = command;
+
+    let contest_info = assert_contest_ready_to_be_claimed(deps.storage, &env, &contest_id)?;
+    let contest_bet_summary = finalize_contest_outcome(&mut deps, &env, &contest_info)?;
     let claimable_amount = user_claims_bet(deps.storage, &info.sender, &contest_bet_summary)?;
 
     let snip20 = Snip20::singleton_load(deps.storage)?;

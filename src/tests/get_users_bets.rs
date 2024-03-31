@@ -1,6 +1,12 @@
 #[cfg(test)]
 mod tests {
-    use crate::tests::test_env::tests::TestEnv;
+    use crate::{
+        msgs::query::commands::get_users_bets::UsersBetsQueryFilters,
+        tests::{
+            constants::{AFTER_TIME_OF_CLOSE, AFTER_TIME_OF_RESOLVE},
+            test_env::tests::TestEnv,
+        },
+    };
 
     ////////TESTS////////
     #[test]
@@ -10,8 +16,8 @@ mod tests {
 
         let contest_file = 1;
         test_env.create_open_contest_success(&contest_file, &1, &100);
-        test_env.users_bets_has_length(1);
-        test_env.users_bets_includes_contest(&contest_file);
+        test_env.users_bets_has_length(None, 1);
+        test_env.users_bets_includes_contest(&contest_file, None);
     }
 
     #[test]
@@ -21,13 +27,13 @@ mod tests {
         let contest_file = 1;
 
         test_env.create_open_contest_success(&contest_file, &1, &100);
-        test_env.users_bets_has_length(1);
+        test_env.users_bets_has_length(None, 1);
 
         test_env.set_sender("user2".to_owned());
 
         test_env.bet_on_contest_success(&contest_file, &2, &100);
-        test_env.users_bets_has_length(1);
-        test_env.users_bets_includes_contest(&contest_file);
+        test_env.users_bets_has_length(None, 1);
+        test_env.users_bets_includes_contest(&contest_file, None);
     }
 
     #[test]
@@ -39,7 +45,7 @@ mod tests {
         test_env.create_open_contest_success(&contest_file, &1, &1);
 
         test_env.create_invalid_signature_contest_failure(&contest_file, &1, &1);
-        test_env.users_bets_has_length(1);
+        test_env.users_bets_has_length(None, 1);
     }
 
     #[test]
@@ -62,6 +68,84 @@ mod tests {
 
         test_env.set_sender("user2".to_owned());
         test_env.bet_on_contest_success(&contest_file, &1, &100);
-        test_env.users_bets_has_length(1);
+        test_env.users_bets_has_length(None, 1);
+    }
+
+    #[test]
+    fn filter_claimable_does_not_include_open_contests() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize();
+
+        let contest_file = 1;
+        test_env.create_open_contest_success(&contest_file, &1, &100);
+
+        let filters = vec![UsersBetsQueryFilters::Claimable];
+        test_env.users_bets_has_length(Some(filters), 0);
+    }
+
+    #[test]
+    fn filter_claimable_does_not_include_closed_awaiting_results_contests() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize();
+
+        let contest_file = 1;
+        test_env.create_open_contest_success(&contest_file, &1, &100);
+
+        test_env.set_time(AFTER_TIME_OF_CLOSE);
+        let filters = vec![UsersBetsQueryFilters::Claimable];
+        test_env.users_bets_has_length(Some(filters), 0);
+    }
+
+    #[test]
+    fn filter_claimable_includes_claimable_contests() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize();
+
+        let contest_file = 1;
+        test_env.create_open_contest_success(&contest_file, &1, &100);
+
+        test_env.set_time(AFTER_TIME_OF_RESOLVE);
+        let filters = vec![UsersBetsQueryFilters::Claimable];
+        test_env.users_bets_has_length(Some(filters), 1);
+    }
+
+    #[test]
+    fn filter_claimable_does_not_include_losses() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize();
+
+        let contest_file = 1;
+        test_env.create_open_contest_success(&contest_file, &1, &100);
+
+        test_env.set_sender("user2".to_owned());
+        test_env.bet_on_contest_success(&contest_file, &2, &100);
+        test_env.set_time(AFTER_TIME_OF_RESOLVE);
+        let filters = vec![UsersBetsQueryFilters::Claimable];
+        test_env.users_bets_has_length(Some(filters), 0);
+    }
+
+    #[test]
+    fn filter_claimable_includes_many() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize();
+
+        let mut contest_file = 1;
+        test_env.create_open_contest_success(&contest_file, &1, &100);
+
+        contest_file = 2;
+        test_env.create_open_contest_success(&contest_file, &1, &100);
+
+        contest_file = 3;
+        test_env.create_open_contest_success(&contest_file, &1, &100);
+
+        contest_file = 4;
+        test_env.create_open_contest_success(&contest_file, &1, &100);
+
+        contest_file = 5;
+        test_env.create_open_contest_success(&contest_file, &1, &100);
+
+        test_env.set_time(AFTER_TIME_OF_RESOLVE);
+        let filters = vec![UsersBetsQueryFilters::Claimable];
+        test_env.users_bets_has_length(Some(filters), 5);
     }
 }
