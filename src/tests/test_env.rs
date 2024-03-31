@@ -742,7 +742,7 @@ pub mod tests {
             let command = GetActiveContests {
                 page_num,
                 page_size,
-                sort_order,
+                sort_order: sort_order.clone(),
             };
 
             let binary_response =
@@ -754,6 +754,24 @@ pub mod tests {
             if let QueryResponse::ContestDataList(contest_data_list_response) = response {
                 let contest_data_list = contest_data_list_response.contests;
                 assert_eq!(contest_data_list.len(), expected_length);
+                if let Some(ContestQuerySortOrder::Volume) = sort_order {
+                    // Extract the total pool volumes for each contest
+                    let volumes: Vec<Uint128> = contest_data_list
+                        .iter()
+                        .map(|contest_data_response| {
+                            contest_data_response.contest_bet_summary.calc_total_pool()
+                        })
+                        .collect();
+
+                    // Check if the volumes list is sorted in descending order
+                    // Adjust this logic if you need ascending order or have other sort orders
+                    let is_sorted_descending = volumes.windows(2).all(|w| w[0] >= w[1]);
+
+                    assert!(
+                        is_sorted_descending,
+                        "Contests are not sorted in descending order of volume as expected."
+                    );
+                }
             } else {
                 panic!("Expected ContestDataList response but received something else");
             }
