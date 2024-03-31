@@ -137,6 +137,15 @@
         "viewing_key"
       ],
       "properties": {
+        "filters": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/UsersBetsQueryFilters"
+          }
+        },
         "user": {
           "$ref": "#/definitions/Addr"
         },
@@ -144,6 +153,12 @@
           "type": "string"
         }
       }
+    },
+    "UsersBetsQueryFilters": {
+      "type": "string",
+      "enum": [
+        "claimable"
+      ]
     }
   }
 }

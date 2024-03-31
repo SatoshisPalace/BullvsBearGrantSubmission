@@ -92,4 +92,18 @@ mod tests {
         test_env.claim_success(&2, None);
         test_env.claim_success(&1, None);
     }
+
+    #[test]
+    fn cannot_claim_twice() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize();
+
+        test_env.create_open_contest_success(&1, &1, &100);
+
+        test_env.set_time(AFTER_TIME_OF_RESOLVE);
+
+        test_env.claim_success(&1, None);
+
+        test_env.claim_failure(&1);
+    }
 }

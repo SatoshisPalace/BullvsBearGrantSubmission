@@ -17,6 +17,18 @@
     {
       "type": "object",
       "required": [
+        "claim_multiple"
+      ],
+      "properties": {
+        "claim_multiple": {
+          "$ref": "#/definitions/ClaimMultiple"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
         "set_minimum_bet"
       ],
       "properties": {
@@ -56,6 +68,20 @@
       "properties": {
         "contest_id": {
           "type": "string"
+        }
+      }
+    },
+    "ClaimMultiple": {
+      "type": "object",
+      "required": [
+        "contest_ids"
+      ],
+      "properties": {
+        "contest_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

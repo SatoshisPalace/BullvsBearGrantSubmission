@@ -84,4 +84,19 @@ mod tests {
         test_env.set_sender("creator".to_owned());
         test_env.claim_multiple_success(vec![&1, &2, &3, &4, &5], None);
     }
+
+    #[test]
+    fn cannot_claim_twice() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize();
+
+        let contest_file = 1;
+        test_env.create_open_contest_success(&contest_file, &1, &100);
+
+        test_env.set_time(AFTER_TIME_OF_RESOLVE);
+
+        test_env.claim_multiple_success(vec![&contest_file], None);
+
+        test_env.claim_multiple_failure(vec![&contest_file]);
+    }
 }
