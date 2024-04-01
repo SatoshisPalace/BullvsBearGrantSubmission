@@ -36,7 +36,7 @@ pub mod tests {
         },
         responses::{
             execute::execute_response::ExecuteResponse,
-            query::{query_response::QueryResponse, response_types::users_bets::UserBetsResponse},
+            query::{query_response::QueryResponse, response_types::users_bets::UsersBetsResponse},
         },
         tests::{
             constants::TESTING_SP_SIGNING_KEY,
@@ -264,7 +264,7 @@ pub mod tests {
         fn query_users_bets(
             &mut self,
             filters: Option<Vec<UsersBetsQueryFilters>>,
-        ) -> StdResult<UserBetsResponse> {
+        ) -> StdResult<UsersBetsResponse> {
             let command = GetUsersBets {
                 user: self.info.sender.clone(),
                 viewing_key: "valid viewing key".to_owned(),
@@ -272,7 +272,11 @@ pub mod tests {
             };
             let binary_respoonse =
                 handle_users_bets_query(self.deps.as_ref(), self.env.clone(), command)?;
-            from_binary(&binary_respoonse)
+            let query_response: QueryResponse = from_binary(&binary_respoonse)?;
+            match query_response {
+                QueryResponse::UsersBets(response) => Ok(response),
+                _ => panic!("Expected Users Bets response but received something else"),
+            }
         }
 
         pub fn users_bets_has_length(
@@ -291,7 +295,7 @@ pub mod tests {
         ) {
             if let Ok((contest_info, _contest_info_signature_hex)) = get_contest_open(*file_number)
             {
-                let users_bets: UserBetsResponse = self.query_users_bets(filters).unwrap();
+                let users_bets: UsersBetsResponse = self.query_users_bets(filters).unwrap();
 
                 for user_contest_bet_info in users_bets.contests_bets.iter() {
                     if user_contest_bet_info.contest_info.id() == contest_info.id()

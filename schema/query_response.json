@@ -41,6 +41,18 @@
     {
       "type": "object",
       "required": [
+        "users_bets"
+      ],
+      "properties": {
+        "users_bets": {
+          "$ref": "#/definitions/UsersBetsResponse"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
         "minimum_bet"
       ],
       "properties": {
@@ -275,6 +287,39 @@
       "properties": {
         "bet": {
           "$ref": "#/definitions/Bet"
+        }
+      }
+    },
+    "UserContestBetInfo": {
+      "type": "object",
+      "required": [
+        "contest_bet_summary",
+        "contest_info",
+        "user_bet"
+      ],
+      "properties": {
+        "contest_bet_summary": {
+          "$ref": "#/definitions/ContestBetSummary"
+        },
+        "contest_info": {
+          "$ref": "#/definitions/ContestInfo"
+        },
+        "user_bet": {
+          "$ref": "#/definitions/Bet"
+        }
+      }
+    },
+    "UsersBetsResponse": {
+      "type": "object",
+      "required": [
+        "contests_bets"
+      ],
+      "properties": {
+        "contests_bets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/UserContestBetInfo"
+          }
         }
       }
     }

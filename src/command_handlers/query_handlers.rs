@@ -22,7 +22,7 @@ use crate::{
             contest_data_list::ContestDataListResponse,
             get_snip20::GetSnip20Response,
             minimum_bet::MinimumBetResponse,
-            users_bets::{UserBetsResponse, UserContestBetInfo},
+            users_bets::{UserContestBetInfo, UsersBetsResponse},
         },
     },
     services::{
@@ -83,7 +83,7 @@ pub fn handle_users_bets_query(deps: Deps, env: Env, command: GetUsersBets) -> S
         )
         .collect();
 
-    let response = UserBetsResponse { contests_bets };
+    let response = QueryResponse::UsersBets(UsersBetsResponse { contests_bets });
 
     to_binary(&response)
 }
