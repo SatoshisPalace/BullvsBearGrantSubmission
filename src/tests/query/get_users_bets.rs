@@ -49,6 +49,18 @@ mod tests {
     }
 
     #[test]
+    fn multiple_bets_on_same_contest_are_treated_as_one() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize();
+
+        let contest_file = 1;
+        test_env.create_open_contest_success(&contest_file, &1, &100);
+        test_env.bet_on_contest_success(&contest_file, &1, &100);
+
+        test_env.users_bets_has_length(None, 1);
+    }
+
+    #[test]
     fn bets_below_minimum_are_ignored() {
         let mut test_env = TestEnv::new();
         test_env.initialize();

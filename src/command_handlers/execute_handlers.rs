@@ -12,8 +12,7 @@ use crate::{
         response_types::claim::ClaimResponse,
     },
     services::{
-        bet_service::user_claims_bet, contest_activity_service::remove_active_contest,
-        contest_bet_summary_service::finalize_contest_outcome,
+        bet_service::user_claims_bet, contest_bet_summary_service::finalize_contest_outcome,
         contest_info_service::assert_contest_ready_to_be_claimed,
         state_service::assert_snip20_address,
     },
@@ -86,12 +85,7 @@ fn process_claim(
 ) -> StdResult<Uint128> {
     let contest_info = assert_contest_ready_to_be_claimed(deps.storage, env, contest_id)?;
 
-    let (contest_bet_summary, was_finalized) = finalize_contest_outcome(deps, env, &contest_info)?;
-
-    if was_finalized {
-        remove_active_contest(deps.storage, contest_id)?;
-    }
-
+    let (contest_bet_summary, _was_finalized) = finalize_contest_outcome(deps, env, &contest_info)?;
     let claimable_amount = user_claims_bet(deps.storage, &info.sender, &contest_bet_summary)?;
     Ok(claimable_amount)
 }

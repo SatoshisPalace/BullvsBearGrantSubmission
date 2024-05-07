@@ -5,11 +5,23 @@
     {
       "type": "object",
       "required": [
-        "get_contest"
+        "get_contest_by_id"
       ],
       "properties": {
-        "get_contest": {
-          "$ref": "#/definitions/GetContest"
+        "get_contest_by_id": {
+          "$ref": "#/definitions/GetContestById"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "get_contests_by_ids"
+      ],
+      "properties": {
+        "get_contests_by_ids": {
+          "$ref": "#/definitions/GetContestsByIds"
         }
       },
       "additionalProperties": false
@@ -22,18 +34,6 @@
       "properties": {
         "get_contests": {
           "$ref": "#/definitions/GetContests"
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
-        "get_active_contests"
-      ],
-      "properties": {
-        "get_active_contests": {
-          "$ref": "#/definitions/GetActiveContests"
         }
       },
       "additionalProperties": false
@@ -92,15 +92,45 @@
       "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
       "type": "string"
     },
+    "ContestQueryFilter": {
+      "type": "string",
+      "enum": [
+        "active",
+        "closed",
+        "unresolved",
+        "resolved"
+      ]
+    },
     "ContestQuerySortOrder": {
       "type": "string",
       "enum": [
         "volume"
       ]
     },
-    "GetActiveContests": {
+    "GetContestById": {
+      "type": "object",
+      "required": [
+        "contest_id"
+      ],
+      "properties": {
+        "contest_id": {
+          "type": "string"
+        }
+      }
+    },
+    "GetContests": {
       "type": "object",
       "properties": {
+        "filter": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ContestQueryFilter"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "page_num": {
           "type": [
             "integer",
@@ -129,18 +159,7 @@
         }
       }
     },
-    "GetContest": {
-      "type": "object",
-      "required": [
-        "contest_id"
-      ],
-      "properties": {
-        "contest_id": {
-          "type": "string"
-        }
-      }
-    },
-    "GetContests": {
+    "GetContestsByIds": {
       "type": "object",
       "required": [
         "contest_ids"
@@ -206,7 +225,8 @@
     "UsersBetsQueryFilters": {
       "type": "string",
       "enum": [
-        "claimable"
+        "claimable",
+        "active"
       ]
     }
   }

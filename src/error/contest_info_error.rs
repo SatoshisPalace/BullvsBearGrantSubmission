@@ -8,6 +8,9 @@ pub enum ContestInfoError {
     #[error("Time of close for contest with id: {0} has passed. Display Text: Failure to place bet. Contest has closed.")]
     TimeOfClosePassed(String),
 
+    #[error("Time of resolve for contest with id: {0} has passed. Display Text: Failure to place bet. Contest has passed time of resolve.")]
+    TimeOfResolvePassed(String),
+
     #[error("Time of resolve for contest with id: {contest_id} has yet to pass. Time of resolve: {time_of_resolve}, Current time: {current_time}. Display Text: Failure to claim. Contest has not been resolved.")]
     TimeOfResolveHasYetToPassed {
         contest_id: String,

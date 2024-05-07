@@ -14,4 +14,5 @@ pub struct GetUsersBets {
 #[serde(rename_all = "snake_case")]
 pub enum UsersBetsQueryFilters {
     Claimable,
+    Active
 }

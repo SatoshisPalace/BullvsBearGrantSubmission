@@ -147,7 +147,7 @@ pub fn get_contest_bet_summaries(
     return Ok(contest_bet_summaries);
 }
 
-fn query_contest_result_oracle(
+pub fn query_contest_result_oracle(
     storage: &dyn Storage,
     querier: &QuerierWrapper,
     env: &Env,

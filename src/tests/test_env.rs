@@ -13,38 +13,33 @@ pub mod tests {
             execute_handlers::{handle_claim, handle_claim_multiple},
             invoke_handlers::{handle_bet_on_contest, handle_create_contest},
             query_handlers::{
-                handle_get_active_contests, handle_get_contest, handle_get_contests,
+                handle_get_contest_by_id, handle_get_contests, handle_get_contests_by_ids,
                 handle_get_minimum_bet, handle_get_snip20, handle_user_bet,
                 handle_users_bets_query,
             },
-        },
-        contract::instantiate,
-        data::contest_info::ContestInfo,
-        msgs::{
+        }, contract::instantiate, data::contest_info::ContestInfo, msgs::{
             execute::commands::{
                 claim::Claim, claim_multiple::ClaimMultiple, set_minimum_bet::SetMinimumBet,
             },
             instantiate::InstantiateMsg,
             invoke::commands::{bet_contest::BetContest, create_contest::CreateContest},
             query::commands::{
-                get_active_contests::{ContestQuerySortOrder, GetActiveContests},
-                get_contest::GetContest,
-                get_contests::GetContests,
+                get_contest_by_id::GetContestById,
+                get_contests::{ContestQueryFilter, ContestQuerySortOrder, GetContests},
+                get_contests_by_ids::GetContestsByIds,
                 get_user_bet::GetUserBet,
                 get_users_bets::{GetUsersBets, UsersBetsQueryFilters},
             },
-        },
-        responses::{
+        }, responses::{
             execute::execute_response::ExecuteResponse,
             query::{query_response::QueryResponse, response_types::users_bets::UsersBetsResponse},
-        },
-        tests::{
+        }, services::integrations::oracle_service::oracle::{configure_mock, MockConfig}, tests::{
             constants::TESTING_SP_SIGNING_KEY,
             contest_infos::{
                 get_contest_closed_awaiting_results, get_contest_closed_claimable,
                 get_contest_invalid_signature, get_contest_open,
             },
-        },
+        }
     };
 
     // Test environment struct
@@ -72,6 +67,7 @@ pub mod tests {
         }
 
         pub fn initialize(&mut self) {
+            configure_mock(MockConfig::ReturnError(false));
             let msg = InstantiateMsg {
                 satoshis_palace: Addr::unchecked(TESTING_SP_SIGNING_KEY),
                 oracle_contract_info: ContractInfo {
@@ -545,10 +541,10 @@ pub mod tests {
         pub fn get_contest_success(&mut self, file_number: &u8) {
             if let Ok((contest_info, _contest_info_signature_hex)) = get_contest_open(*file_number)
             {
-                let command = GetContest {
+                let command = GetContestById {
                     contest_id: contest_info.get_id(),
                 };
-                let response_result = handle_get_contest(self.deps.as_ref(), command);
+                let response_result = handle_get_contest_by_id(self.deps.as_ref(), command);
                 assert!(
                     response_result.is_ok(),
                     "Expected Get Contest to receive but failed"
@@ -576,7 +572,7 @@ pub mod tests {
             }
         }
 
-        pub fn get_contests_success(
+        pub fn get_contests_by_ids_success(
             &mut self,
             file_numbers: &Vec<u8>,
             expected_num_contests: Option<&u128>,
@@ -593,12 +589,12 @@ pub mod tests {
             }
 
             // Populate the GetContests command with the collected ids.
-            let command = GetContests {
+            let command = GetContestsByIds {
                 contest_ids: requested_ids.clone(),
             };
 
             // Handle the get contests command and unwrap the successful result.
-            let binary_response = handle_get_contests(self.deps.as_ref(), command)
+            let binary_response = handle_get_contests_by_ids(self.deps.as_ref(), command)
                 .expect("Expected GetContests to succeed but it failed");
 
             // Deserialize the binary response into QueryResponse.
@@ -736,21 +732,23 @@ pub mod tests {
             }
         }
 
-        pub fn get_active_contests_success(
+        pub fn get_contests_success(
             &self,
             page_num: Option<u32>,
             page_size: Option<u32>,
             sort_order: Option<ContestQuerySortOrder>,
+            filter: Option<ContestQueryFilter>,
             expected_length: usize,
         ) {
-            let command = GetActiveContests {
+            let command = GetContests {
                 page_num,
                 page_size,
                 sort_order: sort_order.clone(),
+                filter: filter.clone(),
             };
 
             let binary_response =
-                handle_get_active_contests(self.deps.as_ref(), self.env.clone(), command)
+                handle_get_contests(self.deps.as_ref(), self.env.clone(), command)
                     .expect("Expected Get Active Contests to succeed but failed");
             let response: QueryResponse =
                 from_binary(&binary_response).expect("Failed to deserialize QueryResponse");

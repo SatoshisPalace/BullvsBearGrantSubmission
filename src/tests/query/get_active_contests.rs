@@ -1,7 +1,9 @@
 #[cfg(test)]
 mod tests {
+    use std::vec;
+
     use crate::{
-        msgs::query::commands::get_active_contests::ContestQuerySortOrder,
+        msgs::query::commands::get_contests::{ContestQueryFilter, ContestQuerySortOrder},
         tests::{
             constants::{AFTER_TIME_OF_CLOSE, AFTER_TIME_OF_RESOLVE},
             test_env::tests::TestEnv,
@@ -16,7 +18,7 @@ mod tests {
 
         let contest_file = 1;
         test_env.create_open_contest_success(&contest_file, &1, &100);
-        test_env.get_active_contests_success(None, None, None, 1);
+        test_env.get_contests_success(None, None, None, Some(ContestQueryFilter::Active), 1);
     }
 
     #[test]
@@ -30,7 +32,13 @@ mod tests {
             test_env.create_open_contest_success(file_number, &1, &100);
         }
 
-        test_env.get_active_contests_success(None, None, None, contest_files.len());
+        test_env.get_contests_success(
+            None,
+            None,
+            None,
+            Some(ContestQueryFilter::Active),
+            contest_files.len(),
+        );
     }
 
     #[test]
@@ -38,14 +46,14 @@ mod tests {
         let mut test_env = TestEnv::new();
         test_env.initialize();
 
-        let contest_files = vec![1, 2, 3, 4, 5]; // Example vector of contest file numbers.
+        let contest_files: Vec<u8> = vec![1, 2, 3, 4, 5]; // Example vector of contest file numbers.
 
         for file_number in contest_files.iter() {
             test_env.create_open_contest_success(file_number, &1, &100);
         }
 
         test_env.set_time(AFTER_TIME_OF_RESOLVE);
-        test_env.get_active_contests_success(None, None, None, 0);
+        test_env.get_contests_success(None, None, None, Some(ContestQueryFilter::Active), 0);
     }
 
     #[test]
@@ -60,7 +68,7 @@ mod tests {
         }
 
         test_env.set_time(AFTER_TIME_OF_CLOSE);
-        test_env.get_active_contests_success(None, None, None, 0);
+        test_env.get_contests_success(None, None, None, Some(ContestQueryFilter::Active), 0);
     }
 
     #[test]
@@ -76,7 +84,13 @@ mod tests {
 
         test_env.set_sender("user2".to_owned());
 
-        test_env.get_active_contests_success(None, None, None, contest_files.len());
+        test_env.get_contests_success(
+            None,
+            None,
+            None,
+            Some(ContestQueryFilter::Active),
+            contest_files.len(),
+        );
     }
 
     #[test]
@@ -90,7 +104,13 @@ mod tests {
             test_env.create_open_contest_success(file_number, &1, &100);
         }
 
-        test_env.get_active_contests_success(Some(0), Some(1), None, 1);
+        test_env.get_contests_success(
+            Some(0),
+            Some(1),
+            None,
+            Some(ContestQueryFilter::Active),
+            1,
+        );
     }
 
     #[test]
@@ -104,7 +124,13 @@ mod tests {
             test_env.create_open_contest_success(file_number, &1, &100);
         }
 
-        test_env.get_active_contests_success(Some(0), Some(2), None, 2);
+        test_env.get_contests_success(
+            Some(0),
+            Some(2),
+            None,
+            Some(ContestQueryFilter::Active),
+            2,
+        );
     }
 
     #[test]
@@ -118,7 +144,13 @@ mod tests {
             test_env.create_open_contest_success(file_number, &1, &100);
         }
 
-        test_env.get_active_contests_success(Some(1), Some(1), None, 1);
+        test_env.get_contests_success(
+            Some(1),
+            Some(1),
+            None,
+            Some(ContestQueryFilter::Active),
+            1,
+        );
     }
 
     #[test]
@@ -132,7 +164,13 @@ mod tests {
             test_env.create_open_contest_success(file_number, &1, &100);
         }
 
-        test_env.get_active_contests_success(Some(1), Some(2), None, 2);
+        test_env.get_contests_success(
+            Some(1),
+            Some(2),
+            None,
+            Some(ContestQueryFilter::Active),
+            2,
+        );
     }
 
     #[test]
@@ -146,7 +184,13 @@ mod tests {
         test_env.create_open_contest_success(&4, &1, &50);
         test_env.create_open_contest_success(&3, &1, &10);
 
-        test_env.get_active_contests_success(None, None, Some(ContestQuerySortOrder::Volume), 5);
+        test_env.get_contests_success(
+            None,
+            None,
+            Some(ContestQuerySortOrder::Volume),
+            Some(ContestQueryFilter::Active),
+            5,
+        );
     }
 
     #[test]
@@ -160,10 +204,11 @@ mod tests {
         test_env.create_open_contest_success(&4, &1, &50);
         test_env.create_open_contest_success(&3, &1, &10);
 
-        test_env.get_active_contests_success(
+        test_env.get_contests_success(
             Some(0),
             Some(4),
             Some(ContestQuerySortOrder::Volume),
+            Some(ContestQueryFilter::Active),
             4,
         );
     }

@@ -8,9 +8,9 @@ use crate::{
         contest_info::ContestInfo,
     },
     msgs::query::commands::{
-        get_active_contests::GetActiveContests,
-        get_contest::GetContest,
+        get_contest_by_id::GetContestById,
         get_contests::GetContests,
+        get_contests_by_ids::GetContestsByIds,
         get_user_bet::GetUserBet,
         get_users_bets::{GetUsersBets, UsersBetsQueryFilters},
     },
@@ -27,7 +27,6 @@ use crate::{
     },
     services::{
         bet_service::{get_bets_for_user_and_contests, get_user_bet},
-        contest_activity_service::get_active_contests,
         contest_bet_summary_service::{
             get_contest_bet_summaries, get_contest_bet_summaries_ignore_missing,
             get_contest_bet_summary, update_contest_bet_summaries_with_results,
@@ -35,6 +34,7 @@ use crate::{
         contest_info_service::{
             get_contest_info, get_contest_infos_for_ids, get_contest_infos_for_ids_ignore_missing,
         },
+        contests_service::get_contests,
         integrations::master_viewing_key_service::viewing_keys::assert_valid_viewing_key,
         state_service::{get_minimum_bet, get_snip20},
         user_info_service::get_contests_for_user,
@@ -88,7 +88,7 @@ pub fn handle_users_bets_query(deps: Deps, env: Env, command: GetUsersBets) -> S
     to_binary(&response)
 }
 
-pub fn handle_get_contest(deps: Deps, command: GetContest) -> StdResult<Binary> {
+pub fn handle_get_contest_by_id(deps: Deps, command: GetContestById) -> StdResult<Binary> {
     let contest_info = get_contest_info(deps.storage, &command.contest_id)?;
     let contest_bet_summary = get_contest_bet_summary(deps.storage, &command.contest_id)?;
 
@@ -99,7 +99,7 @@ pub fn handle_get_contest(deps: Deps, command: GetContest) -> StdResult<Binary> 
     to_binary(&response)
 }
 
-pub fn handle_get_contests(deps: Deps, command: GetContests) -> StdResult<Binary> {
+pub fn handle_get_contests_by_ids(deps: Deps, command: GetContestsByIds) -> StdResult<Binary> {
     let contest_infos =
         get_contest_infos_for_ids_ignore_missing(deps.storage, &command.contest_ids);
     let contest_bet_summaries =
@@ -161,46 +161,42 @@ pub fn filter_contests(
         .iter()
         .zip(contest_bet_summaries.iter())
         .zip(bets.iter())
-        .filter_map(|((contest_info, contest_bet_summary), bet)| {
-            if is_claimable_filter_active {
-                if bet.has_been_paid() {
-                    return None;
-                }
-                match contest_bet_summary.get_outcome() {
-                    Some(outcome) if outcome.get_id() == bet.get_outcome_id() => {
-                        // Clone the data to return owned data while working with borrowed input
-                        Some((
-                            (*contest_info).clone(),
-                            (*contest_bet_summary).clone(),
-                            (*bet).clone(),
-                        ))
+        .filter_map(
+            |((contest_info, contest_bet_summary), bet)| match is_claimable_filter_active {
+                true => {
+                    if bet.has_been_paid() {
+                        None
+                    } else {
+                        match contest_bet_summary.get_outcome() {
+                            Some(outcome) if outcome.get_id() == bet.get_outcome_id() => Some((
+                                (*contest_info).clone(),
+                                (*contest_bet_summary).clone(),
+                                (*bet).clone(),
+                            )),
+                            _ => None,
+                        }
                     }
-                    _ => None,
                 }
-            } else {
-                Some((
+                _ => Some((
                     (*contest_info).clone(),
                     (*contest_bet_summary).clone(),
                     (*bet).clone(),
-                ))
-            }
-        })
+                )),
+            },
+        )
         .collect()
 }
 
-pub fn handle_get_active_contests(
-    deps: Deps,
-    env: Env,
-    command: GetActiveContests,
-) -> StdResult<Binary> {
-    let GetActiveContests {
+pub fn handle_get_contests(deps: Deps, env: Env, command: GetContests) -> StdResult<Binary> {
+    let GetContests {
         page_num,
         page_size,
         sort_order,
+        filter,
     } = command;
 
     // Use the `?` operator to simplify error handling
-    let contest_pairs = get_active_contests(deps.storage, &env, page_num, page_size, sort_order)?;
+    let contest_pairs = get_contests(&deps, &env, page_num, page_size, sort_order, filter)?;
 
     // Transform the data into the response format
     let contests: Vec<ContestDataResponse> = contest_pairs

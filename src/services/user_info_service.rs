@@ -1,36 +1,38 @@
-use cosmwasm_std::{Addr, StdResult, Storage};
+use cosmwasm_std::{Addr, StdError, StdResult, Storage};
 
-use crate::{data::user_info::UserInfo, error::user_info_error::UserInfoError};
+use crate::data::user_info::get_user_contest_store;
 
-// Assuming `address` and `contest_id` are properly defined and passed to this function,
-// along with `deps` which includes storage access.
+// Function to add a contest ID to a specific user's contest store
 pub fn add_contest_to_user(
     storage: &mut dyn Storage,
     address: &Addr,
     contest_id: &String,
 ) -> StdResult<bool> {
-    // Attempt to retrieve the user from storage by address
-    let mut user = match UserInfo::keymap_get_by_id(storage, address) {
-        Some(user) => user,
-        None => {
-            // If the user doesn't exist, create a new one
-            UserInfo::new(address)
-        }
-    };
+    let user_store = get_user_contest_store(address);
 
-    // Add the contest ID to the user's contests
-    let is_new_contest_for_user = user.add_contest(contest_id.to_owned());
+    // Check if the contest ID already exists (omitted here, assuming it's handled elsewhere)
+    // For now, assuming the check is done or not required, directly push the contest ID
+    user_store.push(storage, contest_id)?;
 
-    // Save the updated or new user back to storage
-    user.keymap_save(storage)?;
-
-    Ok(is_new_contest_for_user)
+    Ok(true)
 }
 
-// New function to retrieve contests for a user
+// Function to retrieve all contests for a specific user
 pub fn get_contests_for_user(storage: &dyn Storage, address: &Addr) -> StdResult<Vec<String>> {
-    match UserInfo::keymap_get_by_id(storage, address) {
-        Some(user) => Ok(user.get_contests()),
-        None => Err(UserInfoError::UserInfoNotFound(address.to_string()).into()),
+    let user_store = get_user_contest_store(address);
+    let result_iter = user_store.iter(storage)?;
+
+    // Collect results and errors
+    let results: Vec<Result<String, StdError>> = result_iter.collect();
+
+    // Now, filter out Ok values and handle errors appropriately
+    let mut all_contests = Vec::new();
+    for result in results {
+        match result {
+            Ok(contest) => all_contests.push(contest),
+            Err(e) => return Err(e), // or handle the error differently
+        }
     }
+
+    Ok(all_contests)
 }

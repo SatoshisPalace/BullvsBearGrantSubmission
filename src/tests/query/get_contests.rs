@@ -10,7 +10,7 @@ mod tests {
 
         let contest_file = 1;
         test_env.create_open_contest_success(&contest_file, &1, &100);
-        test_env.get_contests_success(&vec![contest_file], Some(&1));
+        test_env.get_contests_by_ids_success(&vec![contest_file], Some(&1));
     }
 
     #[test]
@@ -24,7 +24,7 @@ mod tests {
             test_env.create_open_contest_success(file_number, &1, &100);
         }
 
-        test_env.get_contests_success(&contest_files, Some(&5)); // Expecting 5 contests across the files, if each file is supposed to hold one contest.
+        test_env.get_contests_by_ids_success(&contest_files, Some(&5)); // Expecting 5 contests across the files, if each file is supposed to hold one contest.
     }
 
     #[test]
@@ -38,6 +38,6 @@ mod tests {
             test_env.create_open_contest_success(file_number, &1, &100);
         }
         contest_files.insert(4, 5);
-        test_env.get_contests_success(&contest_files, Some(&4)); // Expecting 5 contests across the files, if each file is supposed to hold one contest.
+        test_env.get_contests_by_ids_success(&contest_files, Some(&4)); // Expecting 5 contests across the files, if each file is supposed to hold one contest.
     }
 }

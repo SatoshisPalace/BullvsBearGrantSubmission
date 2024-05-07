@@ -34,7 +34,7 @@ pub fn place_or_update_bet(
     contest_id: &String,
     outcome_id: &u8,
     amount: &Uint128, // Borrowing the Option reference
-) -> Result<(), BetError> {
+) -> Result<bool, BetError> {
     // Attempt to retrieve an existing bet
     let user_contest_key = UserContest::new(user.clone(), contest_id.clone()); // Cloning address is necessary here for ownership reasons
     match Bet::keymap_get_by_id(storage, &user_contest_key) {
@@ -46,6 +46,7 @@ pub fn place_or_update_bet(
             // Update the existing bet amount and save
             bet.add_amount(*amount);
             bet.keymap_save(storage)?;
+            Ok(false)
         }
         None => {
             // If no existing bet, create a new one and save
@@ -56,10 +57,9 @@ pub fn place_or_update_bet(
                 outcome_id.clone(),
             ); // Cloning address is necessary for Bet creation
             new_bet.keymap_save(storage)?;
+            Ok(true)
         }
     }
-
-    Ok(())
 }
 
 pub fn get_bets_for_user_and_contests(

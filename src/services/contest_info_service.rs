@@ -105,6 +105,18 @@ pub fn assert_time_of_close_not_passed(
     }
 }
 
+pub fn assert_time_of_resolved_not_passed(
+    contest_info: &ContestInfo,
+    env: &Env,
+) -> Result<(), ContestInfoError> {
+    let current_time = env.block.time.seconds();
+    if current_time >= contest_info.get_time_of_resolve() {
+        Err(ContestInfoError::TimeOfResolvePassed(contest_info.get_id()))
+    } else {
+        Ok(())
+    }
+}
+
 pub fn validate_contest(contest_info: &ContestInfo) -> Result<(), ContestInfoError> {
     if contest_info
         .get_options()
