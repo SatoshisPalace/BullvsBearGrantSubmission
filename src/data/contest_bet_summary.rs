@@ -9,7 +9,7 @@ use super::contest_info::{ContestInfo, ContestOutcome};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema, KeymapStorage)]
 pub struct ContestBetSummary {
-    contest_id: String,
+    contest_id: <ContestInfo as Identifiable>::ID,
     options: Vec<OptionBetSummary>,
     outcome: Option<ContestOutcome>,
 }

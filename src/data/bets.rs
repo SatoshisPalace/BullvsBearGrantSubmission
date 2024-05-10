@@ -5,17 +5,19 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sp_secret_toolkit::macros::{identifiable::Identifiable, keymap::KeymapStorage};
 
+use super::contest_info::ContestInfo;
+
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema, KeymapStorage)]
 pub struct Bet {
     user: Addr,
-    contest_id: String,
+    contest_id: <ContestInfo as Identifiable>::ID,
     amount: Uint128,
     outcome_id: u8,
     has_been_paid: bool,
 }
 
 impl Bet {
-    pub fn new(user: Addr, contest_id: String, amount: Uint128, outcome_id: u8) -> Self {
+    pub fn new(user: Addr, contest_id: <ContestInfo as Identifiable>::ID, amount: Uint128, outcome_id: u8) -> Self {
         Bet {
             user,
             contest_id,
@@ -60,11 +62,11 @@ impl Bet {
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct UserContest {
     user: Addr,
-    contest_id: String,
+    contest_id: <ContestInfo as Identifiable>::ID,
 }
 
 impl UserContest {
-    pub fn new(user: Addr, contest_id: String) -> Self {
+    pub fn new(user: Addr, contest_id: <ContestInfo as Identifiable>::ID) -> Self {
         UserContest { user, contest_id }
     }
 

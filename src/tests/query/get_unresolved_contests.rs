@@ -5,7 +5,7 @@ mod tests {
     use crate::{
         msgs::query::commands::get_contests::{ContestQueryFilter, ContestQuerySortOrder}, services::integrations::oracle_service::oracle::{configure_mock, MockConfig}, tests::{
             constants::AFTER_TIME_OF_CLOSE,
-            test_env::{self, tests::TestEnv},
+            test_env::tests::TestEnv,
         }
     };
 

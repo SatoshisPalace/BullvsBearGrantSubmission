@@ -1,4 +1,7 @@
+use sp_secret_toolkit::macros::identifiable::Identifiable;
 use thiserror::Error;
+
+use crate::data::contest_info::ContestInfo;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ContestInfoError {
@@ -13,13 +16,13 @@ pub enum ContestInfoError {
 
     #[error("Time of resolve for contest with id: {contest_id} has yet to pass. Time of resolve: {time_of_resolve}, Current time: {current_time}. Display Text: Failure to claim. Contest has not been resolved.")]
     TimeOfResolveHasYetToPassed {
-        contest_id: String,
+        contest_id: <ContestInfo as Identifiable>::ID,
         time_of_resolve: u64,
         current_time: u64,
     },
 
     #[error("412: Precondition Failed. Invalid Outcome ID found in contest with ID: {contest_id}")]
-    InvalidOutcomeId { contest_id: String },
+    InvalidOutcomeId { contest_id: <ContestInfo as Identifiable>::ID },
 
     #[error(transparent)]
     StandardError(#[from] cosmwasm_std::StdError),
@@ -30,7 +33,7 @@ pub enum ContestInfoError {
     ContestNotFound(String),
 
     #[error("Outcome with ID: {outcome_id}, was not found on Contest with ID: {contest_id}.")]
-    OutcomeNotFound { contest_id: String, outcome_id: u8 },
+    OutcomeNotFound { contest_id: <ContestInfo as Identifiable>::ID, outcome_id: u8 },
 
     #[error("Contest Does Not Exist. Display Text: Failure to place bet. Cannot place bet on contest that does not exist.")]
     ContestDNE,
