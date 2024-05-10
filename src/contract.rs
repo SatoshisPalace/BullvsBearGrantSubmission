@@ -2,7 +2,7 @@ use crate::command_handlers::admin_execute_handlers::handle_set_minimum_bet;
 use crate::command_handlers::execute_handlers::{
     handle_claim, handle_claim_multiple, handle_receive,
 };
-use crate::command_handlers::invoke_handlers::{handle_bet_on_contest, handle_create_contest};
+use crate::command_handlers::invoke_handlers::handle_bet_on_contest;
 use crate::command_handlers::query_handlers::{
     handle_get_contest_by_id, handle_get_contests, handle_get_contests_by_ids,
     handle_get_minimum_bet, handle_get_snip20, handle_user_bet, handle_users_bets_query,
@@ -66,7 +66,6 @@ pub fn invoke(
     amount: Uint128,
 ) -> StdResult<Response> {
     match msg {
-        InvokeMsg::CreateContest(command) => handle_create_contest(deps, env, command, amount),
         InvokeMsg::BetContest(command) => handle_bet_on_contest(deps, env, command, amount),
     }
 }

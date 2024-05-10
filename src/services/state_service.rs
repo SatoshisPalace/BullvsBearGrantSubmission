@@ -1,10 +1,10 @@
-use cosmwasm_std::{Addr, Api, Storage, Uint128};
+use cosmwasm_std::{Addr, Storage, Uint128};
 use sp_secret_toolkit::{
-    contract::contract::Contract, cryptography::signing::is_valid_signature, snip20::Snip20,
+    contract::contract::Contract, snip20::Snip20,
 };
 
 use crate::{
-    data::{contest_info::ContestInfo, state::State},
+    data::state::State,
     error::state_error::StateError,
 };
 
@@ -26,24 +26,6 @@ pub fn assert_amount_is_greater_than_minimum_bet(
             minimum: minimum_bet,
         })
     }
-}
-
-pub fn assert_contest_info_signature_is_valid(
-    storage: &dyn Storage,
-    api: &dyn Api,
-    contest_info: &ContestInfo,
-    contest_info_signature_hex: &String,
-) -> Result<(), StateError> {
-    let state = State::singleton_load(storage)?;
-
-    let contest_info_json: String = contest_info.to_json();
-    is_valid_signature(
-        api,
-        state.get_satoshis_palace_signing_address().as_str(),
-        &contest_info_json,
-        &contest_info_signature_hex,
-    )?;
-    Ok(())
 }
 
 pub fn get_snip20(storage: &dyn Storage) -> Result<Snip20, StateError> {

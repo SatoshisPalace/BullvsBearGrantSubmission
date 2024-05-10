@@ -1,5 +1,5 @@
 use cosmwasm_std::Uint128;
-use sp_secret_toolkit::{contract::error::SPContractError, cryptography::error::CryptographyError};
+use sp_secret_toolkit::contract::error::SPContractError;
 use thiserror::Error;
 
 use crate::data::bets::UserContest;
@@ -30,8 +30,6 @@ pub enum StateError {
         attempted: Uint128,
         minimum: Uint128,
     },
-    #[error(transparent)]
-    ContestCryptagraphyError(#[from] CryptographyError),
     #[error(transparent)]
     SPContractError(#[from] SPContractError),
 }

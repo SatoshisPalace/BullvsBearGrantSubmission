@@ -1,7 +1,7 @@
 use cosmwasm_std::{DepsMut, Env, Response, StdResult, Uint128};
 
 use crate::{
-    msgs::invoke::commands::{bet_contest::BetContest, create_contest::CreateContest},
+    msgs::invoke::commands::bet_contest::BetContest,
     responses::execute::{
         execute_response::{ExecuteResponse, ResponseStatus::Success},
         response_types::{bet::BetResonse, create_contest::CreateContestResponse},
@@ -14,9 +14,7 @@ use crate::{
             get_contest_info,
         },
         contests_service::add_active_contest,
-        state_service::{
-            assert_amount_is_greater_than_minimum_bet, assert_contest_info_signature_is_valid,
-        },
+        state_service::assert_amount_is_greater_than_minimum_bet,
         user_info_service::add_contest_to_user,
     },
 };
@@ -36,12 +34,6 @@ pub fn handle_create_contest(
         ..
     } = command;
 
-    assert_contest_info_signature_is_valid(
-        deps.storage,
-        deps.api,
-        &contest_info,
-        &contest_info_signature_hex,
-    )?;
     assert_time_of_close_not_passed(&contest_info, &env)?;
     create_new_contest(&mut deps, &contest_info)?;
     create_new_contest_bet_summary(deps.storage, &contest_info)?;
