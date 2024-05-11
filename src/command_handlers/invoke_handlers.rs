@@ -1,70 +1,31 @@
 use cosmwasm_std::{DepsMut, Env, Response, StdResult, Uint128};
 
 use crate::{
-    msgs::invoke::commands::bet_contest::BetContest,
-    responses::execute::{
+    data::contest_info::{ContestId, ContestInfo, ContestOutcome}, error::contest_info_error::ContestInfoError, msgs::invoke::commands::bet_contest::BetContest, responses::execute::{
         execute_response::{ExecuteResponse, ResponseStatus::Success},
-        response_types::{bet::BetResonse, create_contest::CreateContestResponse},
-    },
-    services::{
+        response_types::bet::BetResonse,
+    }, services::{
         bet_service::place_or_update_bet,
         contest_bet_summary_service::{add_bet_to_contest_summary, create_new_contest_bet_summary},
         contest_info_service::{
-            assert_outcome_is_on_contest, assert_time_of_close_not_passed, create_new_contest,
+            assert_outcome_is_on_contest, create_new_contest,
             get_contest_info,
         },
-        contests_service::add_active_contest,
+        contests_service::{add_active_contest, get_current_close},
         state_service::assert_amount_is_greater_than_minimum_bet,
         user_info_service::add_contest_to_user,
-    },
+    }
 };
 
-pub fn handle_create_contest(
-    mut deps: DepsMut,
-    env: Env,
-    command: CreateContest,
-    amount_bet: Uint128,
-) -> StdResult<Response> {
-    // Create the new contest
-    let CreateContest {
-        contest_info,
-        user,
-        outcome_id,
-        contest_info_signature_hex,
-        ..
-    } = command;
-
-    assert_time_of_close_not_passed(&contest_info, &env)?;
-    create_new_contest(&mut deps, &contest_info)?;
-    create_new_contest_bet_summary(deps.storage, &contest_info)?;
-
-    let contest_id = contest_info.get_id();
-
-    add_active_contest(deps.storage, &contest_id)?;
-
-    assert_amount_is_greater_than_minimum_bet(deps.storage, &amount_bet)?;
-    assert_outcome_is_on_contest(&contest_info, &outcome_id)?;
-    place_or_update_bet(deps.storage, &user, &contest_id, &outcome_id, &amount_bet)?;
-
-    add_contest_to_user(deps.storage, &user, &contest_id)?;
-    add_bet_to_contest_summary(deps.storage, &contest_id, &outcome_id, &amount_bet)?;
-
-    Ok(
-        Response::new().set_data(ExecuteResponse::CreateContest(CreateContestResponse {
-            status: Success,
-        })),
-    )
-}
-
 pub fn handle_bet_on_contest(
-    deps: DepsMut,
+    mut deps: DepsMut,
     env: Env,
     command: BetContest,
     amount_bet: Uint128,
 ) -> StdResult<Response> {
     let BetContest {
         user,
-        contest_id,
+        ticker,
         outcome_id,
         ..
     } = command;
@@ -72,9 +33,39 @@ pub fn handle_bet_on_contest(
     // Load state and assert minimum bet
     assert_amount_is_greater_than_minimum_bet(deps.storage, &amount_bet)?;
 
-    let contest_info = get_contest_info(deps.storage, &contest_id)?;
+    // Generate current close time
+    let current_close = get_current_close(&env);
+    // Generate ContestId from ticker and close time
+    let contest_id = ContestId::new(ticker.clone(), current_close);
+
+    // Attempt to load contest info
+    let contest_info_result = get_contest_info(deps.storage, &contest_id);
+
+    // Handle the case where the contest does not exist
+    let contest_info = match contest_info_result {
+        Ok(info) => info,
+        Err(ContestInfoError::ContestNotFound(_)) => {
+            // Initialize new ContestInfo here if needed
+            let info = ContestInfo::new(
+                ticker,
+                current_close, 
+                current_close + 300,
+                vec![ContestOutcome::new(1, "Bull".to_string()), ContestOutcome::new(2, "Bear".to_string())]
+            );
+            create_new_contest(&mut deps, &info)?;
+            create_new_contest_bet_summary(deps.storage, &info)?;
+            add_active_contest(deps.storage, &contest_id)?;
+
+            info
+        },
+        Err(e) => return Err(e.into()),  // handle other errors appropriately
+    };
+
+
+
+
+
     assert_outcome_is_on_contest(&contest_info, &outcome_id)?;
-    assert_time_of_close_not_passed(&contest_info, &env)?;
     let new_bet = place_or_update_bet(deps.storage, &user, &contest_id, &outcome_id, &amount_bet)?;
     if new_bet {
         add_contest_to_user(deps.storage, &user, &contest_id)?;

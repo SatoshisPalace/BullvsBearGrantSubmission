@@ -1,12 +1,12 @@
 use cosmwasm_std::{Addr, StdError, StdResult, Storage};
 
-use crate::data::user_info::get_user_contest_store;
+use crate::data::{contest_info::ContestId, user_info::get_user_contest_store};
 
 // Function to add a contest ID to a specific user's contest store
 pub fn add_contest_to_user(
     storage: &mut dyn Storage,
     address: &Addr,
-    contest_id: &String,
+    contest_id: &ContestId,
 ) -> StdResult<bool> {
     let user_store = get_user_contest_store(address);
 
@@ -18,12 +18,12 @@ pub fn add_contest_to_user(
 }
 
 // Function to retrieve all contests for a specific user
-pub fn get_contests_for_user(storage: &dyn Storage, address: &Addr) -> StdResult<Vec<String>> {
+pub fn get_contests_for_user(storage: &dyn Storage, address: &Addr) -> StdResult<Vec<ContestId>> {
     let user_store = get_user_contest_store(address);
     let result_iter = user_store.iter(storage)?;
 
     // Collect results and errors
-    let results: Vec<Result<String, StdError>> = result_iter.collect();
+    let results: Vec<Result<ContestId, StdError>> = result_iter.collect();
 
     // Now, filter out Ok values and handle errors appropriately
     let mut all_contests = Vec::new();

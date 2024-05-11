@@ -1,11 +1,13 @@
 use thiserror::Error;
 
+use crate::data::contest_info::ContestId;
+
 use super::contest_info_error::ContestInfoError;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ContestBetSummaryError {
     #[error("Contest Bet Summary Does Not Exist for contest with ID: {0}. Display Text: Failure to place bet. Cannot place bet on contest that does not exist.")]
-    DNE(String),
+    DNE(ContestId),
 
     #[error("Outcome has already been set, and connot be reset")]
     CannotResetOutcome,
@@ -17,7 +19,7 @@ pub enum ContestBetSummaryError {
     StandardError(#[from] cosmwasm_std::StdError),
 
     #[error("Failed to query the oracle for contest ID: {0}.")]
-    OracleQueryFailed(String),
+    OracleQueryFailed(ContestId),
 
     #[error(transparent)]
     ContestInfoError(#[from] ContestInfoError),

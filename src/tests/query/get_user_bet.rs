@@ -12,7 +12,7 @@ mod tests {
         let contest_file = 1;
         let amount_to_bet = 100;
         let outcome_to_bet_on = 1;
-        test_env.create_open_contest_success(&contest_file, &outcome_to_bet_on, &amount_to_bet);
+        test_env.first_bet_on_contest_success(&contest_file, &outcome_to_bet_on, &amount_to_bet);
         test_env.get_user_bet_success(
             &contest_file,
             Some(&amount_to_bet),
@@ -29,7 +29,7 @@ mod tests {
         let contest_file = 1;
         let amount_to_bet = 100;
         let outcome_to_bet_on = 1;
-        test_env.create_open_contest_success(&contest_file, &outcome_to_bet_on, &amount_to_bet);
+        test_env.first_bet_on_contest_success(&contest_file, &outcome_to_bet_on, &amount_to_bet);
         test_env.bet_on_contest_success(&contest_file, &outcome_to_bet_on, &amount_to_bet);
 
         test_env.get_user_bet_success(
@@ -51,7 +51,7 @@ mod tests {
         let contest_files = vec![1, 2, 3, 4, 5]; // Example vector of contest file numbers.
 
         for file_number in contest_files.iter() {
-            test_env.create_open_contest_success(file_number, &outcome_to_bet_on, &amount_to_bet);
+            test_env.first_bet_on_contest_success(file_number, &outcome_to_bet_on, &amount_to_bet);
             test_env.bet_on_contest_success(&file_number, &outcome_to_bet_on, &amount_to_bet);
         }
 

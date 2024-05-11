@@ -1,18 +1,18 @@
 use sp_secret_toolkit::macros::identifiable::Identifiable;
 use thiserror::Error;
 
-use crate::data::contest_info::ContestInfo;
+use crate::data::contest_info::{ContestId, ContestInfo};
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ContestInfoError {
     #[error("A contest with id: {0} already exists and cannot be reinitialized. Display Text: A contest with id: {0} already exists and cannot be reinitialized.")]
-    ContestAlreadyExist(String),
+    ContestAlreadyExist(ContestId),
 
     #[error("Time of close for contest with id: {0} has passed. Display Text: Failure to place bet. Contest has closed.")]
-    TimeOfClosePassed(String),
+    TimeOfClosePassed(ContestId),
 
     #[error("Time of resolve for contest with id: {0} has passed. Display Text: Failure to place bet. Contest has passed time of resolve.")]
-    TimeOfResolvePassed(String),
+    TimeOfResolvePassed(ContestId),
 
     #[error("Time of resolve for contest with id: {contest_id} has yet to pass. Time of resolve: {time_of_resolve}, Current time: {current_time}. Display Text: Failure to claim. Contest has not been resolved.")]
     TimeOfResolveHasYetToPassed {
@@ -30,7 +30,7 @@ pub enum ContestInfoError {
     #[error(
         "Contest with id: {0} Not Found. Display Text: Failure to claim. Contest does not exist."
     )]
-    ContestNotFound(String),
+    ContestNotFound(ContestId),
 
     #[error("Outcome with ID: {outcome_id}, was not found on Contest with ID: {contest_id}.")]
     OutcomeNotFound { contest_id: <ContestInfo as Identifiable>::ID, outcome_id: u8 },

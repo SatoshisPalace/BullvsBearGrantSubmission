@@ -1,17 +1,19 @@
+
 #[cfg(not(feature = "testing"))]
 pub mod oracle {
     use cosmwasm_std::{QuerierWrapper, StdResult, Storage};
     use sp_secret_toolkit::oracle::{response::GetContestResultResponse, Oracle};
+    use crate::data::contest_info::ContestId;
 
     pub const NULL_AND_VOID_CONTEST_RESULT: u8 = 0;
 
     pub fn query_contest_result(
         querier: &QuerierWrapper,
         storage: &dyn Storage,
-        contest_id: &String,
+        contest_id: &ContestId,
     ) -> StdResult<GetContestResultResponse> {
         let oracle = Oracle::singleton_load(storage)?;
-        oracle.get_contest_result(querier, contest_id)
+        oracle.get_contest_result(querier, &contest_id.to_string())
     }
 }
 
@@ -27,6 +29,8 @@ pub mod oracle {
 
     use cosmwasm_std::{QuerierWrapper, StdError, StdResult, Storage};
     use sp_secret_toolkit::oracle::response::GetContestResultResponse;
+
+    use crate::data::contest_info::ContestId;
 
     lazy_static! {
         // Use a Mutex to safely mutate the value across threads if necessary
@@ -53,10 +57,11 @@ pub mod oracle {
         }
     }
 
+    // TODO MAKE CHANGES HEREW TO ALLOW FOR STRING ANSWER QUERYING
     pub fn query_contest_result(
         _querier: &QuerierWrapper,
         _storage: &dyn Storage,
-        _contest_id: &String,
+        _contest_id: &ContestId,
     ) -> StdResult<GetContestResultResponse> {
 
         //Will let us throw an error if wanted

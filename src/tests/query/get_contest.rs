@@ -9,7 +9,7 @@ mod tests {
         test_env.initialize();
 
         let contest_file = 1;
-        test_env.create_open_contest_success(&contest_file, &1, &100);
+        test_env.first_bet_on_contest_success(&contest_file, &1, &100);
         test_env.get_contest_success(&1);
     }
 
@@ -18,11 +18,11 @@ mod tests {
         let mut test_env = TestEnv::new();
         test_env.initialize();
 
-        test_env.create_open_contest_success(&1, &1, &100);
-        test_env.create_open_contest_success(&2, &1, &100);
-        test_env.create_open_contest_success(&3, &1, &100);
-        test_env.create_open_contest_success(&4, &1, &100);
-        test_env.create_open_contest_success(&5, &1, &100);
+        test_env.first_bet_on_contest_success(&1, &1, &100);
+        test_env.first_bet_on_contest_success(&2, &1, &100);
+        test_env.first_bet_on_contest_success(&3, &1, &100);
+        test_env.first_bet_on_contest_success(&4, &1, &100);
+        test_env.first_bet_on_contest_success(&5, &1, &100);
 
         test_env.get_contest_success(&1);
         test_env.get_contest_success(&2);
@@ -37,7 +37,7 @@ mod tests {
         test_env.initialize();
 
         let contest_file = 1;
-        test_env.create_open_contest_success(&contest_file, &1, &100);
+        test_env.first_bet_on_contest_success(&contest_file, &1, &100);
 
         test_env.set_sender("user2".to_owned());
         test_env.bet_on_contest_success(&contest_file, &2, &100);

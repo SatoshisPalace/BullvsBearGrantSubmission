@@ -1,36 +1,17 @@
 {
     "contest_info": {
-        "id": "821f964f7d45a6557fa2f45125c10be95633776730e34173530b668d8d2b70e6",
+        "ticker": "BTC",
         "options": [
             {
                 "id": 1,
-                "name": "Los Angeles Dodgers"
+                "name": "Bull"
             },
             {
                 "id": 2,
-                "name": "Los Angeles Angels"
+                "name": "Bear"
             }
         ],
         "time_of_close": 0,
-        "time_of_resolve": 4102549200,
-        "event_details": "MLB153215"
-    },
-    "title": "Los Angeles Dodgers vs Los Angeles Angels",
-    "description": "MLB Los Angeles Dodgers vs Los Angeles Angels. Betting on Los Angeles Dodgers will allow you to claim your share of Los Angeles Angels bets if Los Angeles Dodgers wins, and vice-versa betting on Los Angeles Angels will allow you to claim your share of Los Angeles Dodgers bets if Los Angeles Angels wins.",
-    "pictureID": "/Prediction/MLB/los_angeles_dodgers.png,/Prediction/MLB/los_angeles_angels.png",
-    "colors": [
-        {
-            "id": 1,
-            "color": "rgba(0, 255, 0, 1)"
-        },
-        {
-            "id": 2,
-            "color": "rgba(255, 0, 0, 1)"
-        }
-    ],
-    "categories": [
-        "Sports",
-        "MLB"
-    ],
-    "contest_info_signature_hex": "83147cedceea0cdf606aa880ae0da49462fadc3016f5863c79e1c7538c58fc3705e83161cf4eeb9e3363414e03d50c99d3fda868825ad03c630a80829144e349"
+        "time_of_resolve": 4102463400
+    }
 }

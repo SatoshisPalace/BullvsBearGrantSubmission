@@ -2,20 +2,17 @@ use cosmwasm_std::{from_binary, DepsMut, Env, MessageInfo, Response, StdResult, 
 use sp_secret_toolkit::snip20::Snip20;
 
 use crate::{
-    contract::invoke,
-    msgs::{
+    contract::invoke, data::contest_info::ContestId, msgs::{
         execute::commands::{claim::Claim, claim_multiple::ClaimMultiple, receive::Receive},
         invoke::invoke_msg::InvokeMsg,
-    },
-    responses::execute::{
+    }, responses::execute::{
         execute_response::{ExecuteResponse, ResponseStatus::Success},
         response_types::claim::ClaimResponse,
-    },
-    services::{
+    }, services::{
         bet_service::user_claims_bet, contest_bet_summary_service::finalize_contest_outcome,
         contest_info_service::assert_contest_ready_to_be_claimed,
         state_service::assert_snip20_address,
-    },
+    }
 };
 
 pub fn handle_claim(
@@ -81,7 +78,7 @@ fn process_claim(
     deps: &mut DepsMut,
     env: &Env,
     info: &MessageInfo,
-    contest_id: &String,
+    contest_id: &ContestId,
 ) -> StdResult<Uint128> {
     let contest_info = assert_contest_ready_to_be_claimed(deps.storage, env, contest_id)?;
 

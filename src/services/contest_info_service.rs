@@ -1,7 +1,7 @@
 // contest_info_service.rs
 use cosmwasm_std::{DepsMut, Env, Storage};
 
-use crate::{data::contest_info::ContestInfo, error::contest_info_error::ContestInfoError};
+use crate::{data::contest_info::{ContestId, ContestInfo}, error::contest_info_error::ContestInfoError};
 
 pub fn create_new_contest(
     deps: &mut DepsMut,
@@ -21,7 +21,7 @@ pub fn create_new_contest(
 
 pub fn get_contest_info(
     storage: &dyn Storage,
-    contest_id: &String,
+    contest_id: &ContestId,
 ) -> Result<ContestInfo, ContestInfoError> {
     match ContestInfo::keymap_get_by_id(storage, contest_id) {
         Some(contest_info) => Ok(contest_info),
@@ -31,7 +31,7 @@ pub fn get_contest_info(
 
 pub fn get_contest_infos_for_ids(
     storage: &dyn Storage,
-    contest_ids: &Vec<String>,
+    contest_ids: &Vec<ContestId>,
 ) -> Result<Vec<ContestInfo>, ContestInfoError> {
     let mut contest_infos: Vec<ContestInfo> = Vec::new();
 
@@ -45,7 +45,7 @@ pub fn get_contest_infos_for_ids(
 
 pub fn get_contest_infos_for_ids_ignore_missing(
     storage: &dyn Storage,
-    contest_ids: &Vec<String>,
+    contest_ids: &Vec<ContestId>,
 ) -> Vec<ContestInfo> {
     let mut contest_infos: Vec<ContestInfo> = Vec::new();
 
@@ -64,7 +64,7 @@ pub fn get_contest_infos_for_ids_ignore_missing(
 pub fn assert_contest_ready_to_be_claimed(
     storage: &dyn Storage,
     env: &Env,
-    contest_id: &String,
+    contest_id: &ContestId,
 ) -> Result<ContestInfo, ContestInfoError> {
     let contest_info = get_contest_info(storage, contest_id)?;
     let current_time = env.block.time.seconds();

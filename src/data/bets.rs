@@ -5,7 +5,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sp_secret_toolkit::macros::{identifiable::Identifiable, keymap::KeymapStorage};
 
-use super::contest_info::ContestInfo;
+use super::contest_info::{ContestId, ContestInfo};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema, KeymapStorage)]
 pub struct Bet {
@@ -32,7 +32,7 @@ impl Bet {
         &self.user
     }
 
-    pub fn get_contest_id(&self) -> &String {
+    pub fn get_contest_id(&self) -> &ContestId {
         &self.contest_id
     }
 
@@ -73,7 +73,7 @@ impl UserContest {
     pub fn get_address_as_str(&self) -> &str {
         return self.user.as_str();
     }
-    pub fn get_contest_id(&self) -> &String {
+    pub fn get_contest_id(&self) -> &ContestId {
         return &self.contest_id;
     }
 
@@ -88,7 +88,7 @@ impl Identifiable for Bet {
     fn id(&self) -> Self::ID {
         return UserContest::new(
             self.get_user().to_owned(),
-            self.get_contest_id().to_string(),
+            self.get_contest_id().to_owned(),
         );
     }
 }

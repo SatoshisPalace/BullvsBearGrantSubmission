@@ -5,7 +5,7 @@ use crate::{
     constants::{FEE_PERCENTAGE, PERCENTAGE_BASE},
     data::{
         bets::{Bet, UserContest},
-        contest_bet_summary::ContestBetSummary,
+        contest_bet_summary::ContestBetSummary, contest_info::ContestId,
     },
     error::bet_error::BetError,
 };
@@ -31,7 +31,7 @@ use super::integrations::oracle_service::oracle::NULL_AND_VOID_CONTEST_RESULT;
 pub fn place_or_update_bet(
     storage: &mut dyn Storage,
     user: &Addr,
-    contest_id: &String,
+    contest_id: &ContestId,
     outcome_id: &u8,
     amount: &Uint128, // Borrowing the Option reference
 ) -> Result<bool, BetError> {
@@ -65,12 +65,12 @@ pub fn place_or_update_bet(
 pub fn get_bets_for_user_and_contests(
     storage: &dyn Storage,
     user: &Addr,
-    contest_ids: &Vec<String>,
+    contest_ids: &Vec<ContestId>,
 ) -> Result<Vec<Bet>, BetError> {
     let mut bets: Vec<Bet> = Vec::new();
 
     for contest_id in contest_ids {
-        let user_contest_key = UserContest::new(user.clone(), contest_id.to_string());
+        let user_contest_key = UserContest::new(user.clone(), contest_id.clone());
 
         match Bet::keymap_get_by_id(storage, &user_contest_key) {
             Some(bet) => bets.push(bet),

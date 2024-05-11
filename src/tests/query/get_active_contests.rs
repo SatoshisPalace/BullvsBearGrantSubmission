@@ -17,7 +17,7 @@ mod tests {
         test_env.initialize();
 
         let contest_file = 1;
-        test_env.create_open_contest_success(&contest_file, &1, &100);
+        test_env.first_bet_on_contest_success(&contest_file, &1, &100);
         test_env.get_contests_success(None, None, None, Some(ContestQueryFilter::Active), 1);
     }
 
@@ -29,7 +29,7 @@ mod tests {
         let contest_files = vec![1, 2, 3, 4, 5]; // Example vector of contest file numbers.
 
         for file_number in contest_files.iter() {
-            test_env.create_open_contest_success(file_number, &1, &100);
+            test_env.first_bet_on_contest_success(file_number, &1, &100);
         }
 
         test_env.get_contests_success(
@@ -49,7 +49,7 @@ mod tests {
         let contest_files: Vec<u8> = vec![1, 2, 3, 4, 5]; // Example vector of contest file numbers.
 
         for file_number in contest_files.iter() {
-            test_env.create_open_contest_success(file_number, &1, &100);
+            test_env.first_bet_on_contest_success(file_number, &1, &100);
         }
 
         test_env.set_time(AFTER_TIME_OF_RESOLVE);
@@ -64,7 +64,7 @@ mod tests {
         let contest_files = vec![1, 2, 3, 4, 5]; // Example vector of contest file numbers.
 
         for file_number in contest_files.iter() {
-            test_env.create_open_contest_success(file_number, &1, &100);
+            test_env.first_bet_on_contest_success(file_number, &1, &100);
         }
 
         test_env.set_time(AFTER_TIME_OF_CLOSE);
@@ -79,7 +79,7 @@ mod tests {
         let contest_files = vec![1, 2, 3, 4, 5]; // Example vector of contest file numbers.
 
         for file_number in contest_files.iter() {
-            test_env.create_open_contest_success(file_number, &1, &100);
+            test_env.first_bet_on_contest_success(file_number, &1, &100);
         }
 
         test_env.set_sender("user2".to_owned());
@@ -101,7 +101,7 @@ mod tests {
         let contest_files = vec![1, 2, 3, 4, 5]; // Example vector of contest file numbers.
 
         for file_number in contest_files.iter() {
-            test_env.create_open_contest_success(file_number, &1, &100);
+            test_env.first_bet_on_contest_success(file_number, &1, &100);
         }
 
         test_env.get_contests_success(
@@ -121,7 +121,7 @@ mod tests {
         let contest_files = vec![1, 2, 3, 4, 5]; // Example vector of contest file numbers.
 
         for file_number in contest_files.iter() {
-            test_env.create_open_contest_success(file_number, &1, &100);
+            test_env.first_bet_on_contest_success(file_number, &1, &100);
         }
 
         test_env.get_contests_success(
@@ -141,7 +141,7 @@ mod tests {
         let contest_files = vec![1, 2, 3, 4, 5]; // Example vector of contest file numbers.
 
         for file_number in contest_files.iter() {
-            test_env.create_open_contest_success(file_number, &1, &100);
+            test_env.first_bet_on_contest_success(file_number, &1, &100);
         }
 
         test_env.get_contests_success(
@@ -161,7 +161,7 @@ mod tests {
         let contest_files = vec![1, 2, 3, 4, 5]; // Example vector of contest file numbers.
 
         for file_number in contest_files.iter() {
-            test_env.create_open_contest_success(file_number, &1, &100);
+            test_env.first_bet_on_contest_success(file_number, &1, &100);
         }
 
         test_env.get_contests_success(
@@ -178,11 +178,11 @@ mod tests {
         let mut test_env = TestEnv::new();
         test_env.initialize();
 
-        test_env.create_open_contest_success(&1, &1, &100);
-        test_env.create_open_contest_success(&2, &1, &200);
-        test_env.create_open_contest_success(&5, &1, &400);
-        test_env.create_open_contest_success(&4, &1, &50);
-        test_env.create_open_contest_success(&3, &1, &10);
+        test_env.first_bet_on_contest_success(&1, &1, &100);
+        test_env.first_bet_on_contest_success(&2, &1, &200);
+        test_env.first_bet_on_contest_success(&5, &1, &400);
+        test_env.first_bet_on_contest_success(&4, &1, &50);
+        test_env.first_bet_on_contest_success(&3, &1, &10);
 
         test_env.get_contests_success(
             None,
@@ -198,11 +198,11 @@ mod tests {
         let mut test_env = TestEnv::new();
         test_env.initialize();
 
-        test_env.create_open_contest_success(&1, &1, &100);
-        test_env.create_open_contest_success(&2, &1, &200);
-        test_env.create_open_contest_success(&5, &1, &400);
-        test_env.create_open_contest_success(&4, &1, &50);
-        test_env.create_open_contest_success(&3, &1, &10);
+        test_env.first_bet_on_contest_success(&1, &1, &100);
+        test_env.first_bet_on_contest_success(&2, &1, &200);
+        test_env.first_bet_on_contest_success(&5, &1, &400);
+        test_env.first_bet_on_contest_success(&4, &1, &50);
+        test_env.first_bet_on_contest_success(&3, &1, &10);
 
         test_env.get_contests_success(
             Some(0),

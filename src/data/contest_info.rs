@@ -1,3 +1,5 @@
+use core::fmt;
+
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sp_secret_toolkit::macros::{identifiable::Identifiable, keymap::KeymapStorage};
@@ -9,11 +11,27 @@ use crate::{
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema, KeymapStorage)]
 pub struct ContestInfo {
-    id: String,
+    ticker: String,
     options: Vec<ContestOutcome>,
     time_of_close: u64,
     time_of_resolve: u64,
-    event_details: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
+pub struct ContestId {
+    ticker: String,
+    time_of_close: u64
+}
+impl ContestId {
+    pub fn new(ticker: String, time_of_close: u64) -> Self {
+        ContestId { ticker, time_of_close }
+    }
+}
+
+impl fmt::Display for ContestId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Ticker: {}, Time of Close: {}", self.ticker, self.time_of_close)
+    }
 }
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct ContestOutcome {
@@ -40,22 +58,23 @@ impl ContestOutcome {
 
 impl ContestInfo {
     pub fn new(
-        id: String,
+        ticker: String,
         time_of_close: u64,
         time_of_resolve: u64,
         options: Vec<ContestOutcome>,
-        event_details: String,
     ) -> ContestInfo {
         Self {
-            id,
+            ticker,
             time_of_close,
             time_of_resolve,
             options,
-            event_details,
         }
     }
-    pub fn get_id(&self) -> String {
-        return self.id.clone();
+    pub fn get_id(&self) -> ContestId {
+        return self.id()
+    }
+    pub fn get_ticker(&self) -> String {
+        return self.ticker.clone();
     }
     pub fn get_time_of_close(&self) -> u64 {
         return self.time_of_close;
@@ -85,9 +104,12 @@ impl ContestInfo {
 }
 
 impl Identifiable for ContestInfo {
-    type ID = String;
+    type ID = ContestId;
 
     fn id(&self) -> Self::ID {
-        self.id.clone()
+        ContestId {
+            ticker: self.ticker.clone(),
+            time_of_close: self.time_of_close
+        }
     } // Or another type that implements Serialize + DeserializeOwned
 }

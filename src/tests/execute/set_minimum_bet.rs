@@ -17,7 +17,7 @@ mod tests {
         test_env.initialize();
 
         let contest_file = 1;
-        test_env.create_open_contest_success(&contest_file, &1, &100);
+        test_env.first_bet_on_contest_success(&contest_file, &1, &100);
         test_env.set_minimum_bet_success(&100)
     }
 
@@ -27,7 +27,7 @@ mod tests {
         test_env.initialize();
 
         let contest_file = 1;
-        test_env.create_open_contest_success(&contest_file, &1, &100);
+        test_env.first_bet_on_contest_success(&contest_file, &1, &100);
         test_env.bet_on_contest_success(&contest_file, &1, &100);
         test_env.set_minimum_bet_success(&100)
     }
@@ -38,7 +38,7 @@ mod tests {
         test_env.initialize();
 
         let contest_file = 1;
-        test_env.create_open_contest_success(&contest_file, &1, &100);
+        test_env.first_bet_on_contest_success(&contest_file, &1, &100);
         test_env.set_minimum_bet_success(&1);
         test_env.set_minimum_bet_success(&2);
         test_env.set_minimum_bet_success(&3);

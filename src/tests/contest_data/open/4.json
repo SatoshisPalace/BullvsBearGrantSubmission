@@ -1,19 +1,17 @@
 {
     "contest_info": {
-        "id": "43bc8b6aec2d57a6bad20e0d5c8f0d32e71d8b15c20f8b2f4d0ab02fd0bb5788",
+        "ticker": "BTC",
         "options": [
             {
                 "id": 1,
-                "name": "Oakland Athletics"
+                "name": "Bull"
             },
             {
                 "id": 2,
-                "name": "San Francisco Giants"
+                "name": "Bear"
             }
         ],
-        "time_of_close": 4102462800,
-        "time_of_resolve": 4102549200,
-        "event_details": "MLB153216"
-    },
-    "contest_info_signature_hex": "23fe889e54891e9423ddb15bf550027d66e7d027491257253484747b7129c4a77e93c91a01a0e5daf524df801ad2e1c0519e15b37bbe4ad0c76a71231239d9c6"
+        "time_of_close": 4102463700,
+        "time_of_resolve": 4102464000
+    }
 }

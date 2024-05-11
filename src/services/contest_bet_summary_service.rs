@@ -3,7 +3,7 @@ use cosmwasm_std::{DepsMut, Env, QuerierWrapper, StdResult, Storage, Uint128};
 use crate::{
     data::{
         contest_bet_summary::ContestBetSummary,
-        contest_info::{ContestInfo, ContestOutcome},
+        contest_info::{ContestId, ContestInfo, ContestOutcome},
     },
     error::contest_bet_summary_error::ContestBetSummaryError,
 };
@@ -27,7 +27,7 @@ use super::{
 /// A result indicating success or failure.
 pub fn add_bet_to_contest_summary(
     storage: &mut dyn Storage,
-    contest_id: &String,
+    contest_id: &ContestId,
     outcome_id: &u8,
     amount: &Uint128, // Adjust the type according to your contract's definition
 ) -> StdResult<()> {
@@ -104,7 +104,7 @@ pub fn finalize_contest_outcome(
 
 pub fn get_contest_bet_summary(
     storage: &dyn Storage,
-    contest_id: &String,
+    contest_id: &ContestId,
 ) -> Result<ContestBetSummary, ContestBetSummaryError> {
     let contest_bet_summary = ContestBetSummary::keymap_get_by_id(storage, contest_id)
         .ok_or(ContestBetSummaryError::DNE(contest_id.clone()))?;
@@ -113,7 +113,7 @@ pub fn get_contest_bet_summary(
 
 pub fn get_contest_bet_summaries_ignore_missing(
     storage: &dyn Storage,
-    contest_ids: &Vec<String>,
+    contest_ids: &Vec<ContestId>,
 ) -> Vec<ContestBetSummary> {
     let mut contest_bet_summaries: Vec<ContestBetSummary> = Vec::new();
 
@@ -131,7 +131,7 @@ pub fn get_contest_bet_summaries_ignore_missing(
 
 pub fn get_contest_bet_summaries(
     storage: &dyn Storage,
-    contest_ids: &Vec<String>,
+    contest_ids: &Vec<ContestId>,
 ) -> Result<Vec<ContestBetSummary>, ContestBetSummaryError> {
     let mut contest_bet_summaries: Vec<ContestBetSummary> = Vec::new();
 

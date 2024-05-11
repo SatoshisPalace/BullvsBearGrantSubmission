@@ -18,7 +18,7 @@ mod tests {
         test_env.initialize();
 
         let contest_file = 1;
-        test_env.create_open_contest_success(&contest_file, &1, &100);
+        test_env.first_bet_on_contest_success(&contest_file, &1, &100);
         test_env.get_snip20_success()
     }
 
@@ -28,7 +28,7 @@ mod tests {
         test_env.initialize();
 
         let contest_file = 1;
-        test_env.create_open_contest_success(&contest_file, &1, &100);
+        test_env.first_bet_on_contest_success(&contest_file, &1, &100);
         test_env.bet_on_contest_success(&contest_file, &1, &100);
         test_env.get_snip20_success()
     }

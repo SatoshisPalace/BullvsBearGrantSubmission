@@ -3,7 +3,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use super::response_types::{
-    bet::BetResonse, claim::ClaimResponse, create_contest::CreateContestResponse,
+    bet::BetResonse, claim::ClaimResponse,
 };
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug)]
@@ -16,7 +16,6 @@ pub enum ResponseStatus {
 #[derive(Serialize, Deserialize, JsonSchema, Debug)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteResponse {
-    CreateContest(CreateContestResponse),
     Claim(ClaimResponse),
     Bet(BetResonse),
 }

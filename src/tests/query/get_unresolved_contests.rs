@@ -16,7 +16,7 @@ mod tests {
         test_env.initialize();
 
         let contest_file = 1;
-        test_env.create_open_contest_success(&contest_file, &1, &100);
+        test_env.first_bet_on_contest_success(&contest_file, &1, &100);
         test_env.set_time(AFTER_TIME_OF_CLOSE);
         configure_mock(MockConfig::ReturnError(true));
         test_env.get_contests_success(None, None, None, Some(ContestQueryFilter::Unresolved), 1);
@@ -30,7 +30,7 @@ mod tests {
         let contest_files = vec![1, 2, 3, 4, 5]; // Example vector of contest file numbers.
 
         for file_number in contest_files.iter() {
-            test_env.create_open_contest_success(file_number, &1, &100);
+            test_env.first_bet_on_contest_success(file_number, &1, &100);
         }
 
         test_env.set_time(AFTER_TIME_OF_CLOSE);
@@ -53,7 +53,7 @@ mod tests {
         test_env.initialize();
 
         let contest_file = 1;
-        test_env.create_open_contest_success(&contest_file, &1, &100);
+        test_env.first_bet_on_contest_success(&contest_file, &1, &100);
 
         configure_mock(MockConfig::ReturnError(true));
         test_env.get_contests_success(None, None, None, Some(ContestQueryFilter::Unresolved), 0);
@@ -68,7 +68,7 @@ mod tests {
         // Create multiple open contests
         let contest_files = vec![1, 2, 3];
         for contest_file in &contest_files {
-            test_env.create_open_contest_success(contest_file, &1, &100);
+            test_env.first_bet_on_contest_success(contest_file, &1, &100);
         }
 
         // Set oracle to return an error to simulate unresolved contest
@@ -84,10 +84,7 @@ mod tests {
         let mut test_env = TestEnv::new();
         test_env.initialize();
 
-        let contest_file = 1;
-
-        // Create a closed contest awaiting results
-        test_env.create_closed_claimable_contest_failure(&contest_file, &1, &100);
+        // Do not create any contests
 
         // Set oracle to return an error to simulate unresolved contest
         configure_mock(MockConfig::ReturnError(true));
@@ -102,11 +99,7 @@ mod tests {
         let mut test_env = TestEnv::new();
         test_env.initialize();
 
-        // Create multiple closed contests awaiting results
-        let contest_files = vec![1, 2, 3];
-        for contest_file in &contest_files {
-            test_env.create_closed_claimable_contest_failure(contest_file, &1, &100);
-        }
+        // Expecting length 0 so create no contests
 
         // Set oracle to return an error to simulate unresolved contest
         configure_mock(MockConfig::ReturnError(true));
@@ -124,7 +117,7 @@ mod tests {
         let contest_file = 1;
 
         // Create a closed contest awaiting results
-        test_env.create_open_contest_success(&contest_file, &1, &100);
+        test_env.first_bet_on_contest_success(&contest_file, &1, &100);
         test_env.set_time(AFTER_TIME_OF_CLOSE);
 
         // Set oracle to not return an error to simulate resolved contest
@@ -143,7 +136,7 @@ mod tests {
         // Create multiple open contests
         let contest_files = vec![1, 2, 3];
         for contest_file in &contest_files {
-            test_env.create_open_contest_success(contest_file, &1, &100);
+            test_env.first_bet_on_contest_success(contest_file, &1, &100);
         }
 
         test_env.set_time(AFTER_TIME_OF_CLOSE);
@@ -164,13 +157,9 @@ mod tests {
             // Create multiple open contests
             let contest_files = vec![1, 2, 3];
             for contest_file in &contest_files {
-                test_env.create_open_contest_success(contest_file, &1, &100);
+                test_env.first_bet_on_contest_success(contest_file, &1, &100);
             }
             
-            for contest_file in &contest_files {
-                test_env.create_closed_claimable_contest_failure(contest_file, &1, &100);
-            }
-    
             test_env.set_time(AFTER_TIME_OF_CLOSE);
     
             // Set oracle to not return an error to simulate resolved contest
@@ -189,11 +178,7 @@ mod tests {
             // Create multiple open contests
             let contest_files = vec![1, 2, 3];
             for contest_file in &contest_files {
-                test_env.create_open_contest_success(contest_file, &1, &(((*contest_file as u128) * 100)));
-            }
-            
-            for contest_file in &contest_files {
-                test_env.create_closed_claimable_contest_failure(contest_file, &1, &100);
+                test_env.first_bet_on_contest_success(contest_file, &1, &(((*contest_file as u128) * 100)));
             }
 
             test_env.set_time(AFTER_TIME_OF_CLOSE);
@@ -213,7 +198,7 @@ mod tests {
             let contest_files = vec![1, 2, 3, 4, 5]; // Example vector of contest file numbers.
     
             for file_number in contest_files.iter() {
-                test_env.create_open_contest_success(file_number, &1, &100);
+                test_env.first_bet_on_contest_success(file_number, &1, &100);
             }
 
             test_env.set_time(AFTER_TIME_OF_CLOSE);
@@ -235,7 +220,7 @@ mod tests {
             let contest_files = vec![1, 2, 3, 4, 5]; // Example vector of contest file numbers.
     
             for file_number in contest_files.iter() {
-                test_env.create_open_contest_success(file_number, &1, &100);
+                test_env.first_bet_on_contest_success(file_number, &1, &100);
             }
     
             test_env.set_time(AFTER_TIME_OF_CLOSE);
@@ -257,7 +242,7 @@ mod tests {
             let contest_files = vec![1, 2, 3, 4, 5]; // Example vector of contest file numbers.
     
             for file_number in contest_files.iter() {
-                test_env.create_open_contest_success(file_number, &1, &100);
+                test_env.first_bet_on_contest_success(file_number, &1, &100);
             }
     
             test_env.set_time(AFTER_TIME_OF_CLOSE);
@@ -279,7 +264,7 @@ mod tests {
             let contest_files = vec![1, 2, 3, 4, 5]; // Example vector of contest file numbers.
     
             for file_number in contest_files.iter() {
-                test_env.create_open_contest_success(file_number, &1, &100);
+                test_env.first_bet_on_contest_success(file_number, &1, &100);
             }
 
             test_env.set_time(AFTER_TIME_OF_CLOSE);
@@ -301,7 +286,7 @@ mod tests {
             let contest_files = vec![1, 2, 3, 4, 5]; // Example vector of contest file numbers.
     
             for file_number in contest_files.iter() {
-                test_env.create_open_contest_success(file_number, &1, &100);
+                test_env.first_bet_on_contest_success(file_number, &1, &100);
             }
 
             test_env.set_time(AFTER_TIME_OF_CLOSE);

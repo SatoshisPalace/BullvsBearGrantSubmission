@@ -5,7 +5,7 @@ use sp_secret_toolkit::macros::{identifiable::Identifiable, keymap::KeymapStorag
 
 use crate::error::contest_bet_summary_error::ContestBetSummaryError;
 
-use super::contest_info::{ContestInfo, ContestOutcome};
+use super::contest_info::{ContestId, ContestInfo, ContestOutcome};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema, KeymapStorage)]
 pub struct ContestBetSummary {
@@ -29,7 +29,7 @@ impl ContestBetSummary {
         }
     }
 
-    pub fn get_contest_id(&self) -> &String {
+    pub fn get_contest_id(&self) -> &ContestId {
         &self.contest_id
     }
 
@@ -83,7 +83,7 @@ impl ContestBetSummary {
 }
 
 impl Identifiable for ContestBetSummary {
-    type ID = String; // Or another type that implements Serialize + DeserializeOwned
+    type ID = ContestId; // Or another type that implements Serialize + DeserializeOwned
 
     fn id(&self) -> Self::ID {
         return self.contest_id.clone();

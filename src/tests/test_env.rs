@@ -11,18 +11,21 @@ pub mod tests {
         command_handlers::{
             admin_execute_handlers::handle_set_minimum_bet,
             execute_handlers::{handle_claim, handle_claim_multiple},
-            invoke_handlers::{handle_bet_on_contest, handle_create_contest},
+            invoke_handlers::handle_bet_on_contest,
             query_handlers::{
                 handle_get_contest_by_id, handle_get_contests, handle_get_contests_by_ids,
                 handle_get_minimum_bet, handle_get_snip20, handle_user_bet,
                 handle_users_bets_query,
             },
-        }, contract::instantiate, data::contest_info::ContestInfo, msgs::{
+        },
+        contract::instantiate,
+        data::contest_info::ContestInfo,
+        msgs::{
             execute::commands::{
                 claim::Claim, claim_multiple::ClaimMultiple, set_minimum_bet::SetMinimumBet,
             },
             instantiate::InstantiateMsg,
-            invoke::commands::{bet_contest::BetContest, create_contest::CreateContest},
+            invoke::commands::bet_contest::BetContest,
             query::commands::{
                 get_contest_by_id::GetContestById,
                 get_contests::{ContestQueryFilter, ContestQuerySortOrder, GetContests},
@@ -30,16 +33,16 @@ pub mod tests {
                 get_user_bet::GetUserBet,
                 get_users_bets::{GetUsersBets, UsersBetsQueryFilters},
             },
-        }, responses::{
+        },
+        responses::{
             execute::execute_response::ExecuteResponse,
             query::{query_response::QueryResponse, response_types::users_bets::UsersBetsResponse},
-        }, services::integrations::oracle_service::oracle::{configure_mock, MockConfig}, tests::{
+        },
+        services::integrations::oracle_service::oracle::{configure_mock, MockConfig},
+        tests::{
             constants::TESTING_SP_SIGNING_KEY,
-            contest_infos::{
-                get_contest_closed_awaiting_results, get_contest_closed_claimable,
-                get_contest_invalid_signature, get_contest_open,
-            },
-        }
+            contest_infos::get_contest_open,
+        },
     };
 
     // Test environment struct
@@ -88,175 +91,6 @@ pub mod tests {
                 .expect("contract initialization failed");
         }
 
-        pub fn create_open_contest_success(
-            &mut self,
-            file_number: &u8,
-            outcome_to_bet_on: &u8,
-            amount_to_bet: &u128,
-        ) {
-            if let Ok((contest_info, contest_info_signature_hex)) = get_contest_open(*file_number) {
-                let command = CreateContest {
-                    contest_info,
-                    contest_info_signature_hex,
-                    outcome_id: *outcome_to_bet_on,
-                    user: self.info.sender.clone(),
-                };
-                let response = handle_create_contest(
-                    self.deps.as_mut(),
-                    self.env.clone(),
-                    command,
-                    Uint128::from(*amount_to_bet),
-                );
-                response.expect("Failed To Create a valid contest");
-            } else {
-                assert!(false, "Contest Info not found")
-            }
-        }
-
-        pub fn create_open_contest_failure(
-            &mut self,
-            file_number: &u8,
-            outcome_to_bet_on: &u8,
-            amount_to_bet: &u128,
-        ) {
-            if let Ok((contest_info, contest_info_signature_hex)) = get_contest_open(*file_number) {
-                let command = CreateContest {
-                    contest_info,
-                    contest_info_signature_hex,
-                    outcome_id: *outcome_to_bet_on,
-                    user: self.info.sender.clone(),
-                };
-                let response = handle_create_contest(
-                    self.deps.as_mut(),
-                    self.env.clone(),
-                    command,
-                    Uint128::from(*amount_to_bet),
-                );
-                assert!(
-                    response.is_err(),
-                    "Expected contest creation to fail, but succeded"
-                );
-            } else {
-                assert!(false, "Contest Info not found")
-            }
-        }
-
-        pub fn create_closed_waiting_results_contest_success(
-            &mut self,
-            file_number: &u8,
-            outcome_to_bet_on: &u8,
-            amount_to_bet: &u128,
-        ) {
-            if let Ok((contest_info, contest_info_signature_hex)) =
-                get_contest_closed_awaiting_results(*file_number)
-            {
-                let command = CreateContest {
-                    contest_info,
-                    contest_info_signature_hex,
-                    outcome_id: *outcome_to_bet_on,
-                    user: self.info.sender.clone(),
-                };
-                let response = handle_create_contest(
-                    self.deps.as_mut(),
-                    self.env.clone(),
-                    command,
-                    Uint128::from(*amount_to_bet),
-                );
-                response.expect("Failed To Create a valid contest");
-            } else {
-                assert!(false, "Contest Info not found")
-            }
-        }
-        pub fn create_closed_waiting_results_contest_failure(
-            &mut self,
-            file_number: &u8,
-            outcome_to_bet_on: &u8,
-            amount_to_bet: &u128,
-        ) {
-            if let Ok((contest_info, contest_info_signature_hex)) =
-                get_contest_closed_awaiting_results(*file_number)
-            {
-                let command = CreateContest {
-                    contest_info,
-                    contest_info_signature_hex,
-                    outcome_id: *outcome_to_bet_on,
-                    user: self.info.sender.clone(),
-                };
-                let response = handle_create_contest(
-                    self.deps.as_mut(),
-                    self.env.clone(),
-                    command,
-                    Uint128::from(*amount_to_bet),
-                );
-                assert!(
-                    response.is_err(),
-                    "Expected creation to fail, but it succeeded"
-                );
-            } else {
-                assert!(false, "Contest Info not found")
-            }
-        }
-
-        pub fn create_invalid_signature_contest_failure(
-            &mut self,
-            file_number: &u8,
-            outcome_to_bet_on: &u8,
-            amount_to_bet: &u128,
-        ) {
-            if let Ok((contest_info, contest_info_signature_hex)) =
-                get_contest_invalid_signature(*file_number)
-            {
-                let command = CreateContest {
-                    contest_info,
-                    contest_info_signature_hex,
-                    outcome_id: *outcome_to_bet_on,
-                    user: self.info.sender.clone(),
-                };
-                let response = handle_create_contest(
-                    self.deps.as_mut(),
-                    self.env.clone(),
-                    command,
-                    Uint128::from(*amount_to_bet),
-                );
-                assert!(
-                    response.is_err(),
-                    "Expected creation to fail, but it succeeded"
-                );
-            } else {
-                assert!(false, "Contest Info not found")
-            }
-        }
-
-        pub fn create_closed_claimable_contest_failure(
-            &mut self,
-            file_number: &u8,
-            outcome_to_bet_on: &u8,
-            amount_to_bet: &u128,
-        ) {
-            if let Ok((contest_info, contest_info_signature_hex)) =
-                get_contest_closed_claimable(*file_number)
-            {
-                let command = CreateContest {
-                    contest_info,
-                    contest_info_signature_hex,
-                    outcome_id: *outcome_to_bet_on,
-                    user: self.info.sender.clone(),
-                };
-                let response = handle_create_contest(
-                    self.deps.as_mut(),
-                    self.env.clone(),
-                    command,
-                    Uint128::from(*amount_to_bet),
-                );
-                assert!(
-                    response.is_err(),
-                    "Expected creation to fail, but it succeeded"
-                );
-            } else {
-                assert!(false, "Contest Info not found")
-            }
-        }
-
         fn query_users_bets(
             &mut self,
             filters: Option<Vec<UsersBetsQueryFilters>>,
@@ -289,8 +123,7 @@ pub mod tests {
             file_number: &u8,
             filters: Option<Vec<UsersBetsQueryFilters>>,
         ) {
-            if let Ok((contest_info, _contest_info_signature_hex)) = get_contest_open(*file_number)
-            {
+            if let Ok(contest_info) = get_contest_open(*file_number) {
                 let users_bets: UsersBetsResponse = self.query_users_bets(filters).unwrap();
 
                 for user_contest_bet_info in users_bets.contests_bets.iter() {
@@ -308,16 +141,70 @@ pub mod tests {
             }
         }
 
+        pub fn first_bet_on_contest_success(
+            &mut self,
+            file_number: &u8,
+            outcome_to_bet_on: &u8,
+            amount_to_bet: &u128,
+        ) {
+            if let Ok(contest_info) = get_contest_open(*file_number) {
+                let command = BetContest {
+                    ticker: contest_info.get_ticker(),
+                    outcome_id: *outcome_to_bet_on,
+                    user: self.info.sender.clone(),
+                };
+                let response = handle_bet_on_contest(
+                    self.deps.as_mut(),
+                    self.env.clone(),
+                    command,
+                    Uint128::new(amount_to_bet.clone()),
+                );
+                response.expect("Failed to bet on contest");
+            } else {
+                assert!(false, "Contest Info not found")
+            }
+        }
+
+        pub fn first_bet_on_contest_fail(
+            &mut self,
+            file_number: &u8,
+            outcome_to_bet_on: &u8,
+            amount_to_bet: &u128,
+        ) {
+            if let Ok(contest_info) = get_contest_open(*file_number) {
+                let command = BetContest {
+                    ticker: contest_info.get_ticker(),
+                    outcome_id: *outcome_to_bet_on,
+                    user: self.info.sender.clone(),
+                };
+
+                let response = handle_bet_on_contest(
+                    self.deps.as_mut(),
+                    self.env.clone(),
+                    command,
+                    Uint128::new(*amount_to_bet),
+                );
+                assert!(
+                    response.is_err(),
+                    "Expected bet on contest to fail, but it succeeded"
+                );
+            } else {
+                assert!(
+                    false,
+                    "Contest Info not found or already closed for betting"
+                )
+            }
+        }
+
         pub fn bet_on_contest_success(
             &mut self,
             file_number: &u8,
             outcome_to_bet_on: &u8,
             amount_to_bet: &u128,
         ) {
-            if let Ok((contest_info, _contest_info_signature_hex)) = get_contest_open(*file_number)
-            {
+            if let Ok(contest_info) = get_contest_open(*file_number) {
                 let command = BetContest {
-                    contest_id: contest_info.get_id(),
+                    ticker: contest_info.get_ticker(),
                     outcome_id: *outcome_to_bet_on,
                     user: self.info.sender.clone(),
                 };
@@ -339,10 +226,9 @@ pub mod tests {
             outcome_to_bet_on: &u8,
             amount_to_bet: &u128,
         ) {
-            if let Ok((contest_info, _contest_info_signature_hex)) = get_contest_open(*file_number)
-            {
+            if let Ok(contest_info) = get_contest_open(*file_number) {
                 let command = BetContest {
-                    contest_id: contest_info.get_id(),
+                    ticker: contest_info.get_ticker(),
                     outcome_id: *outcome_to_bet_on,
                     user: self.info.sender.clone(),
                 };
@@ -385,8 +271,7 @@ pub mod tests {
         }
 
         pub fn claim_success(&mut self, file_number: &u8, expected_amount: Option<&u128>) {
-            if let Ok((contest_info, _contest_info_signature_hex)) = get_contest_open(*file_number)
-            {
+            if let Ok(contest_info) = get_contest_open(*file_number) {
                 let command = Claim {
                     contest_id: contest_info.get_id(),
                 };
@@ -436,8 +321,7 @@ pub mod tests {
         }
 
         pub fn claim_failure(&mut self, file_number: &u8) {
-            if let Ok((contest_info, _contest_info_signature_hex)) = get_contest_open(*file_number)
-            {
+            if let Ok(contest_info) = get_contest_open(*file_number) {
                 let command = Claim {
                     contest_id: contest_info.get_id(),
                 };
@@ -464,8 +348,7 @@ pub mod tests {
 
             // Loop through each file number to get contest info and signature.
             for file_number in file_numbers {
-                let (contest_info, _contest_info_signature_hex) =
-                    Self::get_open_contest_from_file(file_number);
+                let contest_info = Self::get_open_contest_from_file(file_number);
 
                 // Collect the id from contest_info.
                 requested_ids.push(contest_info.get_id());
@@ -494,8 +377,7 @@ pub mod tests {
 
             // Loop through each file number to get contest info and signature.
             for file_number in file_numbers {
-                let (contest_info, _contest_info_signature_hex) =
-                    Self::get_open_contest_from_file(file_number);
+                let contest_info = Self::get_open_contest_from_file(file_number);
 
                 // Collect the id from contest_info.
                 requested_ids.push(contest_info.get_id());
@@ -539,8 +421,7 @@ pub mod tests {
         }
 
         pub fn get_contest_success(&mut self, file_number: &u8) {
-            if let Ok((contest_info, _contest_info_signature_hex)) = get_contest_open(*file_number)
-            {
+            if let Ok(contest_info) = get_contest_open(*file_number) {
                 let command = GetContestById {
                     contest_id: contest_info.get_id(),
                 };
@@ -581,8 +462,7 @@ pub mod tests {
 
             // Loop through each file number to get contest info and signature.
             for file_number in file_numbers {
-                let (contest_info, _contest_info_signature_hex) =
-                    Self::get_open_contest_from_file(file_number);
+                let contest_info = Self::get_open_contest_from_file(file_number);
 
                 // Collect the id from contest_info.
                 requested_ids.push(contest_info.get_id());
@@ -615,15 +495,12 @@ pub mod tests {
             }
         }
 
-        fn get_open_contest_from_file(file_number: &u8) -> (ContestInfo, String) {
-            if let Ok((contest_info, contest_info_signature_hex)) = get_contest_open(*file_number) {
-                return (contest_info, contest_info_signature_hex);
+        fn get_open_contest_from_file(file_number: &u8) -> ContestInfo {
+            if let Ok(contest_info) = get_contest_open(*file_number) {
+                return contest_info;
             } else {
                 assert!(false, "Contest File not found");
-                return (
-                    ContestInfo::new("id".to_owned(), 1, 1, vec![], "event_details".to_owned()),
-                    "".to_owned(),
-                );
+                return ContestInfo::new("id".to_owned(), 1, 1, vec![]);
             }
         }
 
@@ -681,7 +558,7 @@ pub mod tests {
             expected_side_option: Option<&u8>,
             expected_has_been_paid_option: Option<&bool>,
         ) {
-            let (contest_info, _) = Self::get_open_contest_from_file(file_number);
+            let contest_info = Self::get_open_contest_from_file(file_number);
 
             let command = GetUserBet {
                 user: self.info.sender.clone(),
