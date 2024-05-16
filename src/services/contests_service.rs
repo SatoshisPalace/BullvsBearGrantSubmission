@@ -5,9 +5,7 @@ use crate::{
         contest_bet_summary::ContestBetSummary,
         contest_info::{ContestId, ContestInfo},
         contests::{add_contest_id, get_all_contest_ids},
-    },
-    error::contest_activity_error::ContestActivityError,
-    msgs::query::commands::get_contests::{ContestQueryFilter, ContestQuerySortOrder},
+    }, error::contest_activity_error::ContestActivityError, msgs::query::commands::get_contests::{ContestQueryFilter, ContestQuerySortOrder}
 };
 
 use super::{
@@ -126,27 +124,4 @@ pub fn get_contests(
 
     // Apply pagination
     Ok(paginate_contests(combined, page_num, page_size))
-}
-
-// Function to grab current time and find the end of the five minute intervalk associated with it 
-pub fn get_current_close(env: &Env) -> u64 {
-    let current_seconds = env.block.time.seconds();
-    let seconds_in_a_minute = 60;
-    let minutes_in_five_minutes = 5;
-
-    // Calculate the current minutes and remaining seconds past the last minute
-    let current_minutes = current_seconds / seconds_in_a_minute;
-    let remaining_seconds = current_seconds % seconds_in_a_minute;
-
-    // Find the next 5-minute mark in terms of minutes
-    let next_interval_minute = if remaining_seconds > 0 {
-        (current_minutes / minutes_in_five_minutes + 1) * minutes_in_five_minutes
-    } else {
-        (current_minutes / minutes_in_five_minutes) * minutes_in_five_minutes
-    };
-
-    // Convert back to seconds
-    let next_five_minute_mark_seconds = next_interval_minute * seconds_in_a_minute;
-
-    next_five_minute_mark_seconds
 }

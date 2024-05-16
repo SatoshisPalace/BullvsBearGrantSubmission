@@ -22,9 +22,7 @@ pub fn handle_claim(
     command: Claim,
 ) -> StdResult<Response> {
     let Claim { contest_id } = command;
-
     let claimable_amount = process_claim(&mut deps, &env, &info, &contest_id)?;
-
     let snip20 = Snip20::singleton_load(deps.storage)?;
 
     Ok(Response::default()

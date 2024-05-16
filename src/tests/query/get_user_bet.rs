@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::tests::test_env::tests::TestEnv;
+    use crate::tests::{constants::{AFTER_TIME_OF_1_CLOSE, AFTER_TIME_OF_2_CLOSE, AFTER_TIME_OF_3_CLOSE, AFTER_TIME_OF_4_CLOSE, AFTER_TIME_OF_5_CLOSE}, test_env::tests::TestEnv};
 
     ////////TESTS////////
 
@@ -50,10 +50,26 @@ mod tests {
 
         let contest_files = vec![1, 2, 3, 4, 5]; // Example vector of contest file numbers.
 
-        for file_number in contest_files.iter() {
-            test_env.first_bet_on_contest_success(file_number, &outcome_to_bet_on, &amount_to_bet);
-            test_env.bet_on_contest_success(&file_number, &outcome_to_bet_on, &amount_to_bet);
-        }
+        test_env.first_bet_on_contest_success(&contest_files[0], &outcome_to_bet_on, &amount_to_bet);
+        test_env.bet_on_contest_success(&contest_files[0], &outcome_to_bet_on, &amount_to_bet);
+        test_env.set_time(AFTER_TIME_OF_1_CLOSE);
+
+        test_env.first_bet_on_contest_success(&contest_files[1], &outcome_to_bet_on, &amount_to_bet);
+        test_env.bet_on_contest_success(&contest_files[1], &outcome_to_bet_on, &amount_to_bet);
+        test_env.set_time(AFTER_TIME_OF_2_CLOSE);
+        
+        test_env.first_bet_on_contest_success(&contest_files[2], &outcome_to_bet_on, &amount_to_bet);
+        test_env.bet_on_contest_success(&contest_files[2], &outcome_to_bet_on, &amount_to_bet);
+        test_env.set_time(AFTER_TIME_OF_3_CLOSE);
+        
+        test_env.first_bet_on_contest_success(&contest_files[3], &outcome_to_bet_on, &amount_to_bet);
+        test_env.bet_on_contest_success(&contest_files[3], &outcome_to_bet_on, &amount_to_bet);
+        test_env.set_time(AFTER_TIME_OF_4_CLOSE);
+        
+        test_env.first_bet_on_contest_success(&contest_files[4], &outcome_to_bet_on, &amount_to_bet);
+        test_env.bet_on_contest_success(&contest_files[4], &outcome_to_bet_on, &amount_to_bet);
+        test_env.set_time(AFTER_TIME_OF_5_CLOSE);
+        
 
         for file_number in contest_files.iter() {
             test_env.get_user_bet_success(

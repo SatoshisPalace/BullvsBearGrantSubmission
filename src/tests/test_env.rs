@@ -39,10 +39,7 @@ pub mod tests {
             query::{query_response::QueryResponse, response_types::users_bets::UsersBetsResponse},
         },
         services::integrations::oracle_service::oracle::{configure_mock, MockConfig},
-        tests::{
-            constants::TESTING_SP_SIGNING_KEY,
-            contest_infos::get_contest_open,
-        },
+        tests::{constants::TESTING_SP_SIGNING_KEY, contest_infos::get_contest_open},
     };
 
     // Test environment struct
@@ -500,7 +497,7 @@ pub mod tests {
                 return contest_info;
             } else {
                 assert!(false, "Contest File not found");
-                return ContestInfo::new("id".to_owned(), 1, 1, vec![]);
+                return ContestInfo::new("BTC".to_owned(), 1, 1, vec![]);
             }
         }
 

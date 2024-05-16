@@ -1,17 +1,16 @@
 use cosmwasm_std::{DepsMut, Env, Response, StdResult, Uint128};
 
 use crate::{
-    data::contest_info::{ContestId, ContestInfo, ContestOutcome}, error::contest_info_error::ContestInfoError, msgs::invoke::commands::bet_contest::BetContest, responses::execute::{
+    data::contest_info::ContestId, error::contest_info_error::ContestInfoError, msgs::invoke::commands::bet_contest::BetContest, responses::execute::{
         execute_response::{ExecuteResponse, ResponseStatus::Success},
         response_types::bet::BetResonse,
     }, services::{
         bet_service::place_or_update_bet,
         contest_bet_summary_service::{add_bet_to_contest_summary, create_new_contest_bet_summary},
         contest_info_service::{
-            assert_outcome_is_on_contest, create_new_contest,
-            get_contest_info,
+            assert_outcome_is_on_contest, create_new_contest, create_new_contest_info, get_contest_info, get_current_close
         },
-        contests_service::{add_active_contest, get_current_close},
+        contests_service::add_active_contest,
         state_service::assert_amount_is_greater_than_minimum_bet,
         user_info_service::add_contest_to_user,
     }
@@ -24,9 +23,9 @@ pub fn handle_bet_on_contest(
     amount_bet: Uint128,
 ) -> StdResult<Response> {
     let BetContest {
-        user,
         ticker,
         outcome_id,
+        user,
         ..
     } = command;
 
@@ -37,7 +36,6 @@ pub fn handle_bet_on_contest(
     let current_close = get_current_close(&env);
     // Generate ContestId from ticker and close time
     let contest_id = ContestId::new(ticker.clone(), current_close);
-
     // Attempt to load contest info
     let contest_info_result = get_contest_info(deps.storage, &contest_id);
 
@@ -46,12 +44,7 @@ pub fn handle_bet_on_contest(
         Ok(info) => info,
         Err(ContestInfoError::ContestNotFound(_)) => {
             // Initialize new ContestInfo here if needed
-            let info = ContestInfo::new(
-                ticker,
-                current_close, 
-                current_close + 300,
-                vec![ContestOutcome::new(1, "Bull".to_string()), ContestOutcome::new(2, "Bear".to_string())]
-            );
+            let info = create_new_contest_info(&ticker, &current_close);
             create_new_contest(&mut deps, &info)?;
             create_new_contest_bet_summary(deps.storage, &info)?;
             add_active_contest(deps.storage, &contest_id)?;
@@ -60,10 +53,6 @@ pub fn handle_bet_on_contest(
         },
         Err(e) => return Err(e.into()),  // handle other errors appropriately
     };
-
-
-
-
 
     assert_outcome_is_on_contest(&contest_info, &outcome_id)?;
     let new_bet = place_or_update_bet(deps.storage, &user, &contest_id, &outcome_id, &amount_bet)?;

@@ -3,7 +3,7 @@ mod tests {
     use crate::{
         msgs::query::commands::get_users_bets::UsersBetsQueryFilters,
         tests::{
-            constants::{AFTER_TIME_OF_CLOSE, AFTER_TIME_OF_RESOLVE},
+            constants::{AFTER_TIME_OF_1_CLOSE, AFTER_TIME_OF_2_CLOSE, AFTER_TIME_OF_3_CLOSE, AFTER_TIME_OF_4_CLOSE, AFTER_TIME_OF_RESOLVE},
             test_env::tests::TestEnv,
         },
     };
@@ -102,7 +102,7 @@ mod tests {
         let contest_file = 1;
         test_env.first_bet_on_contest_success(&contest_file, &1, &100);
 
-        test_env.set_time(AFTER_TIME_OF_CLOSE);
+        test_env.set_time(AFTER_TIME_OF_1_CLOSE);
         let filters = vec![UsersBetsQueryFilters::Claimable];
         test_env.users_bets_has_length(Some(filters), 0);
     }
@@ -142,15 +142,19 @@ mod tests {
 
         let mut contest_file = 1;
         test_env.first_bet_on_contest_success(&contest_file, &1, &100);
+        test_env.set_time(AFTER_TIME_OF_1_CLOSE);
 
         contest_file = 2;
         test_env.first_bet_on_contest_success(&contest_file, &1, &100);
+        test_env.set_time(AFTER_TIME_OF_2_CLOSE);
 
         contest_file = 3;
         test_env.first_bet_on_contest_success(&contest_file, &1, &100);
+        test_env.set_time(AFTER_TIME_OF_3_CLOSE);
 
         contest_file = 4;
         test_env.first_bet_on_contest_success(&contest_file, &1, &100);
+        test_env.set_time(AFTER_TIME_OF_4_CLOSE);
 
         contest_file = 5;
         test_env.first_bet_on_contest_success(&contest_file, &1, &100);

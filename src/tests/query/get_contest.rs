@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::tests::test_env::tests::TestEnv;
+    use crate::tests::{constants::{AFTER_TIME_OF_1_CLOSE, AFTER_TIME_OF_2_CLOSE, AFTER_TIME_OF_3_CLOSE, AFTER_TIME_OF_4_CLOSE}, test_env::tests::TestEnv};
 
     ////////TESTS////////
     #[test]
@@ -19,9 +19,13 @@ mod tests {
         test_env.initialize();
 
         test_env.first_bet_on_contest_success(&1, &1, &100);
+        test_env.set_time(AFTER_TIME_OF_1_CLOSE);
         test_env.first_bet_on_contest_success(&2, &1, &100);
+        test_env.set_time(AFTER_TIME_OF_2_CLOSE);
         test_env.first_bet_on_contest_success(&3, &1, &100);
+        test_env.set_time(AFTER_TIME_OF_3_CLOSE);
         test_env.first_bet_on_contest_success(&4, &1, &100);
+        test_env.set_time(AFTER_TIME_OF_4_CLOSE);
         test_env.first_bet_on_contest_success(&5, &1, &100);
 
         test_env.get_contest_success(&1);

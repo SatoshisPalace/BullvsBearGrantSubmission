@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::tests::test_env::tests::TestEnv;
+    use crate::tests::{constants::{AFTER_TIME_OF_1_CLOSE, AFTER_TIME_OF_2_CLOSE, AFTER_TIME_OF_3_CLOSE, AFTER_TIME_OF_4_CLOSE}, test_env::tests::TestEnv};
 
     ////////TESTS////////
     #[test]
@@ -20,9 +20,15 @@ mod tests {
 
         let contest_files = vec![1, 2, 3, 4, 5]; // Example vector of contest file numbers.
 
-        for file_number in contest_files.iter() {
-            test_env.first_bet_on_contest_success(file_number, &1, &100);
-        }
+        test_env.first_bet_on_contest_success(&1, &1, &100);
+        test_env.set_time(AFTER_TIME_OF_1_CLOSE);
+        test_env.first_bet_on_contest_success(&2, &1, &100);
+        test_env.set_time(AFTER_TIME_OF_2_CLOSE);
+        test_env.first_bet_on_contest_success(&3, &1, &100);
+        test_env.set_time(AFTER_TIME_OF_3_CLOSE);
+        test_env.first_bet_on_contest_success(&4, &1, &100);
+        test_env.set_time(AFTER_TIME_OF_4_CLOSE);
+        test_env.first_bet_on_contest_success(&5, &1, &100);
 
         test_env.get_contests_by_ids_success(&contest_files, Some(&5)); // Expecting 5 contests across the files, if each file is supposed to hold one contest.
     }
@@ -34,9 +40,14 @@ mod tests {
 
         let mut contest_files = vec![1, 2, 3, 4]; // Example vector of contest file numbers.
 
-        for file_number in contest_files.iter() {
-            test_env.first_bet_on_contest_success(file_number, &1, &100);
-        }
+        test_env.first_bet_on_contest_success(&1, &1, &100);
+        test_env.set_time(AFTER_TIME_OF_1_CLOSE);
+        test_env.first_bet_on_contest_success(&2, &1, &100);
+        test_env.set_time(AFTER_TIME_OF_2_CLOSE);
+        test_env.first_bet_on_contest_success(&3, &1, &100);
+        test_env.set_time(AFTER_TIME_OF_3_CLOSE);
+        test_env.first_bet_on_contest_success(&4, &1, &100);
+        
         contest_files.insert(4, 5);
         test_env.get_contests_by_ids_success(&contest_files, Some(&4)); // Expecting 5 contests across the files, if each file is supposed to hold one contest.
     }
