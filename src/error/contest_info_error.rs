@@ -40,6 +40,10 @@ pub enum ContestInfoError {
 
     #[error("Outcome Does Not Exist. Display Text: Failure to place bet. Cannot place bet on a side that does not exist.")]
     OutcomeDNE,
+
+    #[error("Ticker Does Not Exist. Display Text: Failure to place bet. Cannot place bet on tickers that does not exist.")]
+    InvalidTicker,
+
 }
 
 impl From<ContestInfoError> for cosmwasm_std::StdError {

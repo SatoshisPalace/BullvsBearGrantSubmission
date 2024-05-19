@@ -1,16 +1,15 @@
 use cosmwasm_std::{DepsMut, Env, QuerierWrapper, StdResult, Storage, Uint128};
 
 use crate::{
-    data::{
+    constants::EXPIRATION_WINDOW, data::{
         contest_bet_summary::ContestBetSummary,
         contest_info::{ContestId, ContestInfo, ContestOutcome},
-    },
-    error::contest_bet_summary_error::ContestBetSummaryError,
+    }, error::contest_bet_summary_error::ContestBetSummaryError
 };
 
 use super::{
-    contest_info_service::assert_contest_ready_to_be_claimed,
-    integrations::oracle_service::oracle::{query_contest_result, NULL_AND_VOID_CONTEST_RESULT},
+    contest_info_service::{assert_contest_ready_to_be_claimed, get_contest_result},
+    integrations::price_feed_service::pricefeed::query_prices,
 }; // Make sure to adjust the import based on your actual storage handling
 
 /// Adds a bet to a contest summary.
@@ -84,11 +83,13 @@ pub fn finalize_contest_outcome(
         return Ok((contest_bet_summary, false));
     }
 
-    // If not, query the oracle for the contest result using the adjusted function.
-    let oracle_result =
-        query_contest_result_oracle(deps.storage, &deps.querier, env, contest_info)?;
-
-    if let Some(outcome) = oracle_result {
+    // If not and not passed expiration time window, query the price feed for the prices using the adjusted function.
+    let price_posting_ids = vec![contest_info.get_time_of_close(), contest_info.get_time_of_resolve()];
+    let prices = query_prices(&deps.querier, deps.storage, &price_posting_ids);
+    let expiry = EXPIRATION_WINDOW + contest_info.get_time_of_close();
+    let result = get_contest_result(env, &prices, &expiry);
+    
+    if let Some(outcome) = result {
         // Should certainly exist
         // Set the outcome in the contest bet summary.
         contest_bet_summary.set_outcome(&outcome)?;
@@ -154,20 +155,9 @@ pub fn query_contest_result_oracle(
     contest_info: &ContestInfo,
 ) -> Result<Option<ContestOutcome>, ContestBetSummaryError> {
     assert_contest_ready_to_be_claimed(storage, env, &contest_info.get_id())?;
-    match query_contest_result(querier, storage, &contest_info.get_id()) {
-        Ok(response) => {
-            if response.result == NULL_AND_VOID_CONTEST_RESULT {
-                Ok(Some(ContestOutcome::nullified_result()))
-            } else {
-                // Use find_outcome to get the ContestOutcome from the contest_info
-                match contest_info.find_outcome(&response.result) {
-                    Ok(outcome) => Ok(Some(outcome)),
-                    Err(_) => Err(ContestBetSummaryError::OutcomeDNE),
-                }
-            }
-        }
-        Err(_) => Ok(None), // Query failed, assume result not available
-    }
+    let prices = query_prices(querier, storage, &vec![contest_info.get_time_of_close(), contest_info.get_time_of_resolve()]);
+    let expiry = EXPIRATION_WINDOW + contest_info.get_time_of_close();
+    Ok(get_contest_result(env, &prices, &expiry))
 }
 
 pub fn update_contest_bet_summaries_with_results(

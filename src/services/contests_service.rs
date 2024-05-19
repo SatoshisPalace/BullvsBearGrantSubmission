@@ -15,7 +15,7 @@ use super::{
     contest_info_service::{
         assert_time_of_close_not_passed, assert_time_of_resolved_not_passed,
         get_contest_infos_for_ids,
-    },
+    }
 };
 
 pub fn add_active_contest(

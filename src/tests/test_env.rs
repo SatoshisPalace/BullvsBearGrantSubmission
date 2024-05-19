@@ -38,8 +38,8 @@ pub mod tests {
             execute::execute_response::ExecuteResponse,
             query::{query_response::QueryResponse, response_types::users_bets::UsersBetsResponse},
         },
-        services::integrations::oracle_service::oracle::{configure_mock, MockConfig},
-        tests::{constants::TESTING_SP_SIGNING_KEY, contest_infos::get_contest_open},
+        services::integrations::price_feed_service::pricefeed::{configure_mock, MockConfig},
+        tests::{constants::{INTERVAL, TESTING_SP_SIGNING_KEY}, contest_infos::get_contest_open},
     };
 
     // Test environment struct
@@ -70,14 +70,15 @@ pub mod tests {
             configure_mock(MockConfig::ReturnError(false));
             let msg = InstantiateMsg {
                 satoshis_palace: Addr::unchecked(TESTING_SP_SIGNING_KEY),
-                oracle_contract_info: ContractInfo {
-                    address: Addr::unchecked("Oracle Address"),
-                    code_hash: "Oracle CodeHash".to_owned(),
+                price_feed_info: ContractInfo {
+                    address: Addr::unchecked("Price Feed Address"),
+                    code_hash: "Price Feed CodeHash".to_owned(),
                 },
                 snip20: ContractInfo {
                     address: Addr::unchecked("Snip20 Address"),
                     code_hash: "Snip20 Codehash".to_owned(),
                 },
+                interval: INTERVAL,
                 entropy: to_binary("Entropy").unwrap(),
                 master_viewing_key_contract: ContractInfo {
                     address: Addr::unchecked("Master Viewing Key Address"),

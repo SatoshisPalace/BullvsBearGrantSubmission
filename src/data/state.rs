@@ -10,15 +10,17 @@ use crate::error::state_error::StateError;
 pub struct State {
     satoshis_palace: Addr,
     owner: Addr,
+    interval: u64,
     minimum_bet: Uint128,
 }
 
 impl State {
     // Constructor
-    pub fn new(satoshis_palace: Addr, owner: Addr, amount: Uint128) -> Self {
+    pub fn new(satoshis_palace: Addr, owner: Addr, interval: u64, amount: Uint128) -> Self {
         State {
             satoshis_palace,
             owner,
+            interval,
             minimum_bet: amount,
         }
     }
@@ -34,6 +36,10 @@ impl State {
 
     pub fn get_minimum_bet(&self) -> &Uint128 {
         &self.minimum_bet
+    }
+
+    pub fn get_interval(&self) -> &u64 {
+        &self.interval
     }
 
     // Setters

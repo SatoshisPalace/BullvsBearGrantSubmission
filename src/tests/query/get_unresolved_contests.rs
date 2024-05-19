@@ -4,7 +4,7 @@ mod tests {
 
     use crate::{
         msgs::query::commands::get_contests::{ContestQueryFilter, ContestQuerySortOrder},
-        services::integrations::oracle_service::oracle::{configure_mock, MockConfig},
+        services::integrations::price_feed_service::pricefeed::{configure_mock, MockConfig},
         tests::{
             constants::{
                 AFTER_TIME_OF_1_CLOSE, AFTER_TIME_OF_2_CLOSE, AFTER_TIME_OF_3_CLOSE,

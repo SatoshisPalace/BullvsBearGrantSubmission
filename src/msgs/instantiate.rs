@@ -7,7 +7,8 @@ use serde::{Deserialize, Serialize};
 pub struct InstantiateMsg {
     pub master_viewing_key_contract: ContractInfo,
     pub satoshis_palace: Addr,
-    pub oracle_contract_info: ContractInfo,
+    pub price_feed_info: ContractInfo,
     pub snip20: ContractInfo,
+    pub interval: u64,
     pub entropy: Binary,
 }

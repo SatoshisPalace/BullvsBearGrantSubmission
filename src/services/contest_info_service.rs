@@ -1,8 +1,9 @@
 // contest_info_service.rs
-use cosmwasm_std::{DepsMut, Env, Storage};
+use cosmwasm_std::{DepsMut, Env, StdError, Storage};
+use sp_secret_toolkit::price_feed::response::response_types::prices_by_ids::PricesByIdsResponse;
 
-use crate::{constants::{BEAR, BULL, FIVE_MINUTE_INTERVAL, SECONDS_IN_A_MINUTE}, data::contest_info::{ContestId, ContestInfo, ContestOutcome}, error::contest_info_error::ContestInfoError};
-
+use crate::{constants::{BEAR, BULL, SECONDS_IN_A_MINUTE, TICKERS}, data::contest_info::{ContestId, ContestInfo, ContestOutcome}, error::contest_info_error::ContestInfoError};
+use crate::services::state_service::get_interval;
 pub fn create_new_contest(
     deps: &mut DepsMut,
     contest_info: &ContestInfo,
@@ -78,6 +79,49 @@ pub fn assert_contest_ready_to_be_claimed(
     Ok(contest_info)
 }
 
+pub fn assert_ticker_valid(ticker: &String) -> Result<(), ContestInfoError> {
+    if TICKERS.contains(&ticker.as_str()) {
+        Ok(())
+    } else {
+        Err(ContestInfoError::InvalidTicker)
+    }
+}
+
+pub fn get_contest_result(
+    env: &Env,
+    prices: &Result<PricesByIdsResponse, StdError>,
+    expiry: &u64
+) -> Option<ContestOutcome> {
+
+    
+
+    // Handle the case where prices contain an error
+    let prices = match prices {
+        Ok(prices) => &prices.prices,
+        Err(_) => {
+            if expiry < &env.block.time.seconds() {
+                return Some(ContestOutcome::nullified_result());
+            } else {
+                return None;
+            }
+        }
+    };
+
+    // Ensure there are exactly two price postings
+    if prices.len() != 2 {
+        return None;
+    }
+
+    // Compare the first and second price postings
+    if prices[0].price() < prices[1].price() {
+        Some(ContestOutcome::new(1, "First price is greater".to_string()))
+    } else if prices[0].price() > prices[1].price() {
+        Some(ContestOutcome::new(2, "Second price is greater".to_string()))
+    } else {
+        Some(ContestOutcome::nullified_result())
+    }
+}
+
 pub fn assert_outcome_is_on_contest(
     contest_info: &ContestInfo,
     outcome_id: &u8,
@@ -141,26 +185,27 @@ pub fn validate_contest(contest_info: &ContestInfo) -> Result<(), ContestInfoErr
 /// # Returns
 ///
 /// Returns the Unix timestamp of the next 5-minute mark from the current block time.
-pub fn get_current_close(env: &Env) -> u64 {
+pub fn get_current_close(storage: &dyn Storage , env: &Env) -> u64 {
     // Retrieve the current time in seconds from the blockchain's environment.
     let current_seconds = env.block.time.seconds();
+    let interval = get_interval(storage).unwrap();
 
     // Calculate the next multiple of the 5-minute interval from the current time.
     // This finds the smallest multiple of FIVE_MINUTE_INTERVAL that is greater than or equal to
     // the current time. The subtraction by 1 and subsequent division and multiplication
     // by FIVE_MINUTE_INTERVAL ensures rounding up to the next interval unless already exactly on one.
-    let next_interval_seconds = ((current_seconds + FIVE_MINUTE_INTERVAL - 1) / FIVE_MINUTE_INTERVAL) * FIVE_MINUTE_INTERVAL;
+    let next_interval_seconds = ((current_seconds + interval - 1) / interval) * interval;
 
     // Adjust the calculated time to the start of the 5-minute interval.
     // This removes any seconds past the start of the minute, setting the time exactly on the minute mark.
     next_interval_seconds - (next_interval_seconds % SECONDS_IN_A_MINUTE)
 }
 
-pub fn create_new_contest_info(ticker: &String, current_close: &u64) -> ContestInfo {
+pub fn create_new_contest_info(storage: &dyn Storage, ticker: &String, current_close: &u64) -> ContestInfo {
     ContestInfo::new(
         ticker.clone(),
         *current_close, 
-        *current_close + FIVE_MINUTE_INTERVAL,
+        *current_close + get_interval(storage).unwrap(),
         vec![ContestOutcome::new(1, BULL.to_string()), ContestOutcome::new(2, BEAR.to_string())]
     )
 }

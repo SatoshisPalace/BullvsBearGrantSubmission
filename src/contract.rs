@@ -17,8 +17,8 @@ use cosmwasm_std::{
     entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
 use sp_secret_toolkit::master_viewing_key::MasterViewingKey;
-use sp_secret_toolkit::oracle::Oracle;
 use sp_secret_toolkit::snip20::Snip20;
+use sp_secret_toolkit::price_feed::PriceFeed;
 
 #[entry_point]
 pub fn instantiate(
@@ -30,6 +30,7 @@ pub fn instantiate(
     let state = State::new(
         msg.satoshis_palace,
         info.clone().sender,
+        msg.interval,
         Uint128::from(1u128), // Set minimum_bet to 1
     );
     state.singleton_save(deps.storage)?;
@@ -38,7 +39,7 @@ pub fn instantiate(
     snip_20.singleton_save(deps.storage)?;
 
     MasterViewingKey::new(msg.master_viewing_key_contract).singleton_save(deps.storage)?;
-    Oracle::new(msg.oracle_contract_info).singleton_save(deps.storage)?;
+    PriceFeed::new(msg.price_feed_info).singleton_save(deps.storage)?;
 
     Ok(Response::default()
         .add_message(snip_20.create_register_receive_msg(&env)?)

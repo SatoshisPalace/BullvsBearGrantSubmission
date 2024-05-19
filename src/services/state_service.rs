@@ -13,6 +13,11 @@ pub fn get_minimum_bet(storage: &dyn cosmwasm_std::Storage) -> Result<Uint128, S
     Ok(state.get_minimum_bet().clone())
 }
 
+pub fn get_interval(storage: &dyn cosmwasm_std::Storage) -> Result<u64, StateError> {
+    let state = State::singleton_load(storage)?;
+    Ok(state.get_interval().clone())
+}
+
 pub fn assert_amount_is_greater_than_minimum_bet(
     storage: &dyn cosmwasm_std::Storage,
     amount: &Uint128,

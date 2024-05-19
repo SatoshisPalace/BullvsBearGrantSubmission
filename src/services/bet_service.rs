@@ -10,7 +10,7 @@ use crate::{
     error::bet_error::BetError,
 };
 
-use super::integrations::oracle_service::oracle::NULL_AND_VOID_CONTEST_RESULT;
+use super::integrations::price_feed_service::pricefeed::NULL_AND_VOID_CONTEST_RESULT;
 
 // Assuming the existence of State, UserContest, Bet, ContestInfoError, and necessary validation functions.
 

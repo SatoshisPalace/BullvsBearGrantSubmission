@@ -48,6 +48,7 @@ sp-secret-toolkit = { git = "ssh://git@github.com/SatoshisPalace/SP-Secret-Toolk
     "contract",
     "master-viewing-key",
     "oracle",
+    "price-feed",
 ] }
 
 [[bin]]

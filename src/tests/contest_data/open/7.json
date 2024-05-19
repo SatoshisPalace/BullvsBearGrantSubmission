@@ -1,0 +1,17 @@
+{
+    "contest_info": {
+        "ticker": "BTT",
+        "options": [
+            {
+                "id": 1,
+                "name": "Bull"
+            },
+            {
+                "id": 2,
+                "name": "Bear"
+            }
+        ],
+        "time_of_close": 1571797500,
+        "time_of_resolve": 1571797800
+    }
+}

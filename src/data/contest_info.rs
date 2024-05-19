@@ -5,8 +5,7 @@ use serde::{Deserialize, Serialize};
 use sp_secret_toolkit::macros::{identifiable::Identifiable, keymap::KeymapStorage};
 
 use crate::{
-    error::contest_info_error::ContestInfoError,
-    services::integrations::oracle_service::oracle::NULL_AND_VOID_CONTEST_RESULT,
+    error::contest_info_error::ContestInfoError, services::integrations::price_feed_service::pricefeed::NULL_AND_VOID_CONTEST_RESULT,
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema, KeymapStorage)]

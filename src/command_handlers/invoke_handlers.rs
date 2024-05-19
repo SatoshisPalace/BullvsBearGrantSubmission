@@ -8,7 +8,7 @@ use crate::{
         bet_service::place_or_update_bet,
         contest_bet_summary_service::{add_bet_to_contest_summary, create_new_contest_bet_summary},
         contest_info_service::{
-            assert_outcome_is_on_contest, create_new_contest, create_new_contest_info, get_contest_info, get_current_close
+            assert_outcome_is_on_contest, assert_ticker_valid, create_new_contest, create_new_contest_info, get_contest_info, get_current_close
         },
         contests_service::add_active_contest,
         state_service::assert_amount_is_greater_than_minimum_bet,
@@ -33,7 +33,7 @@ pub fn handle_bet_on_contest(
     assert_amount_is_greater_than_minimum_bet(deps.storage, &amount_bet)?;
 
     // Generate current close time
-    let current_close = get_current_close(&env);
+    let current_close = get_current_close(deps.storage, &env);
     // Generate ContestId from ticker and close time
     let contest_id = ContestId::new(ticker.clone(), current_close);
     // Attempt to load contest info
@@ -43,8 +43,9 @@ pub fn handle_bet_on_contest(
     let contest_info = match contest_info_result {
         Ok(info) => info,
         Err(ContestInfoError::ContestNotFound(_)) => {
+            assert_ticker_valid(&ticker)?;
             // Initialize new ContestInfo here if needed
-            let info = create_new_contest_info(&ticker, &current_close);
+            let info = create_new_contest_info(deps.storage, &ticker, &current_close);
             create_new_contest(&mut deps, &info)?;
             create_new_contest_bet_summary(deps.storage, &info)?;
             add_active_contest(deps.storage, &contest_id)?;
