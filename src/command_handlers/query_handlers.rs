@@ -1,5 +1,5 @@
 use cosmwasm_std::{to_binary, Binary, Deps, Env, StdResult};
-use sp_secret_toolkit::contract::contract::Contract;
+use sp_secret_toolkit::{contract::contract::Contract, snip20::Snip20};
 
 use crate::{
     data::{
@@ -17,12 +17,7 @@ use crate::{
     responses::query::{
         query_response::QueryResponse,
         response_types::{
-            bet::UserBetResponse,
-            contest_data::ContestDataResponse,
-            contest_data_list::ContestDataListResponse,
-            get_snip20::GetSnip20Response,
-            minimum_bet::MinimumBetResponse,
-            users_bets::{UserContestBetInfo, UsersBetsResponse},
+            bet::UserBetResponse, contest_data::ContestDataResponse, contest_data_list::ContestDataListResponse, get_snip20::GetSnip20Response, minimum_bet::MinimumBetResponse, total_value::TotalValueResponse, users_bets::{UserContestBetInfo, UsersBetsResponse}
         },
     },
     services::{
@@ -123,6 +118,19 @@ pub fn handle_get_contests_by_ids(deps: Deps, command: GetContestsByIds) -> StdR
 pub fn handle_get_minimum_bet(deps: Deps) -> StdResult<Binary> {
     let minimum_bet = get_minimum_bet(deps.storage)?;
     let response = QueryResponse::MinimumBet(MinimumBetResponse { minimum_bet });
+    return to_binary(&response);
+}
+
+pub fn handle_get_total_value(deps: Deps, env: Env) -> StdResult<Binary> {
+    let storage = deps.storage;
+
+    let snip20 = Snip20::singleton_load(storage)?;
+
+    let balance = snip20.query_contract_balance(&deps.querier, &env).unwrap();
+
+    let total_value = balance.amount;
+
+    let response = QueryResponse::TotalValue(TotalValueResponse {total_value});
     return to_binary(&response);
 }
 

@@ -65,6 +65,18 @@
     {
       "type": "object",
       "required": [
+        "total_value"
+      ],
+      "properties": {
+        "total_value": {
+          "$ref": "#/definitions/TotalValueResponse"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
         "snip20"
       ],
       "properties": {
@@ -272,6 +284,17 @@
         },
         "option": {
           "$ref": "#/definitions/ContestOutcome"
+        }
+      }
+    },
+    "TotalValueResponse": {
+      "type": "object",
+      "required": [
+        "total_value"
+      ],
+      "properties": {
+        "total_value": {
+          "$ref": "#/definitions/Uint128"
         }
       }
     },
