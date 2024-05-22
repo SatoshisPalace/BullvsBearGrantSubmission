@@ -78,7 +78,7 @@ mod tests {
         test_env.initialize();
 
         test_env.first_bet_on_contest_success(&1, &1, &100);
-        test_env.first_bet_on_contest_success(&6, &1, &200);
+        test_env.first_bet_on_contest_success(&10, &1, &200);
 
         test_env.get_contests_success(
             Some(0),
@@ -95,7 +95,7 @@ mod tests {
         test_env.initialize();
 
         test_env.first_bet_on_contest_success(&1, &1, &100);
-        test_env.first_bet_on_contest_success(&6, &1, &200);
+        test_env.first_bet_on_contest_success(&10, &1, &200);
 
         test_env.get_contests_success(
             Some(0),
@@ -112,7 +112,7 @@ mod tests {
         test_env.initialize();
 
         test_env.first_bet_on_contest_success(&1, &1, &100);
-        test_env.first_bet_on_contest_success(&6, &1, &200);
+        test_env.first_bet_on_contest_success(&10, &1, &200);
 
         test_env.get_contests_success(
             Some(0),
@@ -129,7 +129,7 @@ mod tests {
         test_env.initialize();
 
         test_env.first_bet_on_contest_success(&1, &1, &100);
-        test_env.first_bet_on_contest_success(&6, &1, &200);
+        test_env.first_bet_on_contest_success(&10, &1, &200);
 
         test_env.get_contests_success(
             None,
@@ -146,7 +146,7 @@ mod tests {
         test_env.initialize();
 
         test_env.first_bet_on_contest_success(&1, &1, &100);
-        test_env.first_bet_on_contest_success(&6, &1, &200);
+        test_env.first_bet_on_contest_success(&10, &1, &200);
 
         test_env.get_contests_success(
             Some(0),

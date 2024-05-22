@@ -18,7 +18,7 @@ mod tests {
         let mut test_env = TestEnv::new();
         test_env.initialize();
 
-        let contest_file = 7;
+        let contest_file = 11;
         test_env.first_bet_on_contest_fail(&contest_file, &1, &100);
     }
 
