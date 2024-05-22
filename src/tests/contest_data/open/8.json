@@ -1,0 +1,19 @@
+{
+    "contest_info": {
+        "id": "99bb0ec9deec4070a39b99eeaee97871ff2b54bf3a1be8ae04cc91d5b4ebcffe",
+        "options": [
+            {
+                "id": 1,
+                "name": "Philadelphia Phillies"
+            },
+            {
+                "id": 2,
+                "name": "Texas Rangers"
+            }
+        ],
+        "time_of_close": 1716417600,
+        "time_of_resolve": 1716504000,
+        "event_details": "MLB153968"
+    },
+    "contest_info_signature_hex": "09ae44400a739d15b9262a4067756645fc7dc02503836c020ce6967940f1d76a0a1431c67cf6a7476ab468be7050033976a7e6e6852d471a6d1135b8826e14e1"
+}

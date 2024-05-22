@@ -773,6 +773,22 @@ pub mod tests {
                         is_sorted_descending,
                         "Contests are not sorted in descending order of volume as expected."
                     );
+                } else if let Some(ContestQuerySortOrder::Descending) = sort_order {
+                    // Extract the time of close for each contest
+                    let times_of_close: Vec<u64> = contest_data_list
+                        .iter()
+                        .map(|contest_data_response| {
+                            contest_data_response.contest_info.get_time_of_close()
+                        })
+                        .collect();
+                    // Check if the volumes list is sorted in descending order
+                    // Adjust this logic if you need ascending order or have other sort orders
+                    let is_sorted_descending = times_of_close.windows(2).all(|w| w[0] >= w[1]);
+
+                    assert!(
+                        is_sorted_descending,
+                        "Contests are not sorted in descending order of time of close as expected."
+                    );
                 }
             } else {
                 panic!("Expected ContestDataList response but received something else");

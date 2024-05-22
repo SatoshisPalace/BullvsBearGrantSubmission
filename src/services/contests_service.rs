@@ -45,12 +45,20 @@ fn paginate_contests(
 }
 
 pub fn sort_contests(combined: &mut Vec<(ContestInfo, ContestBetSummary)>, sort_order: Option<ContestQuerySortOrder>) {
-    if let Some(ContestQuerySortOrder::Volume) = sort_order {
-        combined.sort_by(|a, b| {
-            let total_pool_a = a.1.calc_total_pool();
-            let total_pool_b = b.1.calc_total_pool();
-            total_pool_b.cmp(&total_pool_a) // Assuming Uint128 supports cmp, adjust if necessary
-        });
+    match sort_order {
+        Some(ContestQuerySortOrder::Volume) => {
+            combined.sort_by(|a, b| {
+                let total_pool_a = a.1.calc_total_pool();
+                let total_pool_b = b.1.calc_total_pool();
+                total_pool_b.cmp(&total_pool_a) // Assuming Uint128 supports cmp, adjust if necessary
+            });
+        },
+        Some(ContestQuerySortOrder::Descending) => {
+            combined.sort_by(|a, b| b.0.get_time_of_close().cmp(&a.0.get_time_of_close()));
+        }
+        None => {
+            
+        },
     }
 }
 

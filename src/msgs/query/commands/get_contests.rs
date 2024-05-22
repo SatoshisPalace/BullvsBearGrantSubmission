@@ -14,6 +14,7 @@ pub struct GetContests {
 #[serde(rename_all = "snake_case")]
 pub enum ContestQuerySortOrder {
     Volume,
+    Descending
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
