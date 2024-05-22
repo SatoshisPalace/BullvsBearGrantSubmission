@@ -77,6 +77,18 @@
     {
       "type": "object",
       "required": [
+        "get_total_value"
+      ],
+      "properties": {
+        "get_total_value": {
+          "$ref": "#/definitions/GetTotalValue"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
         "get_snip20"
       ],
       "properties": {
@@ -177,6 +189,9 @@
       "type": "object"
     },
     "GetSnip20": {
+      "type": "object"
+    },
+    "GetTotalValue": {
       "type": "object"
     },
     "GetUserBet": {

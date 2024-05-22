@@ -124,6 +124,26 @@ mod tests {
     }
 
     #[test]
+    fn get_page_sort_by_time_of_close() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize();
+
+        test_env.create_open_contest_success(&7, &1, &100);
+        test_env.create_open_contest_success(&9, &1, &200);
+        test_env.create_open_contest_success(&6, &1, &400);
+        test_env.create_open_contest_success(&8, &1, &50);
+        test_env.create_open_contest_success(&5, &1, &10);
+
+        test_env.get_contests_success(
+            None,
+            None,
+            Some(ContestQuerySortOrder::Descending),
+            Some(ContestQueryFilter::Active),
+            5,
+        );
+    }
+
+    #[test]
     fn get_page_sort_by_volume() {
         let mut test_env = TestEnv::new();
         test_env.initialize();

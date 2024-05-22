@@ -4,7 +4,8 @@ use serde::{Deserialize, Serialize};
 use super::response_types::{
     bet::UserBetResponse, contest_data::ContestDataResponse,
     contest_data_list::ContestDataListResponse, get_snip20::GetSnip20Response,
-    minimum_bet::MinimumBetResponse, users_bets::UsersBetsResponse,
+    minimum_bet::MinimumBetResponse, total_value::TotalValueResponse,
+    users_bets::UsersBetsResponse,
 };
 
 // Enum to encapsulate each query response type
@@ -16,5 +17,6 @@ pub enum QueryResponse {
     UserBet(UserBetResponse),
     UsersBets(UsersBetsResponse),
     MinimumBet(MinimumBetResponse),
+    TotalValue(TotalValueResponse),
     Snip20(GetSnip20Response),
 }

@@ -4,8 +4,7 @@ use crate::command_handlers::execute_handlers::{
 };
 use crate::command_handlers::invoke_handlers::handle_bet_on_contest;
 use crate::command_handlers::query_handlers::{
-    handle_get_contest_by_id, handle_get_contests, handle_get_contests_by_ids,
-    handle_get_minimum_bet, handle_get_snip20, handle_user_bet, handle_users_bets_query,
+    handle_get_contest_by_id, handle_get_contests, handle_get_contests_by_ids, handle_get_minimum_bet, handle_get_snip20, handle_get_total_value, handle_user_bet, handle_users_bets_query
 };
 use crate::data::state::State;
 use crate::msgs::execute::execute_msg::ExecuteMsg;
@@ -80,6 +79,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetUserBet(command) => handle_user_bet(deps, command),
         QueryMsg::GetUsersBets(command) => handle_users_bets_query(deps, env, command),
         QueryMsg::GetMinBet(_) => handle_get_minimum_bet(deps),
+        QueryMsg::GetTotalValue(_) => handle_get_total_value(deps, env),
         QueryMsg::GetSnip20(_) => handle_get_snip20(deps),
     }
 }

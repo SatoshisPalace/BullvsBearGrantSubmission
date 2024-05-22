@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use super::commands::{
     get_contest_by_id::GetContestById, get_contests::GetContests,
     get_contests_by_ids::GetContestsByIds, get_min_bet::GetMinBet, get_snip20::GetSnip20,
-    get_user_bet::GetUserBet, get_users_bets::GetUsersBets,
+    get_total_value::GetTotalValue, get_user_bet::GetUserBet, get_users_bets::GetUsersBets,
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
@@ -16,5 +16,6 @@ pub enum QueryMsg {
     GetUserBet(GetUserBet),
     GetUsersBets(GetUsersBets),
     GetMinBet(GetMinBet),
+    GetTotalValue(GetTotalValue),
     GetSnip20(GetSnip20),
 }

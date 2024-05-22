@@ -1,0 +1,19 @@
+{
+    "contest_info": {
+        "id": "ddbda2df348fd863f435435c55c584b0570dce7284d5a224e7c927253ba90c02",
+        "options": [
+            {
+                "id": 1,
+                "name": "Pittsburgh Pirates"
+            },
+            {
+                "id": 2,
+                "name": "San Francisco Giants"
+            }
+        ],
+        "time_of_close": 1716482100,
+        "time_of_resolve": 1716568500,
+        "event_details": "MLB153977"
+    },
+    "contest_info_signature_hex": "7d3144c0630b99751b3f45a04b60ce4019cded67ed64464ff5059489810f39956dee8f758f950b3523cd0d825a0749a8e77cb59df044e8f7206c32123813657d"
+}

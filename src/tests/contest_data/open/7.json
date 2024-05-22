@@ -1,0 +1,19 @@
+{
+    "contest_info": {
+        "id": "88edd4feaf18baa92a233f39102bbae63055bc78af365a660d9cd114162a3543",
+        "options": [
+            {
+                "id": 1,
+                "name": "Kansas City Royals"
+            },
+            {
+                "id": 2,
+                "name": "Detroit Tigers"
+            }
+        ],
+        "time_of_close": 1716401400,
+        "time_of_resolve": 1716487800,
+        "event_details": "MLB153963"
+    },
+    "contest_info_signature_hex": "08f28f05c5d8336132ecc3ec6c2a9df59bbfde6c7d9b4c71ad6783a42b08b4c07903bfe5306af95b2e0ff259d3166669a71d69b637b212d450d6cb9e977f3207"
+}
