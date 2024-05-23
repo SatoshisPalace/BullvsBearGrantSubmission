@@ -5,7 +5,7 @@ mod tests {
     use crate::{
         msgs::query::commands::get_contests::{ContestQueryFilter, ContestQuerySortOrder},
         tests::{
-            constants::{AFTER_TIME_OF_CLOSE, AFTER_TIME_OF_RESOLVE},
+            constants::{AFTER_TIME_OF_1_CLOSE, AFTER_TIME_OF_2_CLOSE, AFTER_TIME_OF_3_CLOSE, AFTER_TIME_OF_4_CLOSE, AFTER_TIME_OF_CLOSE, AFTER_TIME_OF_RESOLVE},
             test_env::tests::TestEnv,
         },
     };
@@ -128,17 +128,21 @@ mod tests {
         let mut test_env = TestEnv::new();
         test_env.initialize();
 
-        test_env.create_open_contest_success(&7, &1, &100);
-        test_env.create_open_contest_success(&9, &1, &200);
-        test_env.create_open_contest_success(&6, &1, &400);
-        test_env.create_open_contest_success(&8, &1, &50);
-        test_env.create_open_contest_success(&5, &1, &10);
+        test_env.first_bet_on_contest_success(&1, &1, &100);
+        test_env.set_time(AFTER_TIME_OF_1_CLOSE);
+        test_env.first_bet_on_contest_success(&2, &1, &100);
+        test_env.set_time(AFTER_TIME_OF_2_CLOSE);
+        test_env.first_bet_on_contest_success(&3, &1, &100);
+        test_env.set_time(AFTER_TIME_OF_3_CLOSE);
+        test_env.first_bet_on_contest_success(&4, &1, &100);
+        test_env.set_time(AFTER_TIME_OF_4_CLOSE);
+        test_env.first_bet_on_contest_success(&5, &1, &100);
 
         test_env.get_contests_success(
             None,
             None,
             Some(ContestQuerySortOrder::Descending),
-            Some(ContestQueryFilter::Active),
+            None,
             5,
         );
     }
