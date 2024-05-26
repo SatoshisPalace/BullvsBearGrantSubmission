@@ -1,15 +1,18 @@
 use cosmwasm_std::{DepsMut, Env, QuerierWrapper, StdResult, Storage, Uint128};
 
 use crate::{
-    constants::EXPIRATION_WINDOW, data::{
+    constants::EXPIRATION_WINDOW,
+    data::{
         contest_bet_summary::ContestBetSummary,
         contest_info::{ContestId, ContestInfo, ContestOutcome},
-    }, error::contest_bet_summary_error::ContestBetSummaryError
+        state::State,
+    },
+    error::contest_bet_summary_error::ContestBetSummaryError,
 };
 
 use super::{
     contest_info_service::{assert_contest_ready_to_be_claimed, get_contest_result},
-    integrations::price_feed_service::pricefeed::query_prices,
+    integrations::price_feed_service::pricefeed::{query_prices, NULL_AND_VOID_CONTEST_RESULT},
 }; // Make sure to adjust the import based on your actual storage handling
 
 /// Adds a bet to a contest summary.
@@ -84,15 +87,21 @@ pub fn finalize_contest_outcome(
     }
 
     // If not and not passed expiration time window, query the price feed for the prices using the adjusted function.
-    let price_posting_ids = vec![contest_info.get_time_of_close(), contest_info.get_time_of_resolve()];
+    let price_posting_ids = vec![
+        contest_info.get_time_of_close(),
+        contest_info.get_time_of_resolve(),
+    ];
     let prices = query_prices(&deps.querier, deps.storage, &price_posting_ids);
     let expiry = EXPIRATION_WINDOW + contest_info.get_time_of_close();
     let result = get_contest_result(env, &prices, &expiry);
-    
+
     if let Some(outcome) = result {
         // Should certainly exist
         // Set the outcome in the contest bet summary.
         contest_bet_summary.set_outcome(&outcome)?;
+        if outcome.get_id() != &NULL_AND_VOID_CONTEST_RESULT {
+            take_contest_fees(deps.storage, contest_bet_summary.clone());
+        }
     } else {
         return Err(ContestBetSummaryError::OutcomeDNE);
     }
@@ -155,7 +164,14 @@ pub fn query_contest_result_oracle(
     contest_info: &ContestInfo,
 ) -> Result<Option<ContestOutcome>, ContestBetSummaryError> {
     assert_contest_ready_to_be_claimed(storage, env, &contest_info.get_id())?;
-    let prices = query_prices(querier, storage, &vec![contest_info.get_time_of_close(), contest_info.get_time_of_resolve()]);
+    let prices = query_prices(
+        querier,
+        storage,
+        &vec![
+            contest_info.get_time_of_close(),
+            contest_info.get_time_of_resolve(),
+        ],
+    );
     let expiry = EXPIRATION_WINDOW + contest_info.get_time_of_close();
     Ok(get_contest_result(env, &prices, &expiry))
 }
@@ -185,4 +201,19 @@ pub fn update_contest_bet_summaries_with_results(
     }
 
     contest_bet_summaries.to_vec() // Return the updated summaries
+}
+
+pub fn take_contest_fees(storage: &mut dyn Storage, contest_bet_summary: ContestBetSummary) {
+    let mut state = State::singleton_load(storage).unwrap();
+    let current_fees = state.claimable_fees().to_owned();
+
+    let fee = state.fee_percent();
+
+    let total_pool = contest_bet_summary.calc_total_pool();
+    let fee_amount = total_pool.u128()
+        - (total_pool.u128() * (fee.denominator() - fee.numerator()) / fee.denominator());
+
+    let new_collected_fees = current_fees + Uint128::from(fee_amount);
+    state.set_claimable_fees(new_collected_fees);
+    let _ = state.singleton_save(storage);
 }

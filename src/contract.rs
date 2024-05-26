@@ -1,10 +1,12 @@
-use crate::command_handlers::admin_execute_handlers::handle_set_minimum_bet;
+use crate::command_handlers::admin_execute_handlers::{handle_claim_fees, handle_set_minimum_bet};
 use crate::command_handlers::execute_handlers::{
     handle_claim, handle_claim_multiple, handle_receive,
 };
 use crate::command_handlers::invoke_handlers::handle_bet_on_contest;
 use crate::command_handlers::query_handlers::{
-    handle_get_contest_by_id, handle_get_contests, handle_get_contests_by_ids, handle_get_minimum_bet, handle_get_snip20, handle_get_total_value, handle_user_bet, handle_users_bets_query
+    handle_get_claimable_fees, handle_get_contest_by_id, handle_get_contests,
+    handle_get_contests_by_ids, handle_get_fee_percent, handle_get_minimum_bet, handle_get_snip20,
+    handle_get_total_value, handle_user_bet, handle_users_bets_query,
 };
 use crate::data::state::State;
 use crate::msgs::execute::execute_msg::ExecuteMsg;
@@ -16,8 +18,8 @@ use cosmwasm_std::{
     entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
 use sp_secret_toolkit::master_viewing_key::MasterViewingKey;
-use sp_secret_toolkit::snip20::Snip20;
 use sp_secret_toolkit::price_feed::PriceFeed;
+use sp_secret_toolkit::snip20::Snip20;
 
 #[entry_point]
 pub fn instantiate(
@@ -27,10 +29,11 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
     let state = State::new(
-        msg.satoshis_palace,
         info.clone().sender,
+        info.sender.clone(),
         msg.interval,
         Uint128::from(1u128), // Set minimum_bet to 1
+        msg.fee_percent,
     );
     state.singleton_save(deps.storage)?;
 
@@ -49,6 +52,7 @@ pub fn instantiate(
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
         ExecuteMsg::Claim(command) => handle_claim(deps, env, info, command),
+        ExecuteMsg::ClaimFees(_) => handle_claim_fees(deps, info),
         ExecuteMsg::ClaimMultiple(command) => handle_claim_multiple(deps, env, info, command),
         ExecuteMsg::SetMinimumBet(command) => handle_set_minimum_bet(deps, info, command),
         ExecuteMsg::Receive(command) => handle_receive(deps, env, info, command),
@@ -81,5 +85,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetMinBet(_) => handle_get_minimum_bet(deps),
         QueryMsg::GetTotalValue(_) => handle_get_total_value(deps, env),
         QueryMsg::GetSnip20(_) => handle_get_snip20(deps),
+        QueryMsg::GetClaimableFees(_) => handle_get_claimable_fees(deps),
+        QueryMsg::GetFeePercent(_) => handle_get_fee_percent(deps),
     }
 }

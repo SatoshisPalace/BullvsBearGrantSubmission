@@ -1,7 +1,9 @@
 pub mod bet;
+pub mod claimable_fees;
 pub mod contest_data;
 pub mod contest_data_list;
+pub mod fee_percent;
 pub mod get_snip20;
 pub mod minimum_bet;
-pub mod users_bets;
 pub mod total_value;
+pub mod users_bets;

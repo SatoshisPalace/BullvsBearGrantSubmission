@@ -17,7 +17,15 @@ use crate::{
     responses::query::{
         query_response::QueryResponse,
         response_types::{
-            bet::UserBetResponse, contest_data::ContestDataResponse, contest_data_list::ContestDataListResponse, get_snip20::GetSnip20Response, minimum_bet::MinimumBetResponse, total_value::TotalValueResponse, users_bets::{UserContestBetInfo, UsersBetsResponse}
+            bet::UserBetResponse,
+            claimable_fees::ClaimableFeesResponse,
+            contest_data::ContestDataResponse,
+            contest_data_list::ContestDataListResponse,
+            fee_percent::FeePercentResponse,
+            get_snip20::GetSnip20Response,
+            minimum_bet::MinimumBetResponse,
+            total_value::TotalValueResponse,
+            users_bets::{UserContestBetInfo, UsersBetsResponse},
         },
     },
     services::{
@@ -31,7 +39,7 @@ use crate::{
         },
         contests_service::get_contests,
         integrations::master_viewing_key_service::viewing_keys::assert_valid_viewing_key,
-        state_service::{get_minimum_bet, get_snip20},
+        state_service::{get_claimable_fees, get_fee_percent, get_minimum_bet, get_snip20},
         user_info_service::get_contests_for_user,
     },
 };
@@ -115,9 +123,21 @@ pub fn handle_get_contests_by_ids(deps: Deps, command: GetContestsByIds) -> StdR
     return to_binary(&response);
 }
 
+pub fn handle_get_fee_percent(deps: Deps) -> StdResult<Binary> {
+    let fee_percent = get_fee_percent(deps.storage)?;
+    let response = QueryResponse::FeePercent(FeePercentResponse { fee_percent });
+    return to_binary(&response);
+}
+
 pub fn handle_get_minimum_bet(deps: Deps) -> StdResult<Binary> {
     let minimum_bet = get_minimum_bet(deps.storage)?;
     let response = QueryResponse::MinimumBet(MinimumBetResponse { minimum_bet });
+    return to_binary(&response);
+}
+
+pub fn handle_get_claimable_fees(deps: Deps) -> StdResult<Binary> {
+    let claimable_fees = get_claimable_fees(deps.storage)?;
+    let response = QueryResponse::ClaimableFees(ClaimableFeesResponse { claimable_fees });
     return to_binary(&response);
 }
 
@@ -130,7 +150,7 @@ pub fn handle_get_total_value(deps: Deps, env: Env) -> StdResult<Binary> {
 
     let total_value = balance.amount;
 
-    let response = QueryResponse::TotalValue(TotalValueResponse {total_value});
+    let response = QueryResponse::TotalValue(TotalValueResponse { total_value });
     return to_binary(&response);
 }
 

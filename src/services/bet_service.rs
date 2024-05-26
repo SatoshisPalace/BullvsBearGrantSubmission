@@ -2,10 +2,11 @@ use cosmwasm_std::{Addr, Storage, Uint128};
 use sp_secret_toolkit::macros::identifiable::Identifiable;
 
 use crate::{
-    constants::{FEE_PERCENTAGE, PERCENTAGE_BASE},
     data::{
         bets::{Bet, UserContest},
-        contest_bet_summary::ContestBetSummary, contest_info::ContestId,
+        contest_bet_summary::ContestBetSummary,
+        contest_info::ContestId,
+        state::State,
     },
     error::bet_error::BetError,
 };
@@ -106,7 +107,7 @@ pub fn user_claims_bet(
                 amount_to_claim = bet.get_amount().clone();
             } else if bet.get_outcome_id() == winning_outcome_id {
                 // User won calculate their payout
-                amount_to_claim = calculate_user_share(contest_bet_summary, &bet)?
+                amount_to_claim = calculate_user_share(storage, contest_bet_summary, &bet)?
             } else {
                 // User lost lol
                 return Err(BetError::CannotClaimOnLostContest);
@@ -135,9 +136,14 @@ pub fn assert_not_paid(bet: &Bet) -> Result<(), BetError> {
 }
 
 fn calculate_user_share(
+    storage: &mut dyn Storage,
     contest_bet_summary: &ContestBetSummary,
     bet: &Bet,
 ) -> Result<Uint128, BetError> {
+    // Load state to access fee_percentage
+    let state = State::singleton_load(storage).unwrap();
+    let fee_percent = state.fee_percent();
+
     // Calculate the total pool
     let total_pool = contest_bet_summary.calc_total_pool();
     let users_side_bet_allocation = contest_bet_summary.get_allocation(*bet.get_outcome_id())?;
@@ -148,8 +154,9 @@ fn calculate_user_share(
     }
 
     // Apply the fee
-    let total_pool_after_fee =
-        total_pool.u128() * (PERCENTAGE_BASE - FEE_PERCENTAGE) / PERCENTAGE_BASE;
+    let total_pool_after_fee = total_pool.u128()
+        * (fee_percent.denominator() - fee_percent.numerator())
+        / fee_percent.denominator();
 
     // Get the total allocation for the user's chosen outcome
     let total_allocation_for_outcome = contest_bet_summary.get_allocation(*bet.get_outcome_id())?;

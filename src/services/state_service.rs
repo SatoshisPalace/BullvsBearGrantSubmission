@@ -1,21 +1,43 @@
 use cosmwasm_std::{Addr, Storage, Uint128};
-use sp_secret_toolkit::{
-    contract::contract::Contract, snip20::Snip20,
-};
+use sp_secret_toolkit::{contract::contract::Contract, snip20::Snip20};
 
 use crate::{
-    data::state::State,
+    data::state::{FeePercent, State},
     error::state_error::StateError,
 };
 
+pub fn get_fee_percent(storage: &dyn cosmwasm_std::Storage) -> Result<FeePercent, StateError> {
+    let state = State::singleton_load(storage)?;
+    Ok(state.fee_percent().clone())
+}
+
 pub fn get_minimum_bet(storage: &dyn cosmwasm_std::Storage) -> Result<Uint128, StateError> {
     let state = State::singleton_load(storage)?;
-    Ok(state.get_minimum_bet().clone())
+    Ok(state.minimum_bet().clone())
+}
+
+pub fn get_claimable_fees(storage: &dyn cosmwasm_std::Storage) -> Result<Uint128, StateError> {
+    let state = State::singleton_load(storage)?;
+    Ok(state.claimable_fees().clone())
+}
+
+pub fn add_claimable_fee_for_pool(storage: &mut dyn cosmwasm_std::Storage, total_pool: &Uint128) {
+    let mut state = State::singleton_load(storage).unwrap();
+    let current_fees = state.claimable_fees().to_owned();
+    let fee = state.fee_percent().to_owned();
+
+    let fee_amount = total_pool.u128()
+        - (total_pool.u128() * (fee.denominator() - fee.numerator()) / fee.denominator());
+
+    let new_collected_fees = current_fees + Uint128::from(fee_amount);
+
+    state.set_claimable_fees(new_collected_fees);
+    let _ = state.singleton_save(storage);
 }
 
 pub fn get_interval(storage: &dyn cosmwasm_std::Storage) -> Result<u64, StateError> {
     let state = State::singleton_load(storage)?;
-    Ok(state.get_interval().clone())
+    Ok(state.interval().clone())
 }
 
 pub fn assert_amount_is_greater_than_minimum_bet(
