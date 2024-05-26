@@ -1,14 +1,22 @@
 #[cfg(test)]
 mod tests {
-    use crate::tests::test_env::tests::TestEnv;
+    use crate::{
+        data::state::FeePercent,
+        tests::{
+            constants::{BASE_FEE_PERCENT_DENOMINATOR, BASE_FEE_PERCENT_NUMERATOR},
+            test_env::tests::TestEnv,
+        },
+    };
 
     ////////TESTS////////
 
     #[test]
     fn get_user_bet_after_contest_creation() {
         let mut test_env = TestEnv::new();
-        test_env.initialize();
-
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
         let contest_file = 1;
         let amount_to_bet = 100;
         let outcome_to_bet_on = 1;
@@ -24,8 +32,10 @@ mod tests {
     #[test]
     fn get_user_bet_after_bet() {
         let mut test_env = TestEnv::new();
-        test_env.initialize();
-
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
         let contest_file = 1;
         let amount_to_bet = 100;
         let outcome_to_bet_on = 1;
@@ -43,8 +53,10 @@ mod tests {
     #[test]
     fn get_user_bet_after_create_and_bet_many() {
         let mut test_env = TestEnv::new();
-        test_env.initialize();
-
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
         let amount_to_bet = 100;
         let outcome_to_bet_on = 1;
 

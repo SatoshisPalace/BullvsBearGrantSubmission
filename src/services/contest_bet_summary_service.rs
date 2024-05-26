@@ -4,6 +4,7 @@ use crate::{
     data::{
         contest_bet_summary::ContestBetSummary,
         contest_info::{ContestInfo, ContestOutcome},
+        state::State,
     },
     error::contest_bet_summary_error::ContestBetSummaryError,
 };
@@ -92,6 +93,9 @@ pub fn finalize_contest_outcome(
         // Should certainly exist
         // Set the outcome in the contest bet summary.
         contest_bet_summary.set_outcome(&outcome)?;
+        if outcome.get_id() != &NULL_AND_VOID_CONTEST_RESULT {
+            take_contest_fees(deps.storage, contest_bet_summary.clone());
+        }
     } else {
         return Err(ContestBetSummaryError::OutcomeDNE);
     }
@@ -195,4 +199,19 @@ pub fn update_contest_bet_summaries_with_results(
     }
 
     contest_bet_summaries.to_vec() // Return the updated summaries
+}
+
+pub fn take_contest_fees(storage: &mut dyn Storage, contest_bet_summary: ContestBetSummary) {
+    let mut state = State::singleton_load(storage).unwrap();
+    let current_fees = state.claimable_fees().to_owned();
+
+    let fee = state.fee_percent();
+
+    let total_pool = contest_bet_summary.calc_total_pool();
+    let fee_amount = total_pool.u128()
+        - (total_pool.u128() * (fee.denominator() - fee.numerator()) / fee.denominator());
+
+    let new_collected_fees = current_fees + Uint128::from(fee_amount);
+    state.set_claimable_fees(new_collected_fees);
+    let _ = state.singleton_save(storage);
 }

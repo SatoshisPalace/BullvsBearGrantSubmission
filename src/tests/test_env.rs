@@ -9,15 +9,18 @@ pub mod tests {
 
     use crate::{
         command_handlers::{
-            admin_execute_handlers::handle_set_minimum_bet,
+            admin_execute_handlers::{handle_claim_fees, handle_set_minimum_bet},
             execute_handlers::{handle_claim, handle_claim_multiple},
             invoke_handlers::{handle_bet_on_contest, handle_create_contest},
             query_handlers::{
-                handle_get_contest_by_id, handle_get_contests, handle_get_contests_by_ids,
-                handle_get_minimum_bet, handle_get_snip20, handle_user_bet,
-                handle_users_bets_query,
+                handle_get_claimable_fees, handle_get_contest_by_id, handle_get_contests,
+                handle_get_contests_by_ids, handle_get_fee_percent, handle_get_minimum_bet,
+                handle_get_snip20, handle_user_bet, handle_users_bets_query,
             },
-        }, contract::instantiate, data::contest_info::ContestInfo, msgs::{
+        },
+        contract::instantiate,
+        data::{contest_info::ContestInfo, state::FeePercent},
+        msgs::{
             execute::commands::{
                 claim::Claim, claim_multiple::ClaimMultiple, set_minimum_bet::SetMinimumBet,
             },
@@ -30,16 +33,21 @@ pub mod tests {
                 get_user_bet::GetUserBet,
                 get_users_bets::{GetUsersBets, UsersBetsQueryFilters},
             },
-        }, responses::{
+        },
+        responses::{
             execute::execute_response::ExecuteResponse,
             query::{query_response::QueryResponse, response_types::users_bets::UsersBetsResponse},
-        }, services::integrations::oracle_service::oracle::{configure_mock, MockConfig}, tests::{
-            constants::TESTING_SP_SIGNING_KEY,
+        },
+        services::integrations::oracle_service::oracle::{configure_mock, MockConfig},
+        tests::{
+            constants::{
+                BASE_FEE_PERCENT_DENOMINATOR, BASE_FEE_PERCENT_NUMERATOR, TESTING_SP_SIGNING_KEY,
+            },
             contest_infos::{
                 get_contest_closed_awaiting_results, get_contest_closed_claimable,
                 get_contest_invalid_signature, get_contest_open,
             },
-        }
+        },
     };
 
     // Test environment struct
@@ -66,7 +74,7 @@ pub mod tests {
             self.env.block.time = Timestamp::from_seconds(seconds)
         }
 
-        pub fn initialize(&mut self) {
+        pub fn initialize(&mut self, fee_percent: FeePercent) {
             configure_mock(MockConfig::ReturnError(false));
             let msg = InstantiateMsg {
                 satoshis_palace: Addr::unchecked(TESTING_SP_SIGNING_KEY),
@@ -83,6 +91,7 @@ pub mod tests {
                     address: Addr::unchecked("Master Viewing Key Address"),
                     code_hash: "Master Viewing Key CodeHash".to_owned(),
                 },
+                fee_percent,
             };
             let _res = instantiate(self.deps.as_mut(), self.env.clone(), self.info.clone(), msg)
                 .expect("contract initialization failed");
@@ -384,6 +393,49 @@ pub mod tests {
             )
         }
 
+        pub fn claim_fees_success(&mut self, expected_amount: Option<&u128>) {
+            let response_result = handle_claim_fees(self.deps.as_mut(), self.info.clone());
+            assert!(
+                response_result.is_ok(),
+                "Expected Claim to succeed but failed"
+            );
+            let response = response_result.unwrap();
+            assert_eq!(
+                response.messages.len(),
+                1,
+                "Expected claim response to have snip20 msg on it"
+            );
+            if let Some(binary_data) = response.data {
+                match from_binary::<ExecuteResponse>(&binary_data) {
+                    Ok(claim_response) => match claim_response {
+                        ExecuteResponse::Claim(claim_response) => {
+                            // Successfully deserialized and matched the Claim variant.
+                            // You can now use `claim_data` here.
+                            if let Some(expected) = expected_amount {
+                                assert_eq!(
+                                    claim_response.amount,
+                                    Uint128::from(*expected),
+                                    "Claim Amount does not match expected"
+                                )
+                            }
+                        }
+                        _ => assert!(false, "Could not deserialize claim response"),
+                    },
+                    Err(_e) => assert!(false, "Could not deserialize claim response"),
+                }
+            } else {
+                assert!(false, "Could not deserialize claim response")
+            }
+        }
+
+        pub fn claim_fees_failure(&mut self) {
+            let response_result = handle_claim_fees(self.deps.as_mut(), self.info.clone());
+            assert!(
+                response_result.is_err(),
+                "Expected Claim Fees to Fail but Succeeded"
+            );
+        }
+
         pub fn claim_success(&mut self, file_number: &u8, expected_amount: Option<&u128>) {
             if let Ok((contest_info, _contest_info_signature_hex)) = get_contest_open(*file_number)
             {
@@ -671,6 +723,64 @@ pub mod tests {
                     }
                 }
                 _ => panic!("Expected MinimumBet response but received something else"),
+            }
+        }
+
+        pub fn get_fee_percent(&mut self, expected_fee_percent_option: Option<&FeePercent>) {
+            let binary_response = handle_get_fee_percent(self.deps.as_ref())
+                .expect("Expected GetFeePercent to succeed but failed");
+
+            let response: QueryResponse =
+                from_binary(&binary_response).expect("Failed to deserialize QueryResponse");
+
+            match response {
+                QueryResponse::FeePercent(fee_percent_response) => {
+                    if let Some(expected_fee_percent) = expected_fee_percent_option {
+                        // If an expected fee percent is specified, assert it matches the retrieved value.
+                        assert_eq!(
+                            fee_percent_response.fee_percent, *expected_fee_percent,
+                            "Fee percent is not what was expected"
+                        );
+                    } else {
+                        // If no expected fee percent is provided, just check that itr matches the base fee percent.
+                        assert_eq!(
+                            fee_percent_response.fee_percent,
+                            FeePercent::new(
+                                BASE_FEE_PERCENT_NUMERATOR,
+                                BASE_FEE_PERCENT_DENOMINATOR
+                            ),
+                            "Fee percent should exist and be greater than zero"
+                        );
+                    }
+                }
+                _ => panic!("Expected FeePercent response but received something else"),
+            }
+        }
+
+        pub fn get_claimable_fees(&mut self, expected_claimable_fees_option: Option<&Uint128>) {
+            let binary_response = handle_get_claimable_fees(self.deps.as_ref())
+                .expect("Expected GetClaimableFees to succeed but failed");
+
+            let response: QueryResponse =
+                from_binary(&binary_response).expect("Failed to deserialize QueryResponse");
+
+            match response {
+                QueryResponse::ClaimableFees(claimable_fees_response) => {
+                    if let Some(expected_claimable_fees) = expected_claimable_fees_option {
+                        // If an expected minimum bet is specified, assert it matches the retrieved value.
+                        assert_eq!(
+                            claimable_fees_response.claimable_fees, *expected_claimable_fees,
+                            "ClaimableFees is not what was expected"
+                        );
+                    } else {
+                        // If no expected claimable fees is provided, just check that it exists and is non-zero.
+                        assert!(
+                            claimable_fees_response.claimable_fees == Uint128::zero(),
+                            "ClaimableFees should exist and be 0 if none provided"
+                        );
+                    }
+                }
+                _ => panic!("Expected ClaimableFees response but received something else"),
             }
         }
 

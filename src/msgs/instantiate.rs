@@ -2,6 +2,8 @@ use cosmwasm_std::{Addr, Binary, ContractInfo};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use crate::data::state::FeePercent;
+
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct InstantiateMsg {
@@ -10,4 +12,5 @@ pub struct InstantiateMsg {
     pub oracle_contract_info: ContractInfo,
     pub snip20: ContractInfo,
     pub entropy: Binary,
+    pub fee_percent: FeePercent,
 }

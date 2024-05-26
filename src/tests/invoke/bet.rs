@@ -1,13 +1,21 @@
 #[cfg(test)]
 mod tests {
-    use crate::tests::test_env::tests::TestEnv;
+    use crate::{
+        data::state::FeePercent,
+        tests::{
+            constants::{BASE_FEE_PERCENT_DENOMINATOR, BASE_FEE_PERCENT_NUMERATOR},
+            test_env::tests::TestEnv,
+        },
+    };
 
     ////////TESTS////////
     #[test]
     fn user_bets_again() {
         let mut test_env = TestEnv::new();
-        test_env.initialize();
-
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
         let contest_file = 1;
         test_env.create_open_contest_success(&contest_file, &1, &100);
         test_env.bet_on_contest_success(&contest_file, &1, &10000000);
@@ -16,8 +24,10 @@ mod tests {
     #[test]
     fn user_bets_twice() {
         let mut test_env = TestEnv::new();
-        test_env.initialize();
-
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
         let contest_file = 1;
         test_env.create_open_contest_success(&contest_file, &1, &100);
         test_env.bet_on_contest_success(&contest_file, &1, &10000000);
@@ -26,8 +36,10 @@ mod tests {
     #[test]
     fn two_users_bet() {
         let mut test_env = TestEnv::new();
-        test_env.initialize();
-
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
         let contest_file = 1;
         test_env.create_open_contest_success(&contest_file, &1, &100);
 
@@ -38,8 +50,10 @@ mod tests {
     #[test]
     fn many_users_bet() {
         let mut test_env = TestEnv::new();
-        test_env.initialize();
-
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
         let contest_file = 1;
         // Assuming the first user creates the contest
         test_env.create_open_contest_success(&contest_file, &1, &100);
@@ -55,8 +69,10 @@ mod tests {
     #[test]
     fn user_bets_on_two_contests() {
         let mut test_env = TestEnv::new();
-        test_env.initialize();
-
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
         // User1 creates two contests
         let contest_file_1 = 1;
         let contest_file_2 = 2;
@@ -76,8 +92,10 @@ mod tests {
     #[test]
     fn user_cannot_bet_on_opposite_sides() {
         let mut test_env = TestEnv::new();
-        test_env.initialize();
-
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
         // User1 creates a contest
         let contest_file = 1;
         test_env.create_open_contest_success(&contest_file, &1, &100);
@@ -95,8 +113,10 @@ mod tests {
     #[test]
     fn user_cannot_bet_on_contest_closed_awaiting_results() {
         let mut test_env = TestEnv::new();
-        test_env.initialize();
-
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
         // User1 creates a contest
         let contest_file = 1;
         test_env.create_closed_waiting_results_contest_failure(&contest_file, &1, &100);
@@ -105,8 +125,10 @@ mod tests {
     #[test]
     fn cannot_bet_on_contest_after_close() {
         let mut test_env = TestEnv::new();
-        test_env.initialize();
-
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
         // User1 creates a contest
         let contest_file = 1;
         test_env.create_open_contest_success(&contest_file, &1, &100);
@@ -118,8 +140,10 @@ mod tests {
     #[test]
     fn cannot_bet_on_contest_after_claimable() {
         let mut test_env = TestEnv::new();
-        test_env.initialize();
-
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
         // User1 creates a contest
         let contest_file = 1;
         test_env.create_open_contest_success(&contest_file, &1, &100);
@@ -131,8 +155,10 @@ mod tests {
     #[test]
     fn bet_minimum() {
         let mut test_env = TestEnv::new();
-        test_env.initialize();
-
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
         // User1 creates a contest
         let minimum_bet = 100;
         test_env.set_minimum_bet_success(&minimum_bet);
@@ -148,8 +174,10 @@ mod tests {
     #[test]
     fn bet_minimum_plus_1() {
         let mut test_env = TestEnv::new();
-        test_env.initialize();
-
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
         // User1 creates a contest
         let minimum_bet = 100;
         test_env.set_minimum_bet_success(&minimum_bet);
@@ -165,8 +193,10 @@ mod tests {
     #[test]
     fn cannot_bet_minimum_minus_1() {
         let mut test_env = TestEnv::new();
-        test_env.initialize();
-
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
         let minimum_bet = 100;
         test_env.set_minimum_bet_success(&minimum_bet);
 

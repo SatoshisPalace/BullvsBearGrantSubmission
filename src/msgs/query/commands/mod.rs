@@ -6,3 +6,5 @@ pub mod get_snip20;
 pub mod get_user_bet;
 pub mod get_users_bets;
 pub mod get_total_value;
+pub mod get_claimable_fees;
+pub mod get_fee_percent;

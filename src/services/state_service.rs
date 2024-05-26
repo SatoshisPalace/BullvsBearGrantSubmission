@@ -4,13 +4,40 @@ use sp_secret_toolkit::{
 };
 
 use crate::{
-    data::{contest_info::ContestInfo, state::State},
+    data::{
+        contest_info::ContestInfo,
+        state::{FeePercent, State},
+    },
     error::state_error::StateError,
 };
 
+pub fn get_fee_percent(storage: &dyn cosmwasm_std::Storage) -> Result<FeePercent, StateError> {
+    let state = State::singleton_load(storage)?;
+    Ok(state.fee_percent().clone())
+}
+
 pub fn get_minimum_bet(storage: &dyn cosmwasm_std::Storage) -> Result<Uint128, StateError> {
     let state = State::singleton_load(storage)?;
-    Ok(state.get_minimum_bet().clone())
+    Ok(state.minimum_bet().clone())
+}
+
+pub fn get_claimable_fees(storage: &dyn cosmwasm_std::Storage) -> Result<Uint128, StateError> {
+    let state = State::singleton_load(storage)?;
+    Ok(state.claimable_fees().clone())
+}
+
+pub fn add_claimable_fee_for_pool(storage: &mut dyn cosmwasm_std::Storage, total_pool: &Uint128) {
+    let mut state = State::singleton_load(storage).unwrap();
+    let current_fees = state.claimable_fees().to_owned();
+    let fee = state.fee_percent().to_owned();
+
+    let fee_amount = total_pool.u128()
+        - (total_pool.u128() * (fee.denominator() - fee.numerator()) / fee.denominator());
+
+    let new_collected_fees = current_fees + Uint128::from(fee_amount);
+
+    state.set_claimable_fees(new_collected_fees);
+    let _ = state.singleton_save(storage);
 }
 
 pub fn assert_amount_is_greater_than_minimum_bet(
@@ -39,7 +66,7 @@ pub fn assert_contest_info_signature_is_valid(
     let contest_info_json: String = contest_info.to_json();
     is_valid_signature(
         api,
-        state.get_satoshis_palace_signing_address().as_str(),
+        state.satoshis_palace().as_str(),
         &contest_info_json,
         &contest_info_signature_hex,
     )?;
