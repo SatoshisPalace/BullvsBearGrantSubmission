@@ -4,15 +4,15 @@ use crate::{
     constants::EXPIRATION_WINDOW,
     data::{
         contest_bet_summary::ContestBetSummary,
-        contest_info::{ContestId, ContestInfo, ContestOutcome},
-        state::State,
+        contest_info::{ContestInfo, ContestOutcome},
     },
     error::contest_bet_summary_error::ContestBetSummaryError,
 };
 
 use super::{
-    contest_info_service::{assert_contest_ready_to_be_claimed, get_contest_result},
-    integrations::price_feed_service::pricefeed::{query_prices, NULL_AND_VOID_CONTEST_RESULT},
+    contest_info_service::assert_contest_ready_to_be_claimed,
+    integrations::oracle_service::oracle::{query_contest_result, NULL_AND_VOID_CONTEST_RESULT},
+    state_service::add_claimable_fee_for_pool,
 }; // Make sure to adjust the import based on your actual storage handling
 
 /// Adds a bet to a contest summary.
@@ -204,16 +204,6 @@ pub fn update_contest_bet_summaries_with_results(
 }
 
 pub fn take_contest_fees(storage: &mut dyn Storage, contest_bet_summary: ContestBetSummary) {
-    let mut state = State::singleton_load(storage).unwrap();
-    let current_fees = state.claimable_fees().to_owned();
-
-    let fee = state.fee_percent();
-
     let total_pool = contest_bet_summary.calc_total_pool();
-    let fee_amount = total_pool.u128()
-        - (total_pool.u128() * (fee.denominator() - fee.numerator()) / fee.denominator());
-
-    let new_collected_fees = current_fees + Uint128::from(fee_amount);
-    state.set_claimable_fees(new_collected_fees);
-    let _ = state.singleton_save(storage);
+    add_claimable_fee_for_pool(storage, &total_pool);
 }
