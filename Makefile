@@ -6,12 +6,21 @@ check:
 clippy:
 	cargo clippy
 
-PHONY: test
+.PHONY: test
 test: unit-test
 
 .PHONY: unit-test
 unit-test:
 	cargo test --features testing --lib -- --nocapture --test-threads=1
+
+.PHONY: coverage
+coverage:
+	cargo tarpaulin --features testing --out Html -- --nocapture --test-threads=1
+
+.PHONY: open-coverage
+open-coverage: coverage
+	# Replace 'open' with 'xdg-open' if on Linux
+	xdg-open tarpaulin-report.html
 
 # This is a local build with debug-prints activated. Debug prints only show up
 # in the local development chain (see the `start-server` command below)
@@ -46,6 +55,7 @@ compress-wasm:
 .PHONY: schema
 schema:
 	cargo schema
+
 # Run local development chain with four funded accounts (named a, b, c, and d)
 .PHONY: start-server
 start-server: # CTRL+C to stop

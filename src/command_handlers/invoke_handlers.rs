@@ -1,7 +1,7 @@
 use cosmwasm_std::{DepsMut, Env, Response, StdResult, Uint128};
 
 use crate::{
-    data::contest_info::ContestId, error::contest_info_error::ContestInfoError, msgs::invoke::commands::bet_contest::BetContest, responses::execute::{
+    data::contest_info::ContestId, msgs::invoke::commands::bet_contest::BetContest, responses::execute::{
         execute_response::{ExecuteResponse, ResponseStatus::Success},
         response_types::bet::BetResonse,
     }, services::{
@@ -42,7 +42,7 @@ pub fn handle_bet_on_contest(
     // Handle the case where the contest does not exist
     let contest_info = match contest_info_result {
         Ok(info) => info,
-        Err(ContestInfoError::ContestNotFound(_)) => {
+        Err(_e) => {
             assert_ticker_valid(&ticker)?;
             // Initialize new ContestInfo here if needed
             let info = create_new_contest_info(deps.storage, &ticker, &current_close);
@@ -51,8 +51,7 @@ pub fn handle_bet_on_contest(
             add_active_contest(deps.storage, &contest_id)?;
 
             info
-        },
-        Err(e) => return Err(e.into()),  // handle other errors appropriately
+        }
     };
 
     assert_outcome_is_on_contest(&contest_info, &outcome_id)?;

@@ -33,6 +33,17 @@ mod tests {
     }
 
     #[test]
+    fn user_bets_on_invalid_outcome() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
+        let contest_file = 1;
+        test_env.first_bet_on_contest_fail(&contest_file, &3, &100);
+    }
+
+    #[test]
     fn user_bets_twice() {
         let mut test_env = TestEnv::new();
         test_env.initialize(FeePercent::new(

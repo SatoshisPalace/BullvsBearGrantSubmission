@@ -5,7 +5,8 @@ use super::response_types::{
     bet::UserBetResponse, claimable_fees::ClaimableFeesResponse, contest_data::ContestDataResponse,
     contest_data_list::ContestDataListResponse, fee_percent::FeePercentResponse,
     get_snip20::GetSnip20Response, minimum_bet::MinimumBetResponse,
-    total_value::TotalValueResponse, users_bets::UsersBetsResponse,
+    times_to_resolve::TimesToResolveResponse, total_value::TotalValueResponse,
+    users_bets::UsersBetsResponse,
 };
 
 // Enum to encapsulate each query response type
@@ -19,6 +20,7 @@ pub enum QueryResponse {
     MinimumBet(MinimumBetResponse),
     TotalValue(TotalValueResponse),
     Snip20(GetSnip20Response),
+    TimesToResolve(TimesToResolveResponse),
     ClaimableFees(ClaimableFeesResponse),
     FeePercent(FeePercentResponse),
 }

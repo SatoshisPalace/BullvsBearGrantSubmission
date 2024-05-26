@@ -9,7 +9,7 @@ use crate::{
     },
     msgs::query::commands::{
         get_contest_by_id::GetContestById,
-        get_contests::GetContests,
+        get_contests::{ContestQueryFilter, GetContests},
         get_contests_by_ids::GetContestsByIds,
         get_user_bet::GetUserBet,
         get_users_bets::{GetUsersBets, UsersBetsQueryFilters},
@@ -24,6 +24,7 @@ use crate::{
             fee_percent::FeePercentResponse,
             get_snip20::GetSnip20Response,
             minimum_bet::MinimumBetResponse,
+            times_to_resolve::TimesToResolveResponse,
             total_value::TotalValueResponse,
             users_bets::{UserContestBetInfo, UsersBetsResponse},
         },
@@ -37,7 +38,7 @@ use crate::{
         contest_info_service::{
             get_contest_info, get_contest_infos_for_ids, get_contest_infos_for_ids_ignore_missing,
         },
-        contests_service::get_contests,
+        contests_service::{get_contests, get_times_to_resolve_from_contest_infos},
         integrations::master_viewing_key_service::viewing_keys::assert_valid_viewing_key,
         state_service::{get_claimable_fees, get_fee_percent, get_minimum_bet, get_snip20},
         user_info_service::get_contests_for_user,
@@ -135,6 +136,23 @@ pub fn handle_get_minimum_bet(deps: Deps) -> StdResult<Binary> {
     return to_binary(&response);
 }
 
+pub fn handle_get_times_to_resolve(deps: Deps, env: Env) -> StdResult<Binary> {
+    let contests = get_contests(
+        &deps,
+        &env,
+        None,
+        None,
+        None,
+        Some(ContestQueryFilter::Unresolved),
+    )?;
+    let contest_infos: Vec<ContestInfo> = contests
+        .into_iter()
+        .map(|(contest_info, _)| contest_info)
+        .collect();
+    let times = get_times_to_resolve_from_contest_infos(&deps, contest_infos);
+    let response = QueryResponse::TimesToResolve(TimesToResolveResponse { times });
+    return to_binary(&response);
+}
 pub fn handle_get_claimable_fees(deps: Deps) -> StdResult<Binary> {
     let claimable_fees = get_claimable_fees(deps.storage)?;
     let response = QueryResponse::ClaimableFees(ClaimableFeesResponse { claimable_fees });

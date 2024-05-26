@@ -1,31 +1,35 @@
 #[cfg(test)]
 pub mod tests {
+
     use cosmwasm_std::{
         coins, from_binary,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
-        to_binary, Addr, ContractInfo, Empty, OwnedDeps, StdResult, Timestamp, Uint128,
+        to_binary, to_vec, Addr, Binary, ContractInfo, Empty, MessageInfo, OwnedDeps, StdResult,
+        Timestamp, Uint128,
     };
     use sp_secret_toolkit::macros::identifiable::Identifiable;
 
     use crate::{
         command_handlers::{
             admin_execute_handlers::{handle_claim_fees, handle_set_minimum_bet},
-            execute_handlers::{handle_claim, handle_claim_multiple},
+            execute_handlers::{handle_claim, handle_claim_multiple, handle_receive},
             invoke_handlers::handle_bet_on_contest,
             query_handlers::{
                 handle_get_claimable_fees, handle_get_contest_by_id, handle_get_contests,
                 handle_get_contests_by_ids, handle_get_fee_percent, handle_get_minimum_bet,
-                handle_get_snip20, handle_user_bet, handle_users_bets_query,
+                handle_get_snip20, handle_get_times_to_resolve, handle_user_bet,
+                handle_users_bets_query,
             },
         },
         contract::instantiate,
         data::{contest_info::ContestInfo, state::FeePercent},
         msgs::{
             execute::commands::{
-                claim::Claim, claim_multiple::ClaimMultiple, set_minimum_bet::SetMinimumBet,
+                claim::Claim, claim_multiple::ClaimMultiple, receive::Receive,
+                set_minimum_bet::SetMinimumBet,
             },
             instantiate::InstantiateMsg,
-            invoke::commands::bet_contest::BetContest,
+            invoke::{commands::bet_contest::BetContest, invoke_msg::InvokeMsg},
             query::commands::{
                 get_contest_by_id::GetContestById,
                 get_contests::{ContestQueryFilter, ContestQuerySortOrder, GetContests},
@@ -36,7 +40,12 @@ pub mod tests {
         },
         responses::{
             execute::execute_response::ExecuteResponse,
-            query::{query_response::QueryResponse, response_types::users_bets::UsersBetsResponse},
+            query::{
+                query_response::QueryResponse,
+                response_types::{
+                    times_to_resolve::TimesToResolveResponse, users_bets::UsersBetsResponse,
+                },
+            },
         },
         services::integrations::price_feed_service::pricefeed::{configure_mock, MockConfig},
         tests::{
@@ -105,12 +114,22 @@ pub mod tests {
                 viewing_key: "valid viewing key".to_owned(),
                 filters,
             };
-            let binary_respoonse =
+            let binary_response =
                 handle_users_bets_query(self.deps.as_ref(), self.env.clone(), command)?;
-            let query_response: QueryResponse = from_binary(&binary_respoonse)?;
+            let query_response: QueryResponse = from_binary(&binary_response)?;
             match query_response {
                 QueryResponse::UsersBets(response) => Ok(response),
                 _ => panic!("Expected Users Bets response but received something else"),
+            }
+        }
+
+        pub fn query_times_to_resolve(&mut self, expected_response: TimesToResolveResponse) {
+            let binary_response =
+                handle_get_times_to_resolve(self.deps.as_ref(), self.env.clone()).unwrap();
+            let query_response: QueryResponse = from_binary(&binary_response).unwrap();
+            match query_response {
+                QueryResponse::TimesToResolve(response) => assert_eq!(response, expected_response),
+                _ => panic!("Expected Times to Resolve response but received something else"),
             }
         }
 
@@ -141,6 +160,43 @@ pub mod tests {
 
                 // If we reach this point, no matching entry was found
                 assert!(false, "Users bets does not contain the contest id");
+            } else {
+                assert!(false, "Contest Info not found")
+            }
+        }
+
+        pub fn handle_receive_success(
+            &mut self,
+            file_number: &u8,
+            outcome_to_bet_on: &u8,
+            amount_to_bet: &u128,
+            sender: Addr,
+        ) {
+            if let Ok(contest_info) = get_contest_open(*file_number) {
+                let info = MessageInfo {
+                    sender,
+                    funds: coins(1000, "coin"),
+                };
+                let message = InvokeMsg::BetContest(BetContest {
+                    ticker: contest_info.get_ticker(),
+                    outcome_id: *outcome_to_bet_on,
+                    user: self.info.sender.clone(),
+                });
+                // Serialize the struct to a JSON byte vector
+                let serialized_msg = to_vec(&message).expect("Failed to serialize message");
+
+                // Convert the byte vector to Binary
+                let msg: Binary = Binary::from(serialized_msg);
+
+                let command = Receive {
+                    sender: Addr::unchecked("Snip20 Address"),
+                    from: Addr::unchecked("Address"),
+                    amount: Uint128::new(amount_to_bet.clone()),
+                    memo: None,
+                    msg,
+                };
+                let response = handle_receive(self.deps.as_mut(), self.env.clone(), info, command);
+                response.expect("Failed to bet on contest");
             } else {
                 assert!(false, "Contest Info not found")
             }
@@ -713,6 +769,19 @@ pub mod tests {
             } else {
                 panic!("Expected UserBet response but received something else");
             }
+        }
+
+        pub fn get_user_bet_failure(&mut self, file_number: &u8) {
+            let contest_info = Self::get_open_contest_from_file(file_number);
+
+            let command = GetUserBet {
+                user: self.info.sender.clone(),
+                contest_id: contest_info.get_id(),
+                viewing_key: "Valid Viewing Key".to_owned(),
+            };
+
+            let _binary_response = handle_user_bet(self.deps.as_ref(), command)
+                .expect_err("Expected GetUserBet to fail but succeeded");
         }
 
         pub fn get_contests_success(

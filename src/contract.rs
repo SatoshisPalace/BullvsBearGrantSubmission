@@ -6,7 +6,7 @@ use crate::command_handlers::invoke_handlers::handle_bet_on_contest;
 use crate::command_handlers::query_handlers::{
     handle_get_claimable_fees, handle_get_contest_by_id, handle_get_contests,
     handle_get_contests_by_ids, handle_get_fee_percent, handle_get_minimum_bet, handle_get_snip20,
-    handle_get_total_value, handle_user_bet, handle_users_bets_query,
+    handle_get_times_to_resolve, handle_get_total_value, handle_user_bet, handle_users_bets_query,
 };
 use crate::data::state::State;
 use crate::msgs::execute::execute_msg::ExecuteMsg;
@@ -29,7 +29,6 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
     let state = State::new(
-        info.clone().sender,
         info.sender.clone(),
         msg.interval,
         Uint128::from(1u128), // Set minimum_bet to 1
@@ -85,6 +84,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetMinBet(_) => handle_get_minimum_bet(deps),
         QueryMsg::GetTotalValue(_) => handle_get_total_value(deps, env),
         QueryMsg::GetSnip20(_) => handle_get_snip20(deps),
+        QueryMsg::GetTimesToResolve(_) => handle_get_times_to_resolve(deps, env),
         QueryMsg::GetClaimableFees(_) => handle_get_claimable_fees(deps),
         QueryMsg::GetFeePercent(_) => handle_get_fee_percent(deps),
     }

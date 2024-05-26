@@ -2,7 +2,7 @@ use std::env::current_dir;
 use std::fs::create_dir_all;
 
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
-use satoshis_palace_contests::{
+use satoshis_palace_bullvsbear::{
     msgs::{
         execute::execute_msg::ExecuteMsg, instantiate::InstantiateMsg,
         invoke::invoke_msg::InvokeMsg, query::query_msg::QueryMsg,

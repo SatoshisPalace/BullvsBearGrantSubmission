@@ -67,4 +67,5 @@ mod tests {
         contest_files.insert(4, 5);
         test_env.get_contests_by_ids_success(&contest_files, Some(&4)); // Expecting 5 contests across the files, if each file is supposed to hold one contest.
     }
+
 }

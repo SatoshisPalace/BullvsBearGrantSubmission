@@ -4,9 +4,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sp_secret_toolkit::macros::{identifiable::Identifiable, keymap::KeymapStorage};
 
-use crate::{
-    error::contest_info_error::ContestInfoError, services::integrations::price_feed_service::pricefeed::NULL_AND_VOID_CONTEST_RESULT,
-};
+use crate::services::integrations::price_feed_service::pricefeed::NULL_AND_VOID_CONTEST_RESULT;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema, KeymapStorage)]
 pub struct ContestInfo {
@@ -50,9 +48,6 @@ impl ContestOutcome {
     pub fn get_id(&self) -> &u8 {
         &self.id
     }
-    pub fn get_name(&self) -> &String {
-        &self.name
-    }
 }
 
 impl ContestInfo {
@@ -83,22 +78,6 @@ impl ContestInfo {
     }
     pub fn get_options(&self) -> &Vec<ContestOutcome> {
         return &self.options;
-    }
-    pub fn to_json(&self) -> String {
-        let raw_json = serde_json::to_string(&self).expect("Failed to serialize struct to JSON");
-        return raw_json.replace("\\", "");
-    }
-
-    pub fn find_outcome(&self, id: &u8) -> Result<ContestOutcome, ContestInfoError> {
-        let option: Option<ContestOutcome> = self
-            .options
-            .iter()
-            .find(|&outcome| outcome.id == *id)
-            .cloned();
-        option.ok_or(ContestInfoError::OutcomeNotFound {
-            contest_id: self.get_id(),
-            outcome_id: *id,
-        })
     }
 }
 

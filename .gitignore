@@ -19,3 +19,5 @@ contest.wasm*
 
 node_modules
 .env
+
+tarpaulin-report.html

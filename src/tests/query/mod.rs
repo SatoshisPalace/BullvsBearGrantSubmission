@@ -1,10 +1,11 @@
 pub mod get_active_contests;
+pub mod get_claimable_fees;
 pub mod get_contest;
 pub mod get_contests;
+pub mod get_fee_percent;
 pub mod get_minimum_bet;
 pub mod get_snip20;
+pub mod get_times_to_resolve;
+pub mod get_unresolved_contests;
 pub mod get_user_bet;
 pub mod get_users_bets;
-pub mod get_unresolved_contests;
-pub mod get_fee_percent;
-pub mod get_claimable_fees;

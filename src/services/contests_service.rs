@@ -13,9 +13,9 @@ use super::{
         get_contest_bet_summaries, update_contest_bet_summaries_with_results,
     },
     contest_info_service::{
-        assert_time_of_close_not_passed, assert_time_of_resolved_not_passed,
+        assert_time_of_close_not_passed, assert_time_of_expiry_not_passed, assert_time_of_resolved_not_passed,
         get_contest_infos_for_ids,
-    }
+    }, integrations::price_feed_service::pricefeed::query_prices
 };
 
 pub fn add_active_contest(
@@ -75,11 +75,11 @@ fn apply_filters(
         Some(ContestQueryFilter::Unresolved) => {
             combined.retain(|(contest_info, contest_bet_summary)| {
                 // Check if time of close has passed
-                if assert_time_of_close_not_passed(contest_info, env).is_ok() {
+                if assert_time_of_resolved_not_passed(contest_info, env).is_ok() {
                     return false;
                 }
                 // Check if time of resolution has not passed
-                if let Err(_) = assert_time_of_resolved_not_passed(contest_info, env) {
+                if let Err(_) = assert_time_of_expiry_not_passed(contest_info, env) {
                     return false;
                 }
                 // Check if contest outcome is None
@@ -91,6 +91,25 @@ fn apply_filters(
         }
         _ => {} // No filter specified, do nothing
     }
+}
+
+pub fn get_times_to_resolve_from_contest_infos(deps: &Deps, contest_infos: Vec<ContestInfo>) -> Vec<u64> {
+    let mut times = vec![];
+    let mut close: u64;
+    let mut resolve: u64;
+    for contest_info in contest_infos {
+        close = contest_info.get_time_of_close();
+        resolve = contest_info.get_time_of_resolve();
+        
+        if query_prices(&deps.querier, deps.storage, &vec![close]).is_err() & !times.contains(&close) {
+            times.push(close)
+        }
+        if query_prices(&deps.querier, deps.storage, &vec![resolve]).is_err() & !times.contains(&resolve) {
+            times.push(resolve)
+        }
+    }
+    
+    times
 }
 
 pub fn get_contests(

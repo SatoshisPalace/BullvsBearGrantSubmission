@@ -143,6 +143,23 @@ mod tests {
     }
 
     #[test]
+    fn filter_claimable_does_not_include_claimed_contests() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
+        let contest_file = 1;
+        test_env.first_bet_on_contest_success(&contest_file, &1, &100);
+
+        test_env.set_time(AFTER_TIME_OF_RESOLVE);
+
+        test_env.claim_success(&contest_file, None);
+        let filters = vec![UsersBetsQueryFilters::Claimable];
+        test_env.users_bets_has_length(Some(filters), 0);
+    }
+
+    #[test]
     fn filter_claimable_does_not_include_losses() {
         let mut test_env = TestEnv::new();
         test_env.initialize(FeePercent::new(

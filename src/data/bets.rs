@@ -76,10 +76,6 @@ impl UserContest {
     pub fn get_contest_id(&self) -> &ContestId {
         return &self.contest_id;
     }
-
-    pub fn get_address(&self) -> &Addr {
-        &self.user
-    }
 }
 
 impl Identifiable for Bet {

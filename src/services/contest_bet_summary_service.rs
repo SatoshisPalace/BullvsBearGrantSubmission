@@ -4,14 +4,14 @@ use crate::{
     constants::EXPIRATION_WINDOW,
     data::{
         contest_bet_summary::ContestBetSummary,
-        contest_info::{ContestInfo, ContestOutcome},
+        contest_info::{ContestId, ContestInfo, ContestOutcome},
     },
     error::contest_bet_summary_error::ContestBetSummaryError,
 };
 
 use super::{
-    contest_info_service::assert_contest_ready_to_be_claimed,
-    integrations::oracle_service::oracle::{query_contest_result, NULL_AND_VOID_CONTEST_RESULT},
+    contest_info_service::{assert_contest_ready_to_be_claimed, get_contest_result},
+    integrations::price_feed_service::pricefeed::{query_prices, NULL_AND_VOID_CONTEST_RESULT},
     state_service::add_claimable_fee_for_pool,
 }; // Make sure to adjust the import based on your actual storage handling
 

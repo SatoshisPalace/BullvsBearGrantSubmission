@@ -8,3 +8,4 @@ pub mod get_snip20;
 pub mod get_total_value;
 pub mod get_user_bet;
 pub mod get_users_bets;
+pub mod get_times_to_resolve;

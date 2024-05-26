@@ -7,3 +7,4 @@ pub mod get_snip20;
 pub mod minimum_bet;
 pub mod total_value;
 pub mod users_bets;
+pub mod times_to_resolve;

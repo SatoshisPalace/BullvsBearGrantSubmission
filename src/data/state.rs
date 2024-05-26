@@ -37,7 +37,6 @@ impl FeePercent {
 )]
 #[getset(get = "pub", set = "pub")]
 pub struct State {
-    satoshis_palace: Addr,
     owner: Addr,
     interval: u64,
     minimum_bet: Uint128,
@@ -47,15 +46,8 @@ pub struct State {
 
 impl State {
     // Constructor
-    pub fn new(
-        satoshis_palace: Addr,
-        owner: Addr,
-        interval: u64,
-        amount: Uint128,
-        fee_percent: FeePercent,
-    ) -> Self {
+    pub fn new(owner: Addr, interval: u64, amount: Uint128, fee_percent: FeePercent) -> Self {
         State {
-            satoshis_palace,
             owner,
             interval,
             minimum_bet: amount,

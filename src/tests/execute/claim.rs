@@ -1,5 +1,16 @@
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
+    use cosmwasm_std::Decimal;
+    use sp_secret_toolkit::price_feed::{
+        data::price_posting::PricePosting,
+        response::response_types::prices_by_ids::PricesByIdsResponse,
+    };
+
+    use crate::services::integrations::price_feed_service::pricefeed::{
+        configure_mock, reset_mock_result, set_oracle_result, MockConfig,
+    };
     use crate::tests::{
         constants::{
             AFTER_TIME_OF_1_CLOSE, AFTER_TIME_OF_2_CLOSE, AFTER_TIME_OF_3_CLOSE,
@@ -58,6 +69,23 @@ mod tests {
     }
 
     #[test]
+    fn claim_after_expiration_window_no_opposition() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
+        let contest_file = 1;
+        let amount_bet = 100;
+        test_env.first_bet_on_contest_success(&contest_file, &1, &amount_bet);
+
+        test_env.set_time(AFTER_TIME_OF_RESOLVE);
+        configure_mock(MockConfig::ReturnError(true));
+
+        test_env.claim_success(&contest_file, Some(&amount_bet));
+    }
+
+    #[test]
     fn claim_contest_bets_on_both_sides() {
         let mut test_env = TestEnv::new();
         test_env.initialize(FeePercent::new(
@@ -75,6 +103,93 @@ mod tests {
 
         test_env.set_sender("creator".to_owned());
         test_env.claim_success(&contest_file, Some(&198));
+    }
+
+    #[test]
+    fn claim_contest_bets_on_both_sides_side_2() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
+        let contest_file = 1;
+        test_env.first_bet_on_contest_success(&contest_file, &2, &100);
+
+        test_env.set_sender("user2".to_owned());
+        test_env.bet_on_contest_success(&contest_file, &1, &100);
+
+        test_env.set_time(AFTER_TIME_OF_RESOLVE);
+
+        test_env.set_sender("creator".to_owned());
+
+        let oracle_result = PricesByIdsResponse {
+            prices: vec![
+                PricePosting::new(Decimal::from_str("58205.43").unwrap(), 1571797500),
+                PricePosting::new(Decimal::from_str("58205.29").unwrap(), 1571797800),
+            ],
+        };
+        set_oracle_result(Some(oracle_result));
+
+        test_env.claim_success(&contest_file, None);
+        reset_mock_result();
+    }
+
+    #[test]
+    fn claim_contest_bets_on_both_sides_side_1_price_returned() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
+        let contest_file = 1;
+        test_env.first_bet_on_contest_success(&contest_file, &2, &100);
+
+        test_env.set_sender("user2".to_owned());
+        test_env.bet_on_contest_success(&contest_file, &1, &100);
+
+        test_env.set_time(AFTER_TIME_OF_RESOLVE);
+
+        test_env.set_sender("creator".to_owned());
+
+        let oracle_result = PricesByIdsResponse {
+            prices: vec![PricePosting::new(
+                Decimal::from_str("58205.43").unwrap(),
+                1571797500,
+            )],
+        };
+        set_oracle_result(Some(oracle_result));
+
+        test_env.claim_failure(&contest_file);
+        reset_mock_result();
+    }
+
+    #[test]
+    fn claim_contest_bets_on_both_sides_same_price() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
+        let contest_file = 1;
+        test_env.first_bet_on_contest_success(&contest_file, &2, &100);
+
+        test_env.set_sender("user2".to_owned());
+        test_env.bet_on_contest_success(&contest_file, &1, &100);
+
+        test_env.set_time(AFTER_TIME_OF_RESOLVE);
+
+        test_env.set_sender("creator".to_owned());
+
+        let oracle_result = PricesByIdsResponse {
+            prices: vec![
+                PricePosting::new(Decimal::from_str("58205.29").unwrap(), 1571797500),
+                PricePosting::new(Decimal::from_str("58205.29").unwrap(), 1571797800),
+            ],
+        };
+        set_oracle_result(Some(oracle_result));
+
+        test_env.claim_success(&contest_file, Some(&100));
+        reset_mock_result();
     }
 
     #[test]
@@ -301,6 +416,22 @@ mod tests {
         test_env.set_time(AFTER_TIME_OF_RESOLVE);
 
         test_env.claim_success(&1, Some(&100));
+
+        test_env.claim_failure(&1);
+    }
+
+    #[test]
+    fn cannot_claim_contest_user_did_not_bet() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
+        test_env.first_bet_on_contest_success(&1, &1, &100);
+
+        test_env.set_time(AFTER_TIME_OF_2_CLOSE);
+
+        test_env.set_sender("user2".to_owned());
 
         test_env.claim_failure(&1);
     }
