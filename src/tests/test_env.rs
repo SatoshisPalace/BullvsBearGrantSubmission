@@ -49,10 +49,7 @@ pub mod tests {
         },
         services::integrations::price_feed_service::pricefeed::{configure_mock, MockConfig},
         tests::{
-            constants::{
-                BASE_FEE_PERCENT_DENOMINATOR, BASE_FEE_PERCENT_NUMERATOR, INTERVAL,
-                TESTING_SP_SIGNING_KEY,
-            },
+            constants::{BASE_FEE_PERCENT_DENOMINATOR, BASE_FEE_PERCENT_NUMERATOR, INTERVAL},
             contest_infos::get_contest_open,
         },
     };
@@ -84,7 +81,6 @@ pub mod tests {
         pub fn initialize(&mut self, fee_percent: FeePercent) {
             configure_mock(MockConfig::ReturnError(false));
             let msg = InstantiateMsg {
-                satoshis_palace: Addr::unchecked(TESTING_SP_SIGNING_KEY),
                 price_feed_info: ContractInfo {
                     address: Addr::unchecked("Price Feed Address"),
                     code_hash: "Price Feed CodeHash".to_owned(),
@@ -99,7 +95,8 @@ pub mod tests {
                     address: Addr::unchecked("Master Viewing Key Address"),
                     code_hash: "Master Viewing Key CodeHash".to_owned(),
                 },
-                fee_percent,
+                fee_numerator: fee_percent.numerator().to_owned() as u64,
+                fee_denominator: fee_percent.denominator().to_owned() as u64,
             };
             let _res = instantiate(self.deps.as_mut(), self.env.clone(), self.info.clone(), msg)
                 .expect("contract initialization failed");

@@ -8,7 +8,7 @@ use crate::command_handlers::query_handlers::{
     handle_get_contests_by_ids, handle_get_fee_percent, handle_get_minimum_bet, handle_get_snip20,
     handle_get_times_to_resolve, handle_get_total_value, handle_user_bet, handle_users_bets_query,
 };
-use crate::data::state::State;
+use crate::data::state::{FeePercent, State};
 use crate::msgs::execute::execute_msg::ExecuteMsg;
 use crate::msgs::instantiate::InstantiateMsg;
 use crate::msgs::invoke::invoke_msg::InvokeMsg;
@@ -28,11 +28,12 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
+    let fee_percent = FeePercent::new(msg.fee_numerator as u128, msg.fee_denominator as u128);
     let state = State::new(
         info.sender.clone(),
         msg.interval,
         Uint128::from(1u128), // Set minimum_bet to 1
-        msg.fee_percent,
+        fee_percent,
     );
     state.singleton_save(deps.storage)?;
 
