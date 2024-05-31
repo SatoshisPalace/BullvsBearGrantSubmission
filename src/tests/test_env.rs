@@ -47,7 +47,7 @@ pub mod tests {
                 },
             },
         },
-        services::integrations::price_feed_service::pricefeed::{configure_mock, MockConfig},
+        services::integrations::price_feed_service::pricefeed::reset_mock_result,
         tests::{
             constants::{BASE_FEE_PERCENT_DENOMINATOR, BASE_FEE_PERCENT_NUMERATOR, INTERVAL},
             contest_infos::get_contest_open,
@@ -79,7 +79,7 @@ pub mod tests {
         }
 
         pub fn initialize(&mut self, fee_percent: FeePercent) {
-            configure_mock(MockConfig::ReturnError(false));
+            reset_mock_result();
             let msg = InstantiateMsg {
                 price_feed_info: ContractInfo {
                     address: Addr::unchecked("Price Feed Address"),

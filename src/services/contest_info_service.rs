@@ -2,8 +2,12 @@
 use cosmwasm_std::{DepsMut, Env, StdError, Storage};
 use sp_secret_toolkit::price_feed::response::response_types::prices_by_ids::PricesByIdsResponse;
 
-use crate::{constants::{BEAR, BULL, EXPIRATION_WINDOW, SECONDS_IN_A_MINUTE, TICKERS}, data::contest_info::{ContestId, ContestInfo, ContestOutcome}, error::contest_info_error::ContestInfoError};
 use crate::services::state_service::get_interval;
+use crate::{
+    constants::{BEAR, BULL, EXPIRATION_WINDOW, SECONDS_IN_A_MINUTE, TICKERS},
+    data::contest_info::{ContestId, ContestInfo, ContestOutcome},
+    error::contest_info_error::ContestInfoError,
+};
 pub fn create_new_contest(
     deps: &mut DepsMut,
     contest_info: &ContestInfo,
@@ -90,7 +94,7 @@ pub fn assert_ticker_valid(ticker: &String) -> Result<(), ContestInfoError> {
 pub fn get_contest_result(
     env: &Env,
     prices: &Result<PricesByIdsResponse, StdError>,
-    expiry: &u64
+    expiry: &u64,
 ) -> Option<ContestOutcome> {
     // Handle the case where prices contain an error
     let prices = match prices {
@@ -104,16 +108,21 @@ pub fn get_contest_result(
         }
     };
 
-    // Ensure there are exactly two price postings
+    // Ensure there are exactly two price postings and handle if time has passed
     if prices.len() != 2 {
+        if expiry < &env.block.time.seconds() {
+            return Some(ContestOutcome::nullified_result());
+        }
         return None;
     }
-
     // Compare the first and second price postings
     if prices[0].price() < prices[1].price() {
         Some(ContestOutcome::new(1, "First price is greater".to_string()))
     } else if prices[0].price() > prices[1].price() {
-        Some(ContestOutcome::new(2, "Second price is greater".to_string()))
+        Some(ContestOutcome::new(
+            2,
+            "Second price is greater".to_string(),
+        ))
     } else {
         Some(ContestOutcome::nullified_result())
     }
@@ -194,7 +203,7 @@ pub fn validate_contest(contest_info: &ContestInfo) -> Result<(), ContestInfoErr
 /// # Returns
 ///
 /// Returns the Unix timestamp of the next 5-minute mark from the current block time.
-pub fn get_current_close(storage: &dyn Storage , env: &Env) -> u64 {
+pub fn get_current_close(storage: &dyn Storage, env: &Env) -> u64 {
     // Retrieve the current time in seconds from the blockchain's environment.
     let current_seconds = env.block.time.seconds();
     let interval = get_interval(storage).unwrap();
@@ -210,11 +219,18 @@ pub fn get_current_close(storage: &dyn Storage , env: &Env) -> u64 {
     next_interval_seconds - (next_interval_seconds % SECONDS_IN_A_MINUTE)
 }
 
-pub fn create_new_contest_info(storage: &dyn Storage, ticker: &String, current_close: &u64) -> ContestInfo {
+pub fn create_new_contest_info(
+    storage: &dyn Storage,
+    ticker: &String,
+    current_close: &u64,
+) -> ContestInfo {
     ContestInfo::new(
         ticker.clone(),
-        *current_close, 
+        *current_close,
         *current_close + get_interval(storage).unwrap(),
-        vec![ContestOutcome::new(1, BULL.to_string()), ContestOutcome::new(2, BEAR.to_string())]
+        vec![
+            ContestOutcome::new(1, BULL.to_string()),
+            ContestOutcome::new(2, BEAR.to_string()),
+        ],
     )
 }

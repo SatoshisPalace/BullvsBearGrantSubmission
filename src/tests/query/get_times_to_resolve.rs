@@ -2,10 +2,12 @@
 mod tests {
     use std::vec;
 
+    use sp_secret_toolkit::price_feed::response::response_types::prices_by_ids::PricesByIdsResponse;
+
     use crate::{
         data::state::FeePercent,
         responses::query::response_types::times_to_resolve::TimesToResolveResponse,
-        services::integrations::price_feed_service::pricefeed::{configure_mock, MockConfig},
+        services::integrations::price_feed_service::pricefeed::set_oracle_result,
         tests::{
             constants::{
                 AFTER_TIME_OF_1_CLOSE, AFTER_TIME_OF_2_CLOSE, AFTER_TIME_OF_3_CLOSE,
@@ -26,7 +28,9 @@ mod tests {
         let contest_file = 1;
         test_env.first_bet_on_contest_success(&contest_file, &1, &100);
         test_env.set_time(AFTER_TIME_OF_2_CLOSE);
-        configure_mock(MockConfig::ReturnError(true));
+
+        let oracle_result = PricesByIdsResponse { prices: vec![] };
+        set_oracle_result(Some(oracle_result));
 
         let expected_response = TimesToResolveResponse {
             times: vec![1571797500, 1571797800],
@@ -51,7 +55,9 @@ mod tests {
         test_env.set_time(AFTER_TIME_OF_4_CLOSE);
         test_env.first_bet_on_contest_success(&5, &1, &100);
 
-        configure_mock(MockConfig::ReturnError(true));
+        let oracle_result = PricesByIdsResponse { prices: vec![] };
+        set_oracle_result(Some(oracle_result));
+
         let expected_response = TimesToResolveResponse {
             times: vec![1571797500, 1571797800, 1571798100, 1571798400],
         };

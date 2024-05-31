@@ -5,7 +5,9 @@ use crate::{
         contest_bet_summary::ContestBetSummary,
         contest_info::{ContestId, ContestInfo},
         contests::{add_contest_id, get_all_contest_ids},
-    }, error::contest_activity_error::ContestActivityError, msgs::query::commands::get_contests::{ContestQueryFilter, ContestQuerySortOrder}
+    },
+    error::contest_activity_error::ContestActivityError,
+    msgs::query::commands::get_contests::{ContestQueryFilter, ContestQuerySortOrder},
 };
 
 use super::{
@@ -13,9 +15,10 @@ use super::{
         get_contest_bet_summaries, update_contest_bet_summaries_with_results,
     },
     contest_info_service::{
-        assert_time_of_close_not_passed, assert_time_of_expiry_not_passed, assert_time_of_resolved_not_passed,
-        get_contest_infos_for_ids,
-    }, integrations::price_feed_service::pricefeed::query_prices
+        assert_time_of_close_not_passed, assert_time_of_expiry_not_passed,
+        assert_time_of_resolved_not_passed, get_contest_infos_for_ids,
+    },
+    integrations::price_feed_service::pricefeed::query_prices,
 };
 
 pub fn add_active_contest(
@@ -42,7 +45,10 @@ fn paginate_contests(
     }
 }
 
-pub fn sort_contests(combined: &mut Vec<(ContestInfo, ContestBetSummary)>, sort_order: Option<ContestQuerySortOrder>) {
+pub fn sort_contests(
+    combined: &mut Vec<(ContestInfo, ContestBetSummary)>,
+    sort_order: Option<ContestQuerySortOrder>,
+) {
     match sort_order {
         Some(ContestQuerySortOrder::Volume) => {
             combined.sort_by(|a, b| {
@@ -50,16 +56,13 @@ pub fn sort_contests(combined: &mut Vec<(ContestInfo, ContestBetSummary)>, sort_
                 let total_pool_b = b.1.calc_total_pool();
                 total_pool_b.cmp(&total_pool_a) // Assuming Uint128 supports cmp, adjust if necessary
             });
-        },
+        }
         Some(ContestQuerySortOrder::Descending) => {
             combined.sort_by(|a, b| b.0.get_time_of_close().cmp(&a.0.get_time_of_close()));
         }
-        None => {
-            
-        },
+        None => {}
     }
 }
-
 
 fn apply_filters(
     combined: &mut Vec<(ContestInfo, ContestBetSummary)>,
@@ -93,22 +96,35 @@ fn apply_filters(
     }
 }
 
-pub fn get_times_to_resolve_from_contest_infos(deps: &Deps, contest_infos: Vec<ContestInfo>) -> Vec<u64> {
+pub fn get_times_to_resolve_from_contest_infos(
+    deps: &Deps,
+    contest_infos: Vec<ContestInfo>,
+) -> Vec<u64> {
     let mut times = vec![];
     let mut close: u64;
     let mut resolve: u64;
     for contest_info in contest_infos {
         close = contest_info.get_time_of_close();
         resolve = contest_info.get_time_of_resolve();
-        
-        if query_prices(&deps.querier, deps.storage, &vec![close]).is_err() & !times.contains(&close) {
+
+        if query_prices(&deps.querier, deps.storage, &vec![close])
+            .unwrap()
+            .prices
+            .is_empty()
+            & !times.contains(&close)
+        {
             times.push(close)
         }
-        if query_prices(&deps.querier, deps.storage, &vec![resolve]).is_err() & !times.contains(&resolve) {
+        if query_prices(&deps.querier, deps.storage, &vec![resolve])
+            .unwrap()
+            .prices
+            .is_empty()
+            & !times.contains(&resolve)
+        {
             times.push(resolve)
         }
     }
-    
+
     times
 }
 
@@ -142,7 +158,6 @@ pub fn get_contests(
         .into_iter()
         .zip(contest_bet_summaries.into_iter())
         .collect();
-
 
     // Apply filters based on the specified criteria
     apply_filters(&mut combined, filter, env);

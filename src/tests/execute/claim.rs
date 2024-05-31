@@ -8,9 +8,7 @@ mod tests {
         response::response_types::prices_by_ids::PricesByIdsResponse,
     };
 
-    use crate::services::integrations::price_feed_service::pricefeed::{
-        configure_mock, reset_mock_result, set_oracle_result, MockConfig,
-    };
+    use crate::services::integrations::price_feed_service::pricefeed::set_oracle_result;
     use crate::tests::{
         constants::{
             AFTER_TIME_OF_1_CLOSE, AFTER_TIME_OF_2_CLOSE, AFTER_TIME_OF_3_CLOSE,
@@ -80,7 +78,6 @@ mod tests {
         test_env.first_bet_on_contest_success(&contest_file, &1, &amount_bet);
 
         test_env.set_time(AFTER_TIME_OF_RESOLVE);
-        configure_mock(MockConfig::ReturnError(true));
 
         test_env.claim_success(&contest_file, Some(&amount_bet));
     }
@@ -131,7 +128,6 @@ mod tests {
         set_oracle_result(Some(oracle_result));
 
         test_env.claim_success(&contest_file, None);
-        reset_mock_result();
     }
 
     #[test]
@@ -147,7 +143,7 @@ mod tests {
         test_env.set_sender("user2".to_owned());
         test_env.bet_on_contest_success(&contest_file, &1, &100);
 
-        test_env.set_time(AFTER_TIME_OF_RESOLVE);
+        test_env.set_time(AFTER_TIME_OF_2_CLOSE);
 
         test_env.set_sender("creator".to_owned());
 
@@ -160,7 +156,6 @@ mod tests {
         set_oracle_result(Some(oracle_result));
 
         test_env.claim_failure(&contest_file);
-        reset_mock_result();
     }
 
     #[test]
@@ -189,7 +184,6 @@ mod tests {
         set_oracle_result(Some(oracle_result));
 
         test_env.claim_success(&contest_file, Some(&100));
-        reset_mock_result();
     }
 
     #[test]
