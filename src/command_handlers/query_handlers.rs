@@ -1,4 +1,4 @@
-use cosmwasm_std::{to_binary, Binary, Deps, Env, StdResult};
+use cosmwasm_std::{to_binary, Binary, Deps, Env, StdResult, Uint128};
 use sp_secret_toolkit::{contract::contract::Contract, snip20::Snip20};
 
 use crate::{
@@ -8,11 +8,15 @@ use crate::{
         contest_info::ContestInfo,
     },
     msgs::query::commands::{
+        get_claimable_value::GetClaimableValue,
         get_contest_by_id::GetContestById,
         get_contests::{ContestQueryFilter, GetContests},
         get_contests_by_ids::GetContestsByIds,
         get_user_bet::GetUserBet,
-        get_users_bets::{GetUsersBets, UsersBetsQueryFilters},
+        get_users_bets::{
+            GetUsersBets,
+            UsersBetsQueryFilters::{self, Claimable},
+        },
     },
     responses::query::{
         query_response::QueryResponse,
@@ -22,6 +26,7 @@ use crate::{
             contest_data::ContestDataResponse,
             contest_data_list::ContestDataListResponse,
             fee_percent::FeePercentResponse,
+            get_claimable_value::ClaimableValueResponse,
             get_snip20::GetSnip20Response,
             minimum_bet::MinimumBetResponse,
             times_to_resolve::TimesToResolveResponse,
@@ -30,18 +35,16 @@ use crate::{
         },
     },
     services::{
-        bet_service::{get_bets_for_user_and_contests, get_user_bet},
+        bet_service::{
+            calculate_user_share, get_user_bet, get_users_bets, map_to_user_contest_bet_infos,
+        },
         contest_bet_summary_service::{
-            get_contest_bet_summaries, get_contest_bet_summaries_ignore_missing,
-            get_contest_bet_summary, update_contest_bet_summaries_with_results,
+            get_contest_bet_summaries_ignore_missing, get_contest_bet_summary,
         },
-        contest_info_service::{
-            get_contest_info, get_contest_infos_for_ids, get_contest_infos_for_ids_ignore_missing,
-        },
+        contest_info_service::{get_contest_info, get_contest_infos_for_ids_ignore_missing},
         contests_service::{get_contests, get_times_to_resolve_from_contest_infos},
         integrations::master_viewing_key_service::viewing_keys::assert_valid_viewing_key,
         state_service::{get_claimable_fees, get_fee_percent, get_minimum_bet, get_snip20},
-        user_info_service::get_contests_for_user,
     },
 };
 
@@ -54,40 +57,44 @@ pub fn handle_users_bets_query(deps: Deps, env: Env, command: GetUsersBets) -> S
 
     assert_valid_viewing_key(deps.storage, &deps.querier, &user, &viewing_key)?;
 
-    let users_contest_ids = get_contests_for_user(deps.storage, &user)?;
-    let users_contest_infos = get_contest_infos_for_ids(deps.storage, &users_contest_ids)?;
-    let mut users_contest_bet_summaries =
-        get_contest_bet_summaries(deps.storage, &users_contest_ids)?;
-    update_contest_bet_summaries_with_results(
-        deps.storage,
-        &deps.querier,
-        &env,
-        &users_contest_infos,
-        &mut users_contest_bet_summaries,
-    );
-    let users_bets = get_bets_for_user_and_contests(deps.storage, &user, &users_contest_ids)?;
-
     // Filter contests, bet summaries, and bets based on the provided filters
-    let filtered_results = filter_contests(
-        &users_contest_infos,
-        &users_contest_bet_summaries,
-        &users_bets,
-        &filters,
-    );
+    let filtered_results = get_users_bets(deps, env, user, filters)?;
 
     // Construct UserContestBetInfo or a similar structure for each filtered result
-    let contests_bets: Vec<UserContestBetInfo> = filtered_results
-        .into_iter()
-        .map(
-            |(contest_info, contest_bet_summary, user_bet)| UserContestBetInfo {
-                contest_info,
-                contest_bet_summary,
-                user_bet,
-            },
-        )
-        .collect();
+    let contests_bets: Vec<UserContestBetInfo> = map_to_user_contest_bet_infos(filtered_results);
 
     let response = QueryResponse::UsersBets(UsersBetsResponse { contests_bets });
+
+    to_binary(&response)
+}
+
+pub fn handle_get_claimable_value(
+    deps: Deps,
+    env: Env,
+    command: GetClaimableValue,
+) -> StdResult<Binary> {
+    let GetClaimableValue { user, viewing_key } = command;
+    let filters: Option<Vec<UsersBetsQueryFilters>> = Some(vec![Claimable]);
+    assert_valid_viewing_key(deps.storage, &deps.querier, &user, &viewing_key)?;
+
+    let filtered_results = get_users_bets(deps, env, user, filters)?;
+
+    // Construct UserContestBetInfo or a similar structure for each filtered result
+    let contests_bets: Vec<UserContestBetInfo> = map_to_user_contest_bet_infos(filtered_results);
+
+    let amount: Uint128 = contests_bets
+        .iter()
+        .map(|bet_info| {
+            calculate_user_share(
+                deps.storage,
+                &bet_info.contest_bet_summary,
+                &bet_info.user_bet,
+            )
+            .unwrap()
+        })
+        .sum();
+
+    let response = QueryResponse::ClaimableValue(ClaimableValueResponse { amount });
 
     to_binary(&response)
 }

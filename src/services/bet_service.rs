@@ -1,17 +1,27 @@
-use cosmwasm_std::{Addr, Storage, Uint128};
+use cosmwasm_std::{Addr, Deps, Env, StdError, Storage, Uint128};
 use sp_secret_toolkit::macros::identifiable::Identifiable;
 
 use crate::{
+    command_handlers::query_handlers::filter_contests,
     data::{
         bets::{Bet, UserContest},
         contest_bet_summary::ContestBetSummary,
-        contest_info::ContestId,
+        contest_info::{ContestId, ContestInfo},
         state::State,
     },
     error::bet_error::BetError,
+    msgs::query::commands::get_users_bets::UsersBetsQueryFilters,
+    responses::query::response_types::users_bets::UserContestBetInfo,
 };
 
-use super::integrations::price_feed_service::pricefeed::NULL_AND_VOID_CONTEST_RESULT;
+use super::{
+    contest_bet_summary_service::{
+        get_contest_bet_summaries, update_contest_bet_summaries_with_results,
+    },
+    contest_info_service::get_contest_infos_for_ids,
+    integrations::price_feed_service::pricefeed::NULL_AND_VOID_CONTEST_RESULT,
+    user_info_service::get_contests_for_user,
+};
 
 // Assuming the existence of State, UserContest, Bet, ContestInfoError, and necessary validation functions.
 
@@ -127,6 +137,51 @@ pub fn get_user_bet(storage: &dyn Storage, user_contest: UserContest) -> Result<
     }
 }
 
+pub fn map_to_user_contest_bet_infos(
+    filtered_results: Vec<(ContestInfo, ContestBetSummary, Bet)>,
+) -> Vec<UserContestBetInfo> {
+    let contests_bets: Vec<UserContestBetInfo> = filtered_results
+        .into_iter()
+        .map(
+            |(contest_info, contest_bet_summary, user_bet)| UserContestBetInfo {
+                contest_info,
+                contest_bet_summary,
+                user_bet,
+            },
+        )
+        .collect();
+    contests_bets
+}
+
+pub fn get_users_bets(
+    deps: Deps,
+    env: Env,
+    user: Addr,
+    filters: Option<Vec<UsersBetsQueryFilters>>,
+) -> Result<Vec<(ContestInfo, ContestBetSummary, Bet)>, StdError> {
+    let users_contest_ids = get_contests_for_user(deps.storage, &user)?;
+    let users_contest_infos = get_contest_infos_for_ids(deps.storage, &users_contest_ids)?;
+    let mut users_contest_bet_summaries =
+        get_contest_bet_summaries(deps.storage, &users_contest_ids)?;
+    update_contest_bet_summaries_with_results(
+        deps.storage,
+        &deps.querier,
+        &env,
+        &users_contest_infos,
+        &mut users_contest_bet_summaries,
+    );
+    let users_bets = get_bets_for_user_and_contests(deps.storage, &user, &users_contest_ids)?;
+
+    // Filter contests, bet summaries, and bets based on the provided filters
+    let filtered_results = filter_contests(
+        &users_contest_infos,
+        &users_contest_bet_summaries,
+        &users_bets,
+        &filters,
+    );
+    Ok(filtered_results)
+}
+
 pub fn assert_not_paid(bet: &Bet) -> Result<(), BetError> {
     if bet.has_been_paid() {
         Err(BetError::BetAlreadyPaid)
@@ -135,8 +190,8 @@ pub fn assert_not_paid(bet: &Bet) -> Result<(), BetError> {
     }
 }
 
-fn calculate_user_share(
-    storage: &mut dyn Storage,
+pub fn calculate_user_share(
+    storage: &dyn Storage,
     contest_bet_summary: &ContestBetSummary,
     bet: &Bet,
 ) -> Result<Uint128, BetError> {

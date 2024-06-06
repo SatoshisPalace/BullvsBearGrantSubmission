@@ -29,14 +29,6 @@ impl ContestBetSummary {
         }
     }
 
-    pub fn get_contest_id(&self) -> &ContestId {
-        &self.contest_id
-    }
-
-    pub fn get_options(&self) -> &Vec<OptionBetSummary> {
-        &self.options
-    }
-
     pub fn get_outcome(&self) -> &Option<ContestOutcome> {
         &self.outcome
     }
@@ -107,14 +99,6 @@ impl OptionBetSummary {
     }
 
     // Getters
-    pub fn option(&self) -> &ContestOutcome {
-        &self.option
-    }
-
-    pub fn bet_allocation(&self) -> Uint128 {
-        self.bet_allocation
-    }
-
     pub fn add_bet(&mut self, amount: &Uint128) {
         self.num_bets += 1;
         self.bet_allocation += amount

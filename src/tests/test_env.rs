@@ -15,10 +15,10 @@ pub mod tests {
             execute_handlers::{handle_claim, handle_claim_multiple, handle_receive},
             invoke_handlers::handle_bet_on_contest,
             query_handlers::{
-                handle_get_claimable_fees, handle_get_contest_by_id, handle_get_contests,
-                handle_get_contests_by_ids, handle_get_fee_percent, handle_get_minimum_bet,
-                handle_get_snip20, handle_get_times_to_resolve, handle_user_bet,
-                handle_users_bets_query,
+                handle_get_claimable_fees, handle_get_claimable_value, handle_get_contest_by_id,
+                handle_get_contests, handle_get_contests_by_ids, handle_get_fee_percent,
+                handle_get_minimum_bet, handle_get_snip20, handle_get_times_to_resolve,
+                handle_user_bet, handle_users_bets_query,
             },
         },
         contract::instantiate,
@@ -31,11 +31,15 @@ pub mod tests {
             instantiate::InstantiateMsg,
             invoke::{commands::bet_contest::BetContest, invoke_msg::InvokeMsg},
             query::commands::{
+                get_claimable_value::GetClaimableValue,
                 get_contest_by_id::GetContestById,
                 get_contests::{ContestQueryFilter, ContestQuerySortOrder, GetContests},
                 get_contests_by_ids::GetContestsByIds,
                 get_user_bet::GetUserBet,
-                get_users_bets::{GetUsersBets, UsersBetsQueryFilters},
+                get_users_bets::{
+                    GetUsersBets,
+                    UsersBetsQueryFilters::{self},
+                },
             },
         },
         responses::{
@@ -100,6 +104,22 @@ pub mod tests {
             };
             let _res = instantiate(self.deps.as_mut(), self.env.clone(), self.info.clone(), msg)
                 .expect("contract initialization failed");
+        }
+
+        pub fn query_claimable_value(&mut self, expected_amount: Uint128) {
+            let command = GetClaimableValue {
+                user: self.info.sender.clone(),
+                viewing_key: "valid viewing key".to_owned(),
+            };
+            let binary_response =
+                handle_get_claimable_value(self.deps.as_ref(), self.env.clone(), command).unwrap();
+            let query_response: QueryResponse = from_binary(&binary_response).unwrap();
+            match query_response {
+                QueryResponse::ClaimableValue(response) => {
+                    assert_eq!(response.amount, expected_amount)
+                }
+                _ => panic!("Expected ClaimableValue response but received something else"),
+            }
         }
 
         fn query_users_bets(

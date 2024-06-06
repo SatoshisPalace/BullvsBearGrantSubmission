@@ -1,5 +1,6 @@
 pub mod get_active_contests;
 pub mod get_claimable_fees;
+pub mod get_claimable_value;
 pub mod get_contest;
 pub mod get_contests;
 pub mod get_fee_percent;

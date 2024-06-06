@@ -2,10 +2,10 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use super::commands::{
-    get_claimable_fees::GetClaimableFees, get_contest_by_id::GetContestById,
-    get_contests::GetContests, get_contests_by_ids::GetContestsByIds,
-    get_fee_percent::GetFeePercent, get_min_bet::GetMinBet, get_snip20::GetSnip20,
-    get_times_to_resolve::GetTimesToResolve, get_total_value::GetTotalValue,
+    get_claimable_fees::GetClaimableFees, get_claimable_value::GetClaimableValue,
+    get_contest_by_id::GetContestById, get_contests::GetContests,
+    get_contests_by_ids::GetContestsByIds, get_fee_percent::GetFeePercent, get_min_bet::GetMinBet,
+    get_snip20::GetSnip20, get_times_to_resolve::GetTimesToResolve, get_total_value::GetTotalValue,
     get_user_bet::GetUserBet, get_users_bets::GetUsersBets,
 };
 
@@ -23,4 +23,5 @@ pub enum QueryMsg {
     GetTimesToResolve(GetTimesToResolve),
     GetClaimableFees(GetClaimableFees),
     GetFeePercent(GetFeePercent),
+    GetClaimableValue(GetClaimableValue),
 }
