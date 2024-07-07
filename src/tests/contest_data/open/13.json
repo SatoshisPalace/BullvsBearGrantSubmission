@@ -1,6 +1,6 @@
 {
     "contest_info": {
-        "ticker": "BTC",
+        "ticker": "BTT",
         "options": [
             {
                 "id": 1,
@@ -11,7 +11,7 @@
                 "name": "Bear"
             }
         ],
-        "time_of_close": 1571799300,
-        "time_of_resolve": 1571799600
+        "time_of_close": 1571800500,
+        "time_of_resolve": 1571800800
     }
 }

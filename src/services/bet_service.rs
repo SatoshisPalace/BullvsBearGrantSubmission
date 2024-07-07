@@ -2,15 +2,14 @@ use cosmwasm_std::{Addr, Deps, Env, StdError, Storage, Uint128};
 use sp_secret_toolkit::macros::identifiable::Identifiable;
 
 use crate::{
-    command_handlers::query_handlers::filter_contests,
     data::{
-        bets::{Bet, UserContest},
+        bets::{Bet, UserContest, TOTAL_BETS, TOTAL_VOLUME},
         contest_bet_summary::ContestBetSummary,
         contest_info::{ContestId, ContestInfo},
         state::State,
+        user_info::{get_users_contest_map, TOTAL_USERS},
     },
     error::bet_error::BetError,
-    msgs::query::commands::get_users_bets::UsersBetsQueryFilters,
     responses::query::response_types::users_bets::UserContestBetInfo,
 };
 
@@ -20,7 +19,7 @@ use super::{
     },
     contest_info_service::get_contest_infos_for_ids,
     integrations::price_feed_service::pricefeed::NULL_AND_VOID_CONTEST_RESULT,
-    user_info_service::get_contests_for_user,
+    user_info_service::get_unchecked_contests_for_user,
 };
 
 // Assuming the existence of State, UserContest, Bet, ContestInfoError, and necessary validation functions.
@@ -54,8 +53,9 @@ pub fn place_or_update_bet(
             if outcome_id != bet.get_outcome_id() {
                 return Err(BetError::CannotBetOnBothSides.into());
             }
-            // Update the existing bet amount and save
+            // Update the existing bet amount and save metrics
             bet.add_amount(*amount);
+            update_total_volume(storage, amount);
             bet.keymap_save(storage)?;
             Ok(false)
         }
@@ -68,6 +68,8 @@ pub fn place_or_update_bet(
                 outcome_id.clone(),
             ); // Cloning address is necessary for Bet creation
             new_bet.keymap_save(storage)?;
+            update_total_volume(storage, amount);
+            increment_total_bets(storage);
             Ok(true)
         }
     }
@@ -153,35 +155,6 @@ pub fn map_to_user_contest_bet_infos(
     contests_bets
 }
 
-pub fn get_users_bets(
-    deps: Deps,
-    env: Env,
-    user: Addr,
-    filters: Option<Vec<UsersBetsQueryFilters>>,
-) -> Result<Vec<(ContestInfo, ContestBetSummary, Bet)>, StdError> {
-    let users_contest_ids = get_contests_for_user(deps.storage, &user)?;
-    let users_contest_infos = get_contest_infos_for_ids(deps.storage, &users_contest_ids)?;
-    let mut users_contest_bet_summaries =
-        get_contest_bet_summaries(deps.storage, &users_contest_ids)?;
-    update_contest_bet_summaries_with_results(
-        deps.storage,
-        &deps.querier,
-        &env,
-        &users_contest_infos,
-        &mut users_contest_bet_summaries,
-    );
-    let users_bets = get_bets_for_user_and_contests(deps.storage, &user, &users_contest_ids)?;
-
-    // Filter contests, bet summaries, and bets based on the provided filters
-    let filtered_results = filter_contests(
-        &users_contest_infos,
-        &users_contest_bet_summaries,
-        &users_bets,
-        &filters,
-    );
-    Ok(filtered_results)
-}
-
 pub fn assert_not_paid(bet: &Bet) -> Result<(), BetError> {
     if bet.has_been_paid() {
         Err(BetError::BetAlreadyPaid)
@@ -222,4 +195,111 @@ pub fn calculate_user_share(
         bet.get_amount().u128() * total_pool_after_fee / total_allocation_for_outcome.u128();
 
     Ok(Uint128::from(user_share))
+}
+
+pub fn get_users_map_bets(
+    deps: Deps,
+    env: Env,
+    user: Addr,
+) -> Result<Vec<(ContestInfo, ContestBetSummary, Bet)>, StdError> {
+    let users_contest_ids = get_unchecked_contests_for_user(deps.storage, &user)?;
+    let users_contest_infos = get_contest_infos_for_ids(deps.storage, &users_contest_ids)?;
+    let mut users_contest_bet_summaries =
+        get_contest_bet_summaries(deps.storage, &users_contest_ids)?;
+    update_contest_bet_summaries_with_results(
+        deps.storage,
+        &deps.querier,
+        &env,
+        &users_contest_infos,
+        &mut users_contest_bet_summaries,
+    );
+    let users_bets = get_bets_for_user_and_contests(deps.storage, &user, &users_contest_ids)?;
+
+    // Filter contests, bet summaries, and bets based on the provided filters
+    let filtered_results = filter_claimable(
+        &users_contest_infos,
+        &users_contest_bet_summaries,
+        &users_bets,
+    );
+    Ok(filtered_results)
+}
+
+fn filter_claimable(
+    contest_infos: &Vec<ContestInfo>,
+    contest_bet_summaries: &Vec<ContestBetSummary>,
+    bets: &Vec<Bet>,
+) -> Vec<(ContestInfo, ContestBetSummary, Bet)> {
+    contest_infos
+        .iter()
+        .zip(contest_bet_summaries.iter())
+        .zip(bets.iter())
+        .filter_map(|((contest_info, contest_bet_summary), bet)| {
+            if bet.has_been_paid() {
+                None
+            } else {
+                match contest_bet_summary.get_outcome() {
+                    Some(outcome) if outcome.get_id() == bet.get_outcome_id() => Some((
+                        (*contest_info).clone(),
+                        (*contest_bet_summary).clone(),
+                        (*bet).clone(),
+                    )),
+                    _ => None,
+                }
+            }
+        })
+        .collect()
+}
+
+// Getter function to retrieve the total volume
+pub fn get_total_volume(storage: &dyn Storage) -> Uint128 {
+    // Load the TOTAL_VOLUME from storage and return it
+    let total_volume = TOTAL_VOLUME.load(storage).unwrap_or(Uint128::zero());
+    total_volume
+}
+
+// Getter function to retrieve the total bets
+pub fn get_total_bets(storage: &dyn Storage) -> u64 {
+    // Load the TOTAL_BETS from storage and return it
+    let total_bets = TOTAL_BETS.load(storage).unwrap_or(0);
+    total_bets
+}
+
+// Update function for total volume
+pub fn update_total_volume(storage: &mut dyn Storage, amount: &Uint128) {
+    // Load the current TOTAL_VOLUME
+    let current_total_volume: Uint128 = TOTAL_VOLUME.load(storage).unwrap_or(Uint128::zero());
+
+    // Add the command amount to the current total volume
+    let updated_total_volume = current_total_volume + amount;
+
+    // Store the updated total volume back into TOTAL_VOLUME
+    TOTAL_VOLUME.save(storage, &updated_total_volume).unwrap()
+}
+
+// Update function for total bets
+pub fn increment_total_bets(storage: &mut dyn Storage) {
+    // Load the current TOTAL_BETS
+    let current_total_bets = TOTAL_BETS.load(storage).unwrap_or(0);
+
+    // Add the command amount to the current total bets
+    let updated_total_bets = current_total_bets + 1;
+
+    // Store the incremented total bets back into TOTAL_BETS
+    TOTAL_BETS.save(storage, &updated_total_bets).unwrap()
+}
+
+// Update function for total users
+pub fn increment_total_users(storage: &mut dyn Storage) {
+    // Load the current TOTAL_USERS
+    let current_total_users = TOTAL_USERS.load(storage).unwrap_or(0);
+
+    // Add the command amount to the current total users
+    let updated_total_users = current_total_users + 1;
+
+    // Store the incremented total bets back into TOTAL_USERS
+    TOTAL_USERS.save(storage, &updated_total_users).unwrap()
+}
+
+pub fn get_users_number_of_bets(storage: &dyn Storage, address: &Addr) -> u32 {
+    get_users_contest_map(address).get_len(storage).unwrap()
 }

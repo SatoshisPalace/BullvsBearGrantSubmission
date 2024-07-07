@@ -1,4 +1,4 @@
-use cosmwasm_std::{to_binary, Binary, Deps, Env, StdResult, Uint128};
+use cosmwasm_std::{to_binary, Binary, Deps, Env, StdResult};
 use sp_secret_toolkit::{contract::contract::Contract, snip20::Snip20};
 
 use crate::{
@@ -8,15 +8,10 @@ use crate::{
         contest_info::ContestInfo,
     },
     msgs::query::commands::{
-        get_claimable_value::GetClaimableValue,
-        get_contest_by_id::GetContestById,
-        get_contests::{ContestQueryFilter, GetContests},
-        get_contests_by_ids::GetContestsByIds,
-        get_user_bet::GetUserBet,
-        get_users_bets::{
-            GetUsersBets,
-            UsersBetsQueryFilters::{self, Claimable},
-        },
+        get_claimable_contests::GetClaimableContests, get_contest_by_id::GetContestById,
+        get_contests_by_ids::GetContestsByIds, get_times_to_resolve::GetTimesToResolve,
+        get_user_bet::GetUserBet, get_users_last_ten_bets::GetUsersLastTenBets,
+        get_users_list_of_bets::GetUsersListOfBets, get_users_number_of_bets::GetUsersNumberOfBets,
     },
     responses::query::{
         query_response::QueryResponse,
@@ -26,78 +21,39 @@ use crate::{
             contest_data::ContestDataResponse,
             contest_data_list::ContestDataListResponse,
             fee_percent::FeePercentResponse,
-            get_claimable_value::ClaimableValueResponse,
             get_snip20::GetSnip20Response,
             minimum_bet::MinimumBetResponse,
             times_to_resolve::TimesToResolveResponse,
+            total_number_of_bets::TotalNumberOfBetsResponse,
+            total_number_of_contests::TotalNumberOfContestsResponse,
+            total_number_of_users::TotalNumberOfUsersResponse,
+            total_users_number_of_bets::TotalUsersNumberOfBetsResponse,
             total_value::TotalValueResponse,
+            total_volume::TotalVolumeResponse,
             users_bets::{UserContestBetInfo, UsersBetsResponse},
         },
     },
     services::{
         bet_service::{
-            calculate_user_share, get_user_bet, get_users_bets, map_to_user_contest_bet_infos,
+            get_total_bets, get_total_volume, get_user_bet, get_users_map_bets,
+            get_users_number_of_bets, map_to_user_contest_bet_infos,
         },
         contest_bet_summary_service::{
             get_contest_bet_summaries_ignore_missing, get_contest_bet_summary,
+            update_contest_bet_summaries_with_results,
         },
         contest_info_service::{get_contest_info, get_contest_infos_for_ids_ignore_missing},
-        contests_service::{get_contests, get_times_to_resolve_from_contest_infos},
+        contests_service::{
+            get_last_ten_contest_ids, get_times_to_resolve_from_contest_infos,
+            get_total_number_of_contests,
+        },
         integrations::master_viewing_key_service::viewing_keys::assert_valid_viewing_key,
         state_service::{get_claimable_fees, get_fee_percent, get_minimum_bet, get_snip20},
+        user_info_service::{
+            get_last_ten_bet_on, get_total_users, get_users_contest_bets_by_index,
+        },
     },
 };
-
-pub fn handle_users_bets_query(deps: Deps, env: Env, command: GetUsersBets) -> StdResult<Binary> {
-    let GetUsersBets {
-        user,
-        viewing_key,
-        filters,
-    } = command;
-
-    assert_valid_viewing_key(deps.storage, &deps.querier, &user, &viewing_key)?;
-
-    // Filter contests, bet summaries, and bets based on the provided filters
-    let filtered_results = get_users_bets(deps, env, user, filters)?;
-
-    // Construct UserContestBetInfo or a similar structure for each filtered result
-    let contests_bets: Vec<UserContestBetInfo> = map_to_user_contest_bet_infos(filtered_results);
-
-    let response = QueryResponse::UsersBets(UsersBetsResponse { contests_bets });
-
-    to_binary(&response)
-}
-
-pub fn handle_get_claimable_value(
-    deps: Deps,
-    env: Env,
-    command: GetClaimableValue,
-) -> StdResult<Binary> {
-    let GetClaimableValue { user, viewing_key } = command;
-    let filters: Option<Vec<UsersBetsQueryFilters>> = Some(vec![Claimable]);
-    assert_valid_viewing_key(deps.storage, &deps.querier, &user, &viewing_key)?;
-
-    let filtered_results = get_users_bets(deps, env, user, filters)?;
-
-    // Construct UserContestBetInfo or a similar structure for each filtered result
-    let contests_bets: Vec<UserContestBetInfo> = map_to_user_contest_bet_infos(filtered_results);
-
-    let amount: Uint128 = contests_bets
-        .iter()
-        .map(|bet_info| {
-            calculate_user_share(
-                deps.storage,
-                &bet_info.contest_bet_summary,
-                &bet_info.user_bet,
-            )
-            .unwrap()
-        })
-        .sum();
-
-    let response = QueryResponse::ClaimableValue(ClaimableValueResponse { amount });
-
-    to_binary(&response)
-}
 
 pub fn handle_get_contest_by_id(deps: Deps, command: GetContestById) -> StdResult<Binary> {
     let contest_info = get_contest_info(deps.storage, &command.contest_id)?;
@@ -108,27 +64,6 @@ pub fn handle_get_contest_by_id(deps: Deps, command: GetContestById) -> StdResul
         contest_bet_summary,
     });
     to_binary(&response)
-}
-
-pub fn handle_get_contests_by_ids(deps: Deps, command: GetContestsByIds) -> StdResult<Binary> {
-    let contest_infos =
-        get_contest_infos_for_ids_ignore_missing(deps.storage, &command.contest_ids);
-    let contest_bet_summaries =
-        get_contest_bet_summaries_ignore_missing(deps.storage, &command.contest_ids);
-
-    let contest_infos_and_summaries: Vec<ContestDataResponse> = contest_infos
-        .into_iter()
-        .zip(contest_bet_summaries.into_iter())
-        .map(|(contest_info, contest_bet_summary)| ContestDataResponse {
-            contest_info,
-            contest_bet_summary,
-        })
-        .collect();
-
-    let response = QueryResponse::ContestDataList(ContestDataListResponse {
-        contests: contest_infos_and_summaries,
-    });
-    return to_binary(&response);
 }
 
 pub fn handle_get_fee_percent(deps: Deps) -> StdResult<Binary> {
@@ -143,23 +78,6 @@ pub fn handle_get_minimum_bet(deps: Deps) -> StdResult<Binary> {
     return to_binary(&response);
 }
 
-pub fn handle_get_times_to_resolve(deps: Deps, env: Env) -> StdResult<Binary> {
-    let contests = get_contests(
-        &deps,
-        &env,
-        None,
-        None,
-        None,
-        Some(ContestQueryFilter::Unresolved),
-    )?;
-    let contest_infos: Vec<ContestInfo> = contests
-        .into_iter()
-        .map(|(contest_info, _)| contest_info)
-        .collect();
-    let times = get_times_to_resolve_from_contest_infos(&deps, contest_infos);
-    let response = QueryResponse::TimesToResolve(TimesToResolveResponse { times });
-    return to_binary(&response);
-}
 pub fn handle_get_claimable_fees(deps: Deps) -> StdResult<Binary> {
     let claimable_fees = get_claimable_fees(deps.storage)?;
     let response = QueryResponse::ClaimableFees(ClaimableFeesResponse { claimable_fees });
@@ -179,6 +97,76 @@ pub fn handle_get_total_value(deps: Deps, env: Env) -> StdResult<Binary> {
     return to_binary(&response);
 }
 
+pub fn handle_get_users_number_of_bets(
+    deps: Deps,
+    command: GetUsersNumberOfBets,
+) -> StdResult<Binary> {
+    assert_valid_viewing_key(
+        deps.storage,
+        &deps.querier,
+        &command.user,
+        &command.viewing_key,
+    )?;
+
+    let total_users_number_of_bets = get_users_number_of_bets(deps.storage, &command.user);
+
+    let response = QueryResponse::TotalUsersNumberOfBets(TotalUsersNumberOfBetsResponse {
+        total_users_number_of_bets,
+    });
+    return to_binary(&response);
+}
+
+pub fn handle_get_users_list_of_bets(
+    deps: Deps,
+    env: Env,
+    command: GetUsersListOfBets,
+) -> StdResult<Binary> {
+    assert_valid_viewing_key(
+        deps.storage,
+        &deps.querier,
+        &command.user,
+        &command.viewing_key,
+    )?;
+
+    let contest_ids =
+        get_users_contest_bets_by_index(deps.storage, &command.contest_ids, &command.user)?;
+
+    let contest_infos = get_contest_infos_for_ids_ignore_missing(deps.storage, &contest_ids);
+    let mut bets: Vec<Bet> = vec![];
+    let mut contest_bet_summaries =
+        get_contest_bet_summaries_ignore_missing(deps.storage, &contest_ids);
+    update_contest_bet_summaries_with_results(
+        deps.storage,
+        &deps.querier,
+        &env,
+        &contest_infos,
+        &mut contest_bet_summaries,
+    );
+
+    for id in contest_ids {
+        bets.push(get_user_bet(
+            deps.storage,
+            UserContest::new(command.user.clone(), id),
+        )?);
+    }
+
+    // Ensure all vectors are the same length
+    assert_eq!(contest_infos.len(), contest_bet_summaries.len());
+    assert_eq!(contest_bet_summaries.len(), bets.len());
+
+    let collected_results: Vec<(ContestInfo, ContestBetSummary, Bet)> = contest_infos
+        .into_iter()
+        .zip(contest_bet_summaries.into_iter())
+        .zip(bets.into_iter())
+        .map(|((contest_info, contest_bet_summary), bet)| (contest_info, contest_bet_summary, bet))
+        .collect();
+
+    let contests_bets: Vec<UserContestBetInfo> = map_to_user_contest_bet_infos(collected_results);
+
+    let response = QueryResponse::UsersBets(UsersBetsResponse { contests_bets });
+    return to_binary(&response);
+}
+
 pub fn handle_user_bet(deps: Deps, command: GetUserBet) -> StdResult<Binary> {
     assert_valid_viewing_key(
         deps.storage,
@@ -193,6 +181,56 @@ pub fn handle_user_bet(deps: Deps, command: GetUserBet) -> StdResult<Binary> {
     return to_binary(&response);
 }
 
+pub fn handle_users_last_ten_bets(
+    deps: Deps,
+    env: Env,
+    command: GetUsersLastTenBets,
+) -> StdResult<Binary> {
+    assert_valid_viewing_key(
+        deps.storage,
+        &deps.querier,
+        &command.user,
+        &command.viewing_key,
+    )?;
+
+    let last_10 = get_last_ten_bet_on(deps.storage, &command.user)?;
+
+    let contest_infos = get_contest_infos_for_ids_ignore_missing(deps.storage, &last_10);
+    let mut bets: Vec<Bet> = vec![];
+    let mut contest_bet_summaries =
+        get_contest_bet_summaries_ignore_missing(deps.storage, &last_10);
+    update_contest_bet_summaries_with_results(
+        deps.storage,
+        &deps.querier,
+        &env,
+        &contest_infos,
+        &mut contest_bet_summaries,
+    );
+
+    for id in last_10 {
+        bets.push(get_user_bet(
+            deps.storage,
+            UserContest::new(command.user.clone(), id),
+        )?);
+    }
+
+    // Ensure all vectors are the same length
+    assert_eq!(contest_infos.len(), contest_bet_summaries.len());
+    assert_eq!(contest_bet_summaries.len(), bets.len());
+
+    let collected_results: Vec<(ContestInfo, ContestBetSummary, Bet)> = contest_infos
+        .into_iter()
+        .zip(contest_bet_summaries.into_iter())
+        .zip(bets.into_iter())
+        .map(|((contest_info, contest_bet_summary), bet)| (contest_info, contest_bet_summary, bet))
+        .collect();
+
+    let contests_bets: Vec<UserContestBetInfo> = map_to_user_contest_bet_infos(collected_results);
+
+    let response = QueryResponse::UsersBets(UsersBetsResponse { contests_bets });
+    return to_binary(&response);
+}
+
 pub fn handle_get_snip20(deps: Deps) -> StdResult<Binary> {
     let snip20 = get_snip20(deps.storage)?;
     let response = QueryResponse::Snip20(GetSnip20Response {
@@ -201,66 +239,127 @@ pub fn handle_get_snip20(deps: Deps) -> StdResult<Binary> {
     return to_binary(&response);
 }
 
-pub fn filter_contests(
-    contest_infos: &Vec<ContestInfo>,
-    contest_bet_summaries: &Vec<ContestBetSummary>,
-    bets: &Vec<Bet>,
-    filters: &Option<Vec<UsersBetsQueryFilters>>,
-) -> Vec<(ContestInfo, ContestBetSummary, Bet)> {
-    let is_claimable_filter_active =
-        matches!(filters, Some(filters) if filters.contains(&UsersBetsQueryFilters::Claimable));
+pub fn handle_get_claimable_contests(
+    deps: Deps,
+    env: Env,
+    command: GetClaimableContests,
+) -> StdResult<Binary> {
+    let GetClaimableContests { user, viewing_key } = command;
 
-    contest_infos
-        .iter()
-        .zip(contest_bet_summaries.iter())
-        .zip(bets.iter())
-        .filter_map(
-            |((contest_info, contest_bet_summary), bet)| match is_claimable_filter_active {
-                true => {
-                    if bet.has_been_paid() {
-                        None
-                    } else {
-                        match contest_bet_summary.get_outcome() {
-                            Some(outcome) if outcome.get_id() == bet.get_outcome_id() => Some((
-                                (*contest_info).clone(),
-                                (*contest_bet_summary).clone(),
-                                (*bet).clone(),
-                            )),
-                            _ => None,
-                        }
-                    }
-                }
-                _ => Some((
-                    (*contest_info).clone(),
-                    (*contest_bet_summary).clone(),
-                    (*bet).clone(),
-                )),
-            },
-        )
-        .collect()
+    assert_valid_viewing_key(deps.storage, &deps.querier, &user, &viewing_key)?;
+
+    // Filter contests, bet summaries, and bets based on the provided filters
+    let filtered_results = get_users_map_bets(deps, env, user)?;
+
+    // Construct UserContestBetInfo or a similar structure for each filtered result
+    let contests_bets: Vec<UserContestBetInfo> = map_to_user_contest_bet_infos(filtered_results);
+
+    let response = QueryResponse::UsersBets(UsersBetsResponse { contests_bets });
+
+    to_binary(&response)
 }
 
-pub fn handle_get_contests(deps: Deps, env: Env, command: GetContests) -> StdResult<Binary> {
-    let GetContests {
-        page_num,
-        page_size,
-        sort_order,
-        filter,
-    } = command;
+pub fn handle_get_contests_by_ids(
+    deps: Deps,
+    env: Env,
+    command: GetContestsByIds,
+) -> StdResult<Binary> {
+    let contest_infos =
+        get_contest_infos_for_ids_ignore_missing(deps.storage, &command.contest_ids);
+    let mut contest_bet_summaries =
+        get_contest_bet_summaries_ignore_missing(deps.storage, &command.contest_ids);
 
-    // Use the `?` operator to simplify error handling
-    let contest_pairs = get_contests(&deps, &env, page_num, page_size, sort_order, filter)?;
+    update_contest_bet_summaries_with_results(
+        deps.storage,
+        &deps.querier,
+        &env,
+        &contest_infos,
+        &mut contest_bet_summaries,
+    );
 
-    // Transform the data into the response format
-    let contests: Vec<ContestDataResponse> = contest_pairs
+    let contest_infos_and_summaries: Vec<ContestDataResponse> = contest_infos
         .into_iter()
+        .zip(contest_bet_summaries.into_iter())
         .map(|(contest_info, contest_bet_summary)| ContestDataResponse {
             contest_info,
             contest_bet_summary,
         })
         .collect();
-    let response = QueryResponse::ContestDataList(ContestDataListResponse { contests });
 
-    // Serialize the response into binary format and return
+    let response = QueryResponse::ContestDataList(ContestDataListResponse {
+        contests: contest_infos_and_summaries,
+    });
+    return to_binary(&response);
+}
+
+pub fn handle_get_times_to_resolve_from_ids(
+    deps: Deps,
+    command: GetTimesToResolve,
+) -> StdResult<Binary> {
+    let contest_infos =
+        get_contest_infos_for_ids_ignore_missing(deps.storage, &command.contest_ids);
+
+    let times = get_times_to_resolve_from_contest_infos(&deps, contest_infos);
+    let response = QueryResponse::TimesToResolve(TimesToResolveResponse { times });
+    return to_binary(&response);
+}
+
+pub fn handle_get_last_ten_contests(deps: Deps, env: Env) -> StdResult<Binary> {
+    let contest_ids = get_last_ten_contest_ids(deps.storage);
+
+    let contest_infos = get_contest_infos_for_ids_ignore_missing(deps.storage, &contest_ids);
+    let mut contest_bet_summaries =
+        get_contest_bet_summaries_ignore_missing(deps.storage, &contest_ids);
+
+    update_contest_bet_summaries_with_results(
+        deps.storage,
+        &deps.querier,
+        &env,
+        &contest_infos,
+        &mut contest_bet_summaries,
+    );
+
+    let contest_infos_and_summaries: Vec<ContestDataResponse> = contest_infos
+        .into_iter()
+        .zip(contest_bet_summaries.into_iter())
+        .map(|(contest_info, contest_bet_summary)| ContestDataResponse {
+            contest_info,
+            contest_bet_summary,
+        })
+        .collect();
+
+    let response = QueryResponse::ContestDataList(ContestDataListResponse {
+        contests: contest_infos_and_summaries,
+    });
+    return to_binary(&response);
+}
+
+pub fn handle_get_total_number_of_contests(deps: Deps) -> StdResult<Binary> {
+    let total_number_of_contests = get_total_number_of_contests(deps.storage);
+    let response = QueryResponse::TotalNumberOfContests(TotalNumberOfContestsResponse {
+        total_number_of_contests: total_number_of_contests.try_into().unwrap(),
+    });
+    return to_binary(&response);
+}
+
+pub fn handle_get_total_number_of_bets(deps: Deps) -> StdResult<Binary> {
+    let total_number_of_bets = get_total_bets(deps.storage);
+    let response = QueryResponse::TotalNumberOfBets(TotalNumberOfBetsResponse {
+        total_number_of_bets,
+    });
+    return to_binary(&response);
+}
+
+pub fn handle_get_total_users(deps: Deps) -> StdResult<Binary> {
+    let total_number_of_users = get_total_users(deps.storage);
+    let response = QueryResponse::TotalNumberOfUsers(TotalNumberOfUsersResponse {
+        total_number_of_users,
+    });
+    return to_binary(&response);
+}
+
+pub fn handle_get_total_volume(deps: Deps) -> StdResult<Binary> {
+    let total_volume = get_total_volume(deps.storage);
+    let response = QueryResponse::TotalVolume(TotalVolumeResponse { total_volume });
     return to_binary(&response);
 }

@@ -1,6 +1,6 @@
 {
     "contest_info": {
-        "ticker": "ETH",
+        "ticker": "BTC",
         "options": [
             {
                 "id": 1,
@@ -11,7 +11,7 @@
                 "name": "Bear"
             }
         ],
-        "time_of_close": 1571797500,
-        "time_of_resolve": 1571797800
+        "time_of_close": 1571800200,
+        "time_of_resolve": 1571800500
     }
 }

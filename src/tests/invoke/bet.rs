@@ -28,7 +28,7 @@ mod tests {
             BASE_FEE_PERCENT_NUMERATOR,
             BASE_FEE_PERCENT_DENOMINATOR,
         ));
-        let contest_file = 11;
+        let contest_file = 13;
         test_env.first_bet_on_contest_fail(&contest_file, &1, &100);
     }
 

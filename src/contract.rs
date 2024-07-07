@@ -4,10 +4,12 @@ use crate::command_handlers::execute_handlers::{
 };
 use crate::command_handlers::invoke_handlers::handle_bet_on_contest;
 use crate::command_handlers::query_handlers::{
-    handle_get_claimable_fees, handle_get_claimable_value, handle_get_contest_by_id,
-    handle_get_contests, handle_get_contests_by_ids, handle_get_fee_percent,
-    handle_get_minimum_bet, handle_get_snip20, handle_get_times_to_resolve, handle_get_total_value,
-    handle_user_bet, handle_users_bets_query,
+    handle_get_claimable_contests, handle_get_claimable_fees, handle_get_contest_by_id,
+    handle_get_contests_by_ids, handle_get_fee_percent, handle_get_last_ten_contests,
+    handle_get_minimum_bet, handle_get_snip20, handle_get_times_to_resolve_from_ids,
+    handle_get_total_number_of_bets, handle_get_total_number_of_contests, handle_get_total_users,
+    handle_get_total_value, handle_get_total_volume, handle_get_users_list_of_bets,
+    handle_get_users_number_of_bets, handle_user_bet, handle_users_last_ten_bets,
 };
 use crate::data::state::{FeePercent, State};
 use crate::msgs::execute::execute_msg::ExecuteMsg;
@@ -79,16 +81,24 @@ pub fn invoke(
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetContestById(command) => handle_get_contest_by_id(deps, command),
-        QueryMsg::GetContestsByIds(command) => handle_get_contests_by_ids(deps, command),
-        QueryMsg::GetContests(command) => handle_get_contests(deps, env, command),
+        QueryMsg::GetContestsByIds(command) => handle_get_contests_by_ids(deps, env, command),
         QueryMsg::GetUserBet(command) => handle_user_bet(deps, command),
-        QueryMsg::GetUsersBets(command) => handle_users_bets_query(deps, env, command),
+        QueryMsg::GetUsersLastTenBets(command) => handle_users_last_ten_bets(deps, env, command),
         QueryMsg::GetMinBet(_) => handle_get_minimum_bet(deps),
         QueryMsg::GetTotalValue(_) => handle_get_total_value(deps, env),
         QueryMsg::GetSnip20(_) => handle_get_snip20(deps),
-        QueryMsg::GetTimesToResolve(_) => handle_get_times_to_resolve(deps, env),
         QueryMsg::GetClaimableFees(_) => handle_get_claimable_fees(deps),
-        QueryMsg::GetClaimableValue(command) => handle_get_claimable_value(deps, env, command),
+        QueryMsg::GetClaimableContests(command) => {
+            handle_get_claimable_contests(deps, env, command)
+        }
         QueryMsg::GetFeePercent(_) => handle_get_fee_percent(deps),
+        QueryMsg::GetTimesToResolve(command) => handle_get_times_to_resolve_from_ids(deps, command),
+        QueryMsg::GetTotalNumberOfContests(_) => handle_get_total_number_of_contests(deps),
+        QueryMsg::GetTotalNumberOfBets(_) => handle_get_total_number_of_bets(deps),
+        QueryMsg::GetTotalVolume(_) => handle_get_total_volume(deps),
+        QueryMsg::GetUsersNumberOfBets(command) => handle_get_users_number_of_bets(deps, command),
+        QueryMsg::GetUsersListOfBets(command) => handle_get_users_list_of_bets(deps, env, command),
+        QueryMsg::GetLastTenContests(_) => handle_get_last_ten_contests(deps, env),
+        QueryMsg::GetTotalUsers(_) => handle_get_total_users(deps),
     }
 }

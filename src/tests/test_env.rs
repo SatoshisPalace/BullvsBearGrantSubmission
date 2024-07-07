@@ -7,7 +7,6 @@ pub mod tests {
         to_binary, to_vec, Addr, Binary, ContractInfo, Empty, MessageInfo, OwnedDeps, StdResult,
         Timestamp, Uint128,
     };
-    use sp_secret_toolkit::macros::identifiable::Identifiable;
 
     use crate::{
         command_handlers::{
@@ -15,14 +14,18 @@ pub mod tests {
             execute_handlers::{handle_claim, handle_claim_multiple, handle_receive},
             invoke_handlers::handle_bet_on_contest,
             query_handlers::{
-                handle_get_claimable_fees, handle_get_claimable_value, handle_get_contest_by_id,
-                handle_get_contests, handle_get_contests_by_ids, handle_get_fee_percent,
-                handle_get_minimum_bet, handle_get_snip20, handle_get_times_to_resolve,
-                handle_user_bet, handle_users_bets_query,
+                handle_get_claimable_contests, handle_get_claimable_fees, handle_get_contest_by_id,
+                handle_get_contests_by_ids, handle_get_fee_percent, handle_get_last_ten_contests,
+                handle_get_minimum_bet, handle_get_snip20, handle_get_times_to_resolve_from_ids,
+                handle_get_total_number_of_bets, handle_get_total_number_of_contests,
+                handle_get_total_users, handle_get_total_volume, handle_get_users_list_of_bets,
+                handle_get_users_number_of_bets, handle_user_bet, handle_users_last_ten_bets,
             },
         },
         contract::instantiate,
-        data::{contest_info::ContestInfo, state::FeePercent},
+        data::{
+            contest_info::ContestInfo, state::FeePercent, user_info::get_users_last_claimed_index,
+        },
         msgs::{
             execute::commands::{
                 claim::Claim, claim_multiple::ClaimMultiple, receive::Receive,
@@ -31,15 +34,11 @@ pub mod tests {
             instantiate::InstantiateMsg,
             invoke::{commands::bet_contest::BetContest, invoke_msg::InvokeMsg},
             query::commands::{
-                get_claimable_value::GetClaimableValue,
-                get_contest_by_id::GetContestById,
-                get_contests::{ContestQueryFilter, ContestQuerySortOrder, GetContests},
-                get_contests_by_ids::GetContestsByIds,
-                get_user_bet::GetUserBet,
-                get_users_bets::{
-                    GetUsersBets,
-                    UsersBetsQueryFilters::{self},
-                },
+                get_claimable_contests::GetClaimableContests, get_contest_by_id::GetContestById,
+                get_contests_by_ids::GetContestsByIds, get_times_to_resolve::GetTimesToResolve,
+                get_user_bet::GetUserBet, get_users_last_ten_bets::GetUsersLastTenBets,
+                get_users_list_of_bets::GetUsersListOfBets,
+                get_users_number_of_bets::GetUsersNumberOfBets,
             },
         },
         responses::{
@@ -47,6 +46,7 @@ pub mod tests {
             query::{
                 query_response::QueryResponse,
                 response_types::{
+                    contest_data_list::ContestDataListResponse,
                     times_to_resolve::TimesToResolveResponse, users_bets::UsersBetsResponse,
                 },
             },
@@ -106,79 +106,28 @@ pub mod tests {
                 .expect("contract initialization failed");
         }
 
-        pub fn query_claimable_value(&mut self, expected_amount: Uint128) {
-            let command = GetClaimableValue {
-                user: self.info.sender.clone(),
-                viewing_key: "valid viewing key".to_owned(),
-            };
-            let binary_response =
-                handle_get_claimable_value(self.deps.as_ref(), self.env.clone(), command).unwrap();
-            let query_response: QueryResponse = from_binary(&binary_response).unwrap();
-            match query_response {
-                QueryResponse::ClaimableValue(response) => {
-                    assert_eq!(response.amount, expected_amount)
-                }
-                _ => panic!("Expected ClaimableValue response but received something else"),
-            }
+        pub fn ensure_index_incrementing(&mut self, expected: Option<u32>) {
+            let index = get_users_last_claimed_index(&self.info.sender);
+            assert_eq!(
+                index.may_load(&self.deps.storage).unwrap(),
+                expected,
+                "Expected index to be incremting"
+            );
         }
 
-        fn query_users_bets(
+        pub fn query_times_to_resolve(
             &mut self,
-            filters: Option<Vec<UsersBetsQueryFilters>>,
-        ) -> StdResult<UsersBetsResponse> {
-            let command = GetUsersBets {
-                user: self.info.sender.clone(),
-                viewing_key: "valid viewing key".to_owned(),
-                filters,
-            };
+            command: GetTimesToResolve,
+            expected_response: TimesToResolveResponse,
+        ) {
             let binary_response =
-                handle_users_bets_query(self.deps.as_ref(), self.env.clone(), command)?;
-            let query_response: QueryResponse = from_binary(&binary_response)?;
-            match query_response {
-                QueryResponse::UsersBets(response) => Ok(response),
-                _ => panic!("Expected Users Bets response but received something else"),
-            }
-        }
-
-        pub fn query_times_to_resolve(&mut self, expected_response: TimesToResolveResponse) {
-            let binary_response =
-                handle_get_times_to_resolve(self.deps.as_ref(), self.env.clone()).unwrap();
+                handle_get_times_to_resolve_from_ids(self.deps.as_ref(), command).unwrap();
             let query_response: QueryResponse = from_binary(&binary_response).unwrap();
             match query_response {
-                QueryResponse::TimesToResolve(response) => assert_eq!(response, expected_response),
+                QueryResponse::TimesToResolve(response) => {
+                    assert_eq!(response, expected_response)
+                }
                 _ => panic!("Expected Times to Resolve response but received something else"),
-            }
-        }
-
-        pub fn users_bets_has_length(
-            &mut self,
-            filters: Option<Vec<UsersBetsQueryFilters>>,
-            expected_length: usize,
-        ) {
-            let users_bets = self.query_users_bets(filters).unwrap();
-            assert_eq!(users_bets.contests_bets.len(), expected_length);
-        }
-
-        pub fn users_bets_includes_contest(
-            &mut self,
-            file_number: &u8,
-            filters: Option<Vec<UsersBetsQueryFilters>>,
-        ) {
-            if let Ok(contest_info) = get_contest_open(*file_number) {
-                let users_bets: UsersBetsResponse = self.query_users_bets(filters).unwrap();
-
-                for user_contest_bet_info in users_bets.contests_bets.iter() {
-                    if user_contest_bet_info.contest_info.id() == contest_info.id()
-                        && user_contest_bet_info.user_bet.get_contest_id() == &contest_info.id()
-                    {
-                        return;
-                    }
-                }
-
-                // If we reach this point, no matching entry was found
-                assert!(false, "Users bets does not contain the contest id");
-            } else {
-                assert!(false, "Contest Info not found")
             }
         }
 
@@ -595,8 +544,9 @@ pub mod tests {
             };
 
             // Handle the get contests command and unwrap the successful result.
-            let binary_response = handle_get_contests_by_ids(self.deps.as_ref(), command)
-                .expect("Expected GetContests to succeed but it failed");
+            let binary_response =
+                handle_get_contests_by_ids(self.deps.as_ref(), self.env.clone(), command)
+                    .expect("Expected GetContests to succeed but it failed");
 
             // Deserialize the binary response into QueryResponse.
             let response: QueryResponse =
@@ -703,6 +653,126 @@ pub mod tests {
             }
         }
 
+        pub fn get_number_of_contests(&mut self, expected_number: Option<&u32>) {
+            let binary_response = handle_get_total_number_of_contests(self.deps.as_ref())
+                .expect("Expected GetTotalNumberOfContests to succeed but failed");
+
+            let response: QueryResponse =
+                from_binary(&binary_response).expect("Failed to deserialize QueryResponse");
+
+            match response {
+                QueryResponse::TotalNumberOfContests(total_number_response) => {
+                    if let Some(total_number) = expected_number {
+                        // If an expected number is specified, assert it matches the retrieved value.
+                        assert_eq!(
+                            total_number_response.total_number_of_contests, *total_number,
+                            "Total Number is not what was expected"
+                        );
+                    }
+                }
+                _ => {
+                    panic!("Expected TotalNumberOfContestsResponse but received something else")
+                }
+            }
+        }
+
+        pub fn get_number_of_bets(&mut self, expected_number: Option<&u64>) {
+            let binary_response = handle_get_total_number_of_bets(self.deps.as_ref())
+                .expect("Expected GetTotalNumberOfBets to succeed but failed");
+
+            let response: QueryResponse =
+                from_binary(&binary_response).expect("Failed to deserialize QueryResponse");
+
+            match response {
+                QueryResponse::TotalNumberOfBets(total_number_response) => {
+                    if let Some(total_number) = expected_number {
+                        // If an expected number is specified, assert it matches the retrieved value.
+                        assert_eq!(
+                            total_number_response.total_number_of_bets, *total_number,
+                            "Total Number is not what was expected"
+                        );
+                    }
+                }
+                _ => {
+                    panic!("Expected TotalNumberOfBetsResponse but received something else")
+                }
+            }
+        }
+
+        pub fn get_number_of_users_bets(&mut self, expected_number: Option<&u32>) {
+            let command = GetUsersNumberOfBets {
+                user: self.info.sender.clone(),
+                viewing_key: "Valid Viewing Key".to_owned(),
+            };
+
+            let binary_response = handle_get_users_number_of_bets(self.deps.as_ref(), command)
+                .expect("Expected GetUsersNumberOfBets to succeed but failed");
+
+            let response: QueryResponse =
+                from_binary(&binary_response).expect("Failed to deserialize QueryResponse");
+
+            match response {
+                QueryResponse::TotalUsersNumberOfBets(total_number_response) => {
+                    if let Some(total_number) = expected_number {
+                        // If an expected number is specified, assert it matches the retrieved value.
+                        assert_eq!(
+                            total_number_response.total_users_number_of_bets, *total_number,
+                            "Total Number is not what was expected"
+                        );
+                    }
+                }
+                _ => {
+                    panic!("Expected UsersNumberOfBetsResponse but received something else")
+                }
+            }
+        }
+
+        pub fn get_number_of_users(&mut self, expected_number: Option<&u32>) {
+            let binary_response = handle_get_total_users(self.deps.as_ref())
+                .expect("Expected GetTotalUsers to succeed but failed");
+
+            let response: QueryResponse =
+                from_binary(&binary_response).expect("Failed to deserialize QueryResponse");
+
+            match response {
+                QueryResponse::TotalNumberOfUsers(total_number_response) => {
+                    if let Some(total_number) = expected_number {
+                        // If an expected number is specified, assert it matches the retrieved value.
+                        assert_eq!(
+                            total_number_response.total_number_of_users, *total_number,
+                            "Total Number is not what was expected"
+                        );
+                    }
+                }
+                _ => {
+                    panic!("Expected TotalNumberOfUsersResponse but received something else")
+                }
+            }
+        }
+
+        pub fn get_volume(&mut self, expected_number: Option<&Uint128>) {
+            let binary_response = handle_get_total_volume(self.deps.as_ref())
+                .expect("Expected GetTotalVolume to succeed but failed");
+
+            let response: QueryResponse =
+                from_binary(&binary_response).expect("Failed to deserialize QueryResponse");
+
+            match response {
+                QueryResponse::TotalVolume(total_number_response) => {
+                    if let Some(total_number) = expected_number {
+                        // If an expected number is specified, assert it matches the retrieved value.
+                        assert_eq!(
+                            total_number_response.total_volume, *total_number,
+                            "Total volume is not what was expected"
+                        );
+                    }
+                }
+                _ => {
+                    panic!("Expected TotalVolumeResponse but received something else")
+                }
+            }
+        }
+
         pub fn get_claimable_fees(&mut self, expected_claimable_fees_option: Option<&Uint128>) {
             let binary_response = handle_get_claimable_fees(self.deps.as_ref())
                 .expect("Expected GetClaimableFees to succeed but failed");
@@ -801,66 +871,204 @@ pub mod tests {
                 .expect_err("Expected GetUserBet to fail but succeeded");
         }
 
-        pub fn get_contests_success(
-            &self,
-            page_num: Option<u32>,
-            page_size: Option<u32>,
-            sort_order: Option<ContestQuerySortOrder>,
-            filter: Option<ContestQueryFilter>,
-            expected_length: usize,
-        ) {
-            let command = GetContests {
-                page_num,
-                page_size,
-                sort_order: sort_order.clone(),
-                filter: filter.clone(),
+        fn query_users_claimable_contests(&mut self) -> StdResult<UsersBetsResponse> {
+            let command = GetClaimableContests {
+                user: self.info.sender.clone(),
+                viewing_key: "valid viewing key".to_owned(),
             };
-
             let binary_response =
-                handle_get_contests(self.deps.as_ref(), self.env.clone(), command)
-                    .expect("Expected Get Active Contests to succeed but failed");
-            let response: QueryResponse =
-                from_binary(&binary_response).expect("Failed to deserialize QueryResponse");
+                handle_get_claimable_contests(self.deps.as_ref(), self.env.clone(), command)?;
+            let query_response: QueryResponse = from_binary(&binary_response)?;
+            match query_response {
+                QueryResponse::UsersBets(response) => Ok(response),
+                _ => panic!("Expected Users Bets response but received something else"),
+            }
+        }
 
-            if let QueryResponse::ContestDataList(contest_data_list_response) = response {
-                let contest_data_list = contest_data_list_response.contests;
-                assert_eq!(contest_data_list.len(), expected_length);
-                if let Some(ContestQuerySortOrder::Volume) = sort_order {
-                    // Extract the total pool volumes for each contest
-                    let volumes: Vec<Uint128> = contest_data_list
-                        .iter()
-                        .map(|contest_data_response| {
-                            contest_data_response.contest_bet_summary.calc_total_pool()
-                        })
-                        .collect();
+        pub fn users_claimable_contests_has_length(&mut self, expected_length: usize) {
+            let users_bets = self.query_users_claimable_contests().unwrap();
+            assert_eq!(users_bets.contests_bets.len(), expected_length);
+        }
 
-                    // Check if the volumes list is sorted in descending order
-                    // Adjust this logic if you need ascending order or have other sort orders
-                    let is_sorted_descending = volumes.windows(2).all(|w| w[0] >= w[1]);
+        pub fn users_claimable_contests_includes_contest(&mut self, file_number: &u8) {
+            if let Ok(contest_info) = get_contest_open(*file_number) {
+                let users_bets: UsersBetsResponse = self.query_users_claimable_contests().unwrap();
 
-                    assert!(
-                        is_sorted_descending,
-                        "Contests are not sorted in descending order of volume as expected."
-                    );
-                } else if let Some(ContestQuerySortOrder::Descending) = sort_order {
-                    // Extract the time of close for each contest
-                    let times_of_close: Vec<u64> = contest_data_list
-                        .iter()
-                        .map(|contest_data_response| {
-                            contest_data_response.contest_info.get_time_of_close()
-                        })
-                        .collect();
-                    // Check if the volumes list is sorted in descending order
-                    // Adjust this logic if you need ascending order or have other sort orders
-                    let is_sorted_descending = times_of_close.windows(2).all(|w| w[0] >= w[1]);
-
-                    assert!(
-                        is_sorted_descending,
-                        "Contests are not sorted in descending order of time of close as expected."
-                    );
+                for user_contest_bet_info in users_bets.contests_bets.iter() {
+                    if user_contest_bet_info.contest_info.get_time_of_close()
+                        == contest_info.get_time_of_close()
+                    {
+                        return;
+                    }
                 }
+
+                // If we reach this point, no matching entry was found
+                assert!(
+                    false,
+                    "Users claimable contests does not contain the contest id"
+                );
             } else {
-                panic!("Expected ContestDataList response but received something else");
+                assert!(false, "Contest Info not found")
+            }
+        }
+
+        fn query_users_last_ten_contests(&mut self) -> StdResult<UsersBetsResponse> {
+            let command = GetUsersLastTenBets {
+                user: self.info.sender.clone(),
+                viewing_key: "valid viewing key".to_owned(),
+            };
+            let binary_response =
+                handle_users_last_ten_bets(self.deps.as_ref(), self.env.clone(), command)?;
+            let query_response: QueryResponse = from_binary(&binary_response)?;
+            match query_response {
+                QueryResponse::UsersBets(response) => Ok(response),
+                _ => panic!("Expected Users Bets response but received something else"),
+            }
+        }
+
+        pub fn users_last_ten_contests_has_length(&mut self, expected_length: usize) {
+            let users_bets = self.query_users_last_ten_contests().unwrap();
+            assert_eq!(users_bets.contests_bets.len(), expected_length);
+        }
+
+        pub fn users_last_ten_contests_includes_contest(&mut self, file_number: &u8) {
+            if let Ok(contest_info) = get_contest_open(*file_number) {
+                let users_bets: UsersBetsResponse = self.query_users_last_ten_contests().unwrap();
+
+                for user_contest_bet_info in users_bets.contests_bets.iter() {
+                    if user_contest_bet_info.contest_info.get_time_of_close()
+                        == contest_info.get_time_of_close()
+                    {
+                        return;
+                    }
+                }
+
+                // If we reach this point, no matching entry was found
+                assert!(
+                    false,
+                    "Users claimable contests does not contain the contest id"
+                );
+            } else {
+                assert!(false, "Contest Info not found")
+            }
+        }
+
+        pub fn users_last_ten_contests_does_not_include_contest(&mut self, file_number: &u8) {
+            if let Ok(contest_info) = get_contest_open(*file_number) {
+                let users_bets: UsersBetsResponse = self.query_users_last_ten_contests().unwrap();
+
+                for user_contest_bet_info in users_bets.contests_bets.iter() {
+                    if user_contest_bet_info.contest_info.get_time_of_close()
+                        == contest_info.get_time_of_close()
+                    {
+                        panic!("Expected contest to not be included")
+                    }
+                }
+
+                // If we reach this point, no matching entry was found
+                return;
+            } else {
+                return;
+            }
+        }
+
+        fn query_last_ten_contests(&mut self) -> StdResult<ContestDataListResponse> {
+            let binary_response =
+                handle_get_last_ten_contests(self.deps.as_ref(), self.env.clone())?;
+            let query_response: QueryResponse = from_binary(&binary_response)?;
+            match query_response {
+                QueryResponse::ContestDataList(response) => Ok(response),
+                _ => panic!("Expected Users Bets response but received something else"),
+            }
+        }
+
+        pub fn last_ten_contests_has_length(&mut self, expected_length: &u32) {
+            let response = self.query_last_ten_contests().unwrap();
+            // Check if the number of contests matches the expected number, if provided.
+            assert_eq!(
+                *expected_length as usize,
+                response.contests.len(),
+                "Number of contests does not match the expected number"
+            );
+        }
+
+        pub fn last_ten_contests_includes_contest(&mut self, file_number: &u8) {
+            if let Ok(contest_info) = get_contest_open(*file_number) {
+                let contests_data_list_response: ContestDataListResponse =
+                    self.query_last_ten_contests().unwrap();
+
+                for contest in contests_data_list_response.contests {
+                    if contest.contest_info.get_time_of_close() == contest_info.get_time_of_close()
+                    {
+                        return;
+                    }
+                }
+
+                // If we reach this point, no matching entry was found
+                assert!(false, "Last ten contests does not contain the contest id");
+            } else {
+                assert!(false, "Contest Info not found")
+            }
+        }
+
+        pub fn last_ten_contests_does_not_include_contest(&mut self, file_number: &u8) {
+            if let Ok(contest_info) = get_contest_open(*file_number) {
+                let contests_data_list_response: ContestDataListResponse =
+                    self.query_last_ten_contests().unwrap();
+
+                for contest in contests_data_list_response.contests {
+                    if contest.contest_info.get_time_of_close() == contest_info.get_time_of_close()
+                    {
+                        panic!("Expected contest to not be included")
+                    }
+                }
+
+                // If we reach this point, no matching entry was found
+                return;
+            } else {
+                return;
+            }
+        }
+
+        fn query_users_list_of_bets(&mut self, ids: Vec<u32>) -> StdResult<UsersBetsResponse> {
+            let command = GetUsersListOfBets {
+                user: self.info.sender.clone(),
+                viewing_key: "valid viewing key".to_owned(),
+                contest_ids: ids,
+            };
+            let binary_response =
+                handle_get_users_list_of_bets(self.deps.as_ref(), self.env.clone(), command)?;
+            let query_response: QueryResponse = from_binary(&binary_response)?;
+            match query_response {
+                QueryResponse::UsersBets(response) => Ok(response),
+                _ => panic!("Expected Users Bets response but received something else"),
+            }
+        }
+
+        pub fn users_list_of_bets_has_length(&mut self, ids: Vec<u32>, expected_length: usize) {
+            let users_bets = self.query_users_list_of_bets(ids).unwrap();
+            assert_eq!(users_bets.contests_bets.len(), expected_length);
+        }
+
+        pub fn users_list_of_bets_includes_contest(&mut self, ids: Vec<u32>, file_number: &u8) {
+            if let Ok(contest_info) = get_contest_open(*file_number) {
+                let users_bets: UsersBetsResponse = self.query_users_list_of_bets(ids).unwrap();
+
+                for user_contest_bet_info in users_bets.contests_bets.iter() {
+                    if user_contest_bet_info.contest_info.get_time_of_close()
+                        == contest_info.get_time_of_close()
+                    {
+                        return;
+                    }
+                }
+
+                // If we reach this point, no matching entry was found
+                assert!(
+                    false,
+                    "Users list of bets contests does not contain the contest id"
+                );
+            } else {
+                assert!(false, "Contest Info not found")
             }
         }
     }

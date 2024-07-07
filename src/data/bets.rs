@@ -2,10 +2,14 @@ use std::fmt;
 
 use cosmwasm_std::{Addr, Uint128};
 use schemars::JsonSchema;
+use secret_toolkit::storage::Item;
 use serde::{Deserialize, Serialize};
 use sp_secret_toolkit::macros::{identifiable::Identifiable, keymap::KeymapStorage};
 
 use super::contest_info::{ContestId, ContestInfo};
+
+pub static TOTAL_VOLUME: Item<Uint128> = Item::new(b"TOTAL_VOLUME");
+pub static TOTAL_BETS: Item<u64> = Item::new(b"TOTAL_BETS");
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema, KeymapStorage)]
 pub struct Bet {
@@ -17,7 +21,12 @@ pub struct Bet {
 }
 
 impl Bet {
-    pub fn new(user: Addr, contest_id: <ContestInfo as Identifiable>::ID, amount: Uint128, outcome_id: u8) -> Self {
+    pub fn new(
+        user: Addr,
+        contest_id: <ContestInfo as Identifiable>::ID,
+        amount: Uint128,
+        outcome_id: u8,
+    ) -> Self {
         Bet {
             user,
             contest_id,
@@ -82,10 +91,7 @@ impl Identifiable for Bet {
     type ID = UserContest; // Or another type that implements Serialize + DeserializeOwned
 
     fn id(&self) -> Self::ID {
-        return UserContest::new(
-            self.get_user().to_owned(),
-            self.get_contest_id().to_owned(),
-        );
+        return UserContest::new(self.get_user().to_owned(), self.get_contest_id().to_owned());
     }
 }
 

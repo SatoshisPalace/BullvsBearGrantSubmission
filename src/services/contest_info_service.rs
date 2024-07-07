@@ -4,7 +4,7 @@ use sp_secret_toolkit::price_feed::response::response_types::prices_by_ids::Pric
 
 use crate::services::state_service::get_interval;
 use crate::{
-    constants::{BEAR, BULL, EXPIRATION_WINDOW, SECONDS_IN_A_MINUTE, TICKERS},
+    constants::{BEAR, BULL, SECONDS_IN_A_MINUTE, TICKERS},
     data::contest_info::{ContestId, ContestInfo, ContestOutcome},
     error::contest_info_error::ContestInfoError,
 };
@@ -140,42 +140,6 @@ pub fn assert_outcome_is_on_contest(
         Ok(())
     } else {
         Err(ContestInfoError::OutcomeDNE)
-    }
-}
-
-pub fn assert_time_of_close_not_passed(
-    contest_info: &ContestInfo,
-    env: &Env,
-) -> Result<(), ContestInfoError> {
-    let current_time = env.block.time.seconds();
-    if current_time >= contest_info.get_time_of_close() {
-        Err(ContestInfoError::TimeOfClosePassed(contest_info.get_id()))
-    } else {
-        Ok(())
-    }
-}
-
-pub fn assert_time_of_resolved_not_passed(
-    contest_info: &ContestInfo,
-    env: &Env,
-) -> Result<(), ContestInfoError> {
-    let current_time = env.block.time.seconds();
-    if current_time >= contest_info.get_time_of_resolve() {
-        Err(ContestInfoError::TimeOfResolvePassed(contest_info.get_id()))
-    } else {
-        Ok(())
-    }
-}
-
-pub fn assert_time_of_expiry_not_passed(
-    contest_info: &ContestInfo,
-    env: &Env,
-) -> Result<(), ContestInfoError> {
-    let current_time = env.block.time.seconds();
-    if current_time >= contest_info.get_time_of_resolve() + EXPIRATION_WINDOW {
-        Err(ContestInfoError::TimeOfResolvePassed(contest_info.get_id()))
-    } else {
-        Ok(())
     }
 }
 

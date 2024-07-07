@@ -1,19 +1,17 @@
 {
     "contest_info": {
-        "id": "374b4e952ee217ea9c02421d2c5c6fc77b748e93343901e9ba3ebee7986574fc",
+        "ticker": "BTC",
         "options": [
             {
                 "id": 1,
-                "name": "Cleveland Guardians"
+                "name": "Bull"
             },
             {
                 "id": 2,
-                "name": "New York Mets"
+                "name": "Bear"
             }
         ],
-        "time_of_close": 1716397800,
-        "time_of_resolve": 1716484200,
-        "event_details": "MLB153964"
-    },
-    "contest_info_signature_hex": "213b6771cf223d63b13b531b59b902f5bf7f95042852470613d11d80cf30bd3c6ec247ef80c071b24d6242fe66339485c41c418ec7b6cb0104889a54bc1f1b7a"
+        "time_of_close": 1571799000,
+        "time_of_resolve": 1571799300
+    }
 }

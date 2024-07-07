@@ -1,5 +1,6 @@
 use core::fmt;
 
+use getset::{Getters, Setters};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sp_secret_toolkit::macros::{identifiable::Identifiable, keymap::KeymapStorage};
@@ -14,20 +15,28 @@ pub struct ContestInfo {
     time_of_resolve: u64,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
+#[derive(Getters, Setters, Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
+#[getset(get = "pub", set = "pub")]
 pub struct ContestId {
     ticker: String,
-    time_of_close: u64
+    time_of_close: u64,
 }
 impl ContestId {
     pub fn new(ticker: String, time_of_close: u64) -> Self {
-        ContestId { ticker, time_of_close }
+        ContestId {
+            ticker,
+            time_of_close,
+        }
     }
 }
 
 impl fmt::Display for ContestId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Ticker: {}, Time of Close: {}", self.ticker, self.time_of_close)
+        write!(
+            f,
+            "Ticker: {}, Time of Close: {}",
+            self.ticker, self.time_of_close
+        )
     }
 }
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
@@ -65,7 +74,7 @@ impl ContestInfo {
         }
     }
     pub fn get_id(&self) -> ContestId {
-        return self.id()
+        return self.id();
     }
     pub fn get_ticker(&self) -> String {
         return self.ticker.clone();
@@ -87,7 +96,7 @@ impl Identifiable for ContestInfo {
     fn id(&self) -> Self::ID {
         ContestId {
             ticker: self.ticker.clone(),
-            time_of_close: self.time_of_close
+            time_of_close: self.time_of_close,
         }
     } // Or another type that implements Serialize + DeserializeOwned
 }

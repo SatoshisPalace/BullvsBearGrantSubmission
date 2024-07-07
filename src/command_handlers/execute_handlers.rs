@@ -2,17 +2,21 @@ use cosmwasm_std::{from_binary, DepsMut, Env, MessageInfo, Response, StdResult, 
 use sp_secret_toolkit::snip20::Snip20;
 
 use crate::{
-    contract::invoke, data::contest_info::ContestId, msgs::{
+    contract::invoke,
+    data::contest_info::ContestId,
+    msgs::{
         execute::commands::{claim::Claim, claim_multiple::ClaimMultiple, receive::Receive},
         invoke::invoke_msg::InvokeMsg,
-    }, responses::execute::{
+    },
+    responses::execute::{
         execute_response::{ExecuteResponse, ResponseStatus::Success},
         response_types::claim::ClaimResponse,
-    }, services::{
+    },
+    services::{
         bet_service::user_claims_bet, contest_bet_summary_service::finalize_contest_outcome,
         contest_info_service::assert_contest_ready_to_be_claimed,
-        state_service::assert_snip20_address,
-    }
+        state_service::assert_snip20_address, user_info_service::advance_index,
+    },
 };
 
 pub fn handle_claim(
@@ -39,17 +43,24 @@ pub fn handle_claim_multiple(
     info: MessageInfo,
     command: ClaimMultiple,
 ) -> StdResult<Response> {
-    let ClaimMultiple { contest_ids } = command;
+    let ClaimMultiple { mut contest_ids } = command;
+
+    contest_ids.sort_by_key(|contest| *contest.time_of_close());
 
     let mut total_claimable_amount = Uint128::zero();
 
-    for contest_id in contest_ids.iter() {
+    for (index, contest_id) in contest_ids.iter().enumerate() {
         let claimable_amount = process_claim(&mut deps, &env, &info, contest_id)?;
-
         total_claimable_amount += claimable_amount;
+
+        // Check if this is the last item
+        if index == contest_ids.len() - 1 {
+            advance_index(deps.storage, &info.sender, contest_id)?;
+        }
     }
 
     let snip20 = Snip20::singleton_load(deps.storage)?;
+    // reset_unchecked_contests_for_user(deps.storage, &info.sender);
 
     Ok(Response::default()
         .add_message(snip20.create_send_msg(&info.sender.into_string(), &total_claimable_amount)?)
