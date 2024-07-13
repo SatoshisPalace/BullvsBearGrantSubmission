@@ -5,8 +5,8 @@ use super::response_types::{
     bet::UserBetResponse, claimable_fees::ClaimableFeesResponse, contest_data::ContestDataResponse,
     contest_data_list::ContestDataListResponse, fee_percent::FeePercentResponse,
     get_claimable_value::ClaimableValueResponse, get_snip20::GetSnip20Response,
-    minimum_bet::MinimumBetResponse, times_to_resolve::TimesToResolveResponse,
-    total_number_of_bets::TotalNumberOfBetsResponse,
+    minimum_bet::MinimumBetResponse, stats::StatsResponse,
+    times_to_resolve::TimesToResolveResponse, total_number_of_bets::TotalNumberOfBetsResponse,
     total_number_of_contests::TotalNumberOfContestsResponse,
     total_number_of_users::TotalNumberOfUsersResponse,
     total_users_number_of_bets::TotalUsersNumberOfBetsResponse, total_value::TotalValueResponse,
@@ -33,4 +33,5 @@ pub enum QueryResponse {
     TotalVolume(TotalVolumeResponse),
     TotalUsersNumberOfBets(TotalUsersNumberOfBetsResponse),
     TotalNumberOfUsers(TotalNumberOfUsersResponse),
+    Stats(StatsResponse),
 }

@@ -6,6 +6,7 @@ pub mod fee_percent;
 pub mod get_claimable_value;
 pub mod get_snip20;
 pub mod minimum_bet;
+pub mod stats;
 pub mod times_to_resolve;
 pub mod total_number_of_bets;
 pub mod total_number_of_contests;

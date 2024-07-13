@@ -10,7 +10,7 @@ pub mod tests {
 
     use crate::{
         command_handlers::{
-            admin_execute_handlers::{handle_claim_fees, handle_set_minimum_bet},
+            admin_execute_handlers::{handle_claim_fees, handle_set_fee, handle_set_minimum_bet},
             execute_handlers::{handle_claim, handle_claim_multiple, handle_receive},
             invoke_handlers::handle_bet_on_contest,
             query_handlers::{
@@ -28,7 +28,7 @@ pub mod tests {
         },
         msgs::{
             execute::commands::{
-                claim::Claim, claim_multiple::ClaimMultiple, receive::Receive,
+                claim::Claim, claim_multiple::ClaimMultiple, receive::Receive, set_fee::SetFee,
                 set_minimum_bet::SetMinimumBet,
             },
             instantiate::InstantiateMsg,
@@ -295,6 +295,24 @@ pub mod tests {
                 response.is_err(),
                 "Expected set minimum bet to fail but succeded"
             )
+        }
+
+        pub fn set_fee_success(&mut self, new_fee: FeePercent) {
+            let command = SetFee {
+                numerator: *new_fee.numerator() as u64,
+                denominator: *new_fee.denominator() as u64,
+            };
+            let response = handle_set_fee(self.deps.as_mut(), self.info.clone(), command);
+            assert!(response.is_ok(), "Expected Set fee to succeed")
+        }
+
+        pub fn set_fee_fail(&mut self, new_fee: FeePercent) {
+            let command = SetFee {
+                numerator: *new_fee.numerator() as u64,
+                denominator: *new_fee.denominator() as u64,
+            };
+            let response = handle_set_fee(self.deps.as_mut(), self.info.clone(), command);
+            assert!(response.is_err(), "Expected set fee to fail but succeded")
         }
 
         pub fn claim_fees_success(&mut self, expected_amount: Option<&u128>) {

@@ -23,6 +23,7 @@ use crate::{
             fee_percent::FeePercentResponse,
             get_snip20::GetSnip20Response,
             minimum_bet::MinimumBetResponse,
+            stats::StatsResponse,
             times_to_resolve::TimesToResolveResponse,
             total_number_of_bets::TotalNumberOfBetsResponse,
             total_number_of_contests::TotalNumberOfContestsResponse,
@@ -251,7 +252,7 @@ pub fn handle_get_claimable_contests(
     // Filter contests, bet summaries, and bets based on the provided filters
     let filtered_results = get_users_map_bets(deps, env, user)?;
 
-    // Construct UserContestBetInfo or a similar structure for each filtered result
+    // Construct UserContestBetInfo
     let contests_bets: Vec<UserContestBetInfo> = map_to_user_contest_bet_infos(filtered_results);
 
     let response = QueryResponse::UsersBets(UsersBetsResponse { contests_bets });
@@ -331,6 +332,25 @@ pub fn handle_get_last_ten_contests(deps: Deps, env: Env) -> StdResult<Binary> {
     let response = QueryResponse::ContestDataList(ContestDataListResponse {
         contests: contest_infos_and_summaries,
     });
+    return to_binary(&response);
+}
+
+pub fn handle_get_stats(deps: Deps) -> StdResult<Binary> {
+    let contests = get_total_number_of_contests(deps.storage);
+
+    let bets = get_total_bets(deps.storage);
+
+    let users = get_total_users(deps.storage);
+
+    let volume = get_total_volume(deps.storage);
+
+    let response = QueryResponse::Stats(StatsResponse {
+        contests,
+        bets,
+        users,
+        volume,
+    });
+
     return to_binary(&response);
 }
 

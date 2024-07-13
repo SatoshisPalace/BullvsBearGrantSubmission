@@ -5,17 +5,21 @@ use sp_secret_toolkit::macros::{identifiable::Identifiable, keymap::KeymapStorag
 
 use crate::error::contest_bet_summary_error::ContestBetSummaryError;
 
-use super::contest_info::{ContestId, ContestInfo, ContestOutcome};
+use super::{
+    contest_info::{ContestId, ContestInfo, ContestOutcome},
+    state::FeePercent,
+};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema, KeymapStorage)]
 pub struct ContestBetSummary {
     contest_id: <ContestInfo as Identifiable>::ID,
     options: Vec<OptionBetSummary>,
     outcome: Option<ContestOutcome>,
+    fee: FeePercent,
 }
 
 impl ContestBetSummary {
-    pub fn new(contest_info: &ContestInfo) -> Self {
+    pub fn new(contest_info: &ContestInfo, fee: &FeePercent) -> Self {
         let options = contest_info
             .get_options()
             .iter()
@@ -26,6 +30,7 @@ impl ContestBetSummary {
             contest_id,
             options,
             outcome: None,
+            fee: fee.clone(),
         }
     }
 
@@ -40,6 +45,10 @@ impl ContestBetSummary {
         } else {
             Err(ContestBetSummaryError::CannotResetOutcome)
         }
+    }
+
+    pub fn get_fee(&self) -> &FeePercent {
+        &self.fee
     }
 
     pub fn calc_total_pool(&self) -> Uint128 {

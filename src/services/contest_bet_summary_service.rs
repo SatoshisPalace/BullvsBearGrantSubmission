@@ -5,6 +5,7 @@ use crate::{
     data::{
         contest_bet_summary::ContestBetSummary,
         contest_info::{ContestId, ContestInfo, ContestOutcome},
+        state::State,
     },
     error::contest_bet_summary_error::ContestBetSummaryError,
 };
@@ -62,8 +63,11 @@ pub fn create_new_contest_bet_summary(
     storage: &mut dyn Storage,
     contest_info: &ContestInfo, // Borrowing contest_info
 ) -> StdResult<()> {
+    let state = State::singleton_load(storage).unwrap();
+    let fee = state.fee_percent();
+
     // Create a new ContestBetSummary instance
-    let contest_bet_summary = ContestBetSummary::new(contest_info);
+    let contest_bet_summary = ContestBetSummary::new(contest_info, fee);
 
     // Save the ContestBetSummary instance to storage
     contest_bet_summary.keymap_save(storage)?;
@@ -98,6 +102,7 @@ pub fn finalize_contest_outcome(
     if let Some(outcome) = result {
         // Should certainly exist
         // Set the outcome in the contest bet summary.
+
         contest_bet_summary.set_outcome(&outcome)?;
         if outcome.get_id() != &NULL_AND_VOID_CONTEST_RESULT {
             take_contest_fees(deps.storage, contest_bet_summary.clone());
@@ -205,5 +210,6 @@ pub fn update_contest_bet_summaries_with_results(
 
 pub fn take_contest_fees(storage: &mut dyn Storage, contest_bet_summary: ContestBetSummary) {
     let total_pool = contest_bet_summary.calc_total_pool();
-    add_claimable_fee_for_pool(storage, &total_pool);
+    let fee = contest_bet_summary.get_fee();
+    add_claimable_fee_for_pool(storage, &total_pool, &fee);
 }

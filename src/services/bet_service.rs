@@ -6,7 +6,6 @@ use crate::{
         bets::{Bet, UserContest, TOTAL_BETS, TOTAL_VOLUME},
         contest_bet_summary::ContestBetSummary,
         contest_info::{ContestId, ContestInfo},
-        state::State,
         user_info::{get_users_contest_map, TOTAL_USERS},
     },
     error::bet_error::BetError,
@@ -119,7 +118,7 @@ pub fn user_claims_bet(
                 amount_to_claim = bet.get_amount().clone();
             } else if bet.get_outcome_id() == winning_outcome_id {
                 // User won calculate their payout
-                amount_to_claim = calculate_user_share(storage, contest_bet_summary, &bet)?
+                amount_to_claim = calculate_user_share(contest_bet_summary, &bet)?
             } else {
                 // User lost lol
                 return Err(BetError::CannotClaimOnLostContest);
@@ -164,13 +163,11 @@ pub fn assert_not_paid(bet: &Bet) -> Result<(), BetError> {
 }
 
 pub fn calculate_user_share(
-    storage: &dyn Storage,
     contest_bet_summary: &ContestBetSummary,
     bet: &Bet,
 ) -> Result<Uint128, BetError> {
     // Load state to access fee_percentage
-    let state = State::singleton_load(storage).unwrap();
-    let fee_percent = state.fee_percent();
+    let fee_percent = contest_bet_summary.get_fee();
 
     // Calculate the total pool
     let total_pool = contest_bet_summary.calc_total_pool();
@@ -182,10 +179,13 @@ pub fn calculate_user_share(
     }
 
     // Apply the fee
-    let total_pool_after_fee = total_pool.u128()
-        * (fee_percent.denominator() - fee_percent.numerator())
-        / fee_percent.denominator();
+    let mut total_pool_after_fee = total_pool.u128();
 
+    if fee_percent.numerator() > &(0 as u128) {
+        total_pool_after_fee = total_pool.u128()
+            * (fee_percent.denominator() - fee_percent.numerator())
+            / fee_percent.denominator();
+    }
     // Get the total allocation for the user's chosen outcome
     let total_allocation_for_outcome = contest_bet_summary.get_allocation(*bet.get_outcome_id())?;
 

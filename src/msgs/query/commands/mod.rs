@@ -6,6 +6,7 @@ pub mod get_fee_percent;
 pub mod get_last_ten_contests;
 pub mod get_min_bet;
 pub mod get_snip20;
+pub mod get_stats;
 pub mod get_times_to_resolve;
 pub mod get_total_number_of_bets;
 pub mod get_total_number_of_contests;

@@ -1,4 +1,6 @@
-use crate::command_handlers::admin_execute_handlers::{handle_claim_fees, handle_set_minimum_bet};
+use crate::command_handlers::admin_execute_handlers::{
+    handle_claim_fees, handle_set_fee, handle_set_minimum_bet,
+};
 use crate::command_handlers::execute_handlers::{
     handle_claim, handle_claim_multiple, handle_receive,
 };
@@ -6,10 +8,11 @@ use crate::command_handlers::invoke_handlers::handle_bet_on_contest;
 use crate::command_handlers::query_handlers::{
     handle_get_claimable_contests, handle_get_claimable_fees, handle_get_contest_by_id,
     handle_get_contests_by_ids, handle_get_fee_percent, handle_get_last_ten_contests,
-    handle_get_minimum_bet, handle_get_snip20, handle_get_times_to_resolve_from_ids,
-    handle_get_total_number_of_bets, handle_get_total_number_of_contests, handle_get_total_users,
-    handle_get_total_value, handle_get_total_volume, handle_get_users_list_of_bets,
-    handle_get_users_number_of_bets, handle_user_bet, handle_users_last_ten_bets,
+    handle_get_minimum_bet, handle_get_snip20, handle_get_stats,
+    handle_get_times_to_resolve_from_ids, handle_get_total_number_of_bets,
+    handle_get_total_number_of_contests, handle_get_total_users, handle_get_total_value,
+    handle_get_total_volume, handle_get_users_list_of_bets, handle_get_users_number_of_bets,
+    handle_user_bet, handle_users_last_ten_bets,
 };
 use crate::data::state::{FeePercent, State};
 use crate::msgs::execute::execute_msg::ExecuteMsg;
@@ -35,7 +38,7 @@ pub fn instantiate(
     let state = State::new(
         info.sender.clone(),
         msg.interval,
-        Uint128::from(1u128), // Set minimum_bet to 1
+        Uint128::from(1u128), // Set minimum_bet to 1 SSCRT
         fee_percent,
     );
     state.singleton_save(deps.storage)?;
@@ -58,6 +61,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         ExecuteMsg::ClaimFees(_) => handle_claim_fees(deps, info),
         ExecuteMsg::ClaimMultiple(command) => handle_claim_multiple(deps, env, info, command),
         ExecuteMsg::SetMinimumBet(command) => handle_set_minimum_bet(deps, info, command),
+        ExecuteMsg::SetFee(command) => handle_set_fee(deps, info, command),
         ExecuteMsg::Receive(command) => handle_receive(deps, env, info, command),
     }
 }
@@ -100,5 +104,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetUsersListOfBets(command) => handle_get_users_list_of_bets(deps, env, command),
         QueryMsg::GetLastTenContests(_) => handle_get_last_ten_contests(deps, env),
         QueryMsg::GetTotalUsers(_) => handle_get_total_users(deps),
+        QueryMsg::GetStats(_) => handle_get_stats(deps),
     }
 }

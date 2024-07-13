@@ -21,14 +21,21 @@ pub fn get_claimable_fees(storage: &dyn cosmwasm_std::Storage) -> Result<Uint128
     Ok(state.claimable_fees().clone())
 }
 
-pub fn add_claimable_fee_for_pool(storage: &mut dyn cosmwasm_std::Storage, total_pool: &Uint128) {
+pub fn add_claimable_fee_for_pool(
+    storage: &mut dyn cosmwasm_std::Storage,
+    total_pool: &Uint128,
+    fee: &FeePercent,
+) {
     let mut state = State::singleton_load(storage).unwrap();
     let current_fees = state.claimable_fees().to_owned();
-    let fee = state.fee_percent().to_owned();
+    let fee = fee;
 
-    let fee_amount = total_pool.u128()
-        - (total_pool.u128() * (fee.denominator() - fee.numerator()) / fee.denominator());
+    let mut fee_amount = 0;
 
+    if fee.numerator() > &(0 as u128) {
+        fee_amount = total_pool.u128()
+            - (total_pool.u128() * (fee.denominator() - fee.numerator()) / fee.denominator());
+    }
     let new_collected_fees = current_fees + Uint128::from(fee_amount);
 
     state.set_claimable_fees(new_collected_fees);

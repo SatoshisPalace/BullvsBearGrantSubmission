@@ -1,6 +1,8 @@
 use cosmwasm_std::{DepsMut, MessageInfo, Response, StdResult, Uint128};
 use sp_secret_toolkit::snip20::Snip20;
 
+use crate::data::state::FeePercent;
+use crate::msgs::execute::commands::set_fee::SetFee;
 use crate::responses::execute::execute_response::ResponseStatus::Success;
 use crate::{
     data::state::State,
@@ -18,6 +20,15 @@ pub fn handle_set_minimum_bet(
     state.assert_owner(&info.sender)?;
 
     state.set_minimum_bet(command.amount);
+    state.singleton_save(deps.storage)?;
+    Ok(Response::default())
+}
+
+pub fn handle_set_fee(deps: DepsMut, info: MessageInfo, command: SetFee) -> StdResult<Response> {
+    let mut state = State::singleton_load(deps.storage)?;
+    state.assert_owner(&info.sender)?;
+    let fee_percent = FeePercent::new(command.numerator as u128, command.denominator as u128);
+    state.set_fee_percent(fee_percent);
     state.singleton_save(deps.storage)?;
     Ok(Response::default())
 }

@@ -38,8 +38,9 @@ pub fn advance_index(
 ) -> StdResult<bool> {
     let user_map = get_users_contest_map(address);
     let user_index = get_users_last_claimed_index(address);
+    let search_index = user_index.load(storage).unwrap_or_default();
 
-    for key in 0..user_map.get_len(storage)?.into() {
+    for key in search_index..user_map.get_len(storage)?.into() {
         if user_map.get(storage, &key).unwrap() == *contest_id {
             user_index.save(storage, &(key + 1))?;
         }
