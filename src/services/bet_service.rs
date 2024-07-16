@@ -238,11 +238,16 @@ fn filter_claimable(
                 None
             } else {
                 match contest_bet_summary.get_outcome() {
-                    Some(outcome) if outcome.get_id() == bet.get_outcome_id() => Some((
-                        (*contest_info).clone(),
-                        (*contest_bet_summary).clone(),
-                        (*bet).clone(),
-                    )),
+                    Some(outcome)
+                        if (outcome.get_id() == bet.get_outcome_id()
+                            || outcome.get_id() == &NULL_AND_VOID_CONTEST_RESULT) =>
+                    {
+                        Some((
+                            (*contest_info).clone(),
+                            (*contest_bet_summary).clone(),
+                            (*bet).clone(),
+                        ))
+                    }
                     _ => None,
                 }
             }

@@ -83,6 +83,11 @@ mod tests {
         let contest_file = 1;
         test_env.first_bet_on_contest_success(&contest_file, &1, &100);
 
+        test_env.set_sender("user2".to_owned());
+        test_env.bet_on_contest_success(&contest_file, &2, &100);
+
+        test_env.set_sender("creator".to_owned());
+
         test_env.set_time(AFTER_TIME_OF_1_CLOSE);
         test_env.users_claimable_contests_has_length(0);
     }
@@ -96,6 +101,20 @@ mod tests {
         ));
         let contest_file = 1;
         test_env.first_bet_on_contest_success(&contest_file, &1, &100);
+
+        test_env.set_time(AFTER_TIME_OF_RESOLVE);
+        test_env.users_claimable_contests_has_length(1);
+    }
+
+    #[test]
+    fn includes_lost_but_nullified_contest() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
+        let contest_file = 1;
+        test_env.first_bet_on_contest_success(&contest_file, &2, &100);
 
         test_env.set_time(AFTER_TIME_OF_RESOLVE);
         test_env.users_claimable_contests_has_length(1);
@@ -172,41 +191,60 @@ mod tests {
         ));
         let mut contest_file = 1;
         test_env.first_bet_on_contest_success(&contest_file, &1, &100);
+        test_env.set_sender("user2".to_owned());
+        test_env.bet_on_contest_success(&contest_file, &2, &100);
+
+        test_env.set_sender("creator".to_owned());
         test_env.set_time(AFTER_TIME_OF_1_CLOSE);
 
         test_env.ensure_index_incrementing(None);
         contest_file = 2;
         test_env.first_bet_on_contest_success(&contest_file, &1, &100);
+        test_env.set_sender("user2".to_owned());
+        test_env.bet_on_contest_success(&contest_file, &2, &100);
+
+        test_env.set_sender("creator".to_owned());
+
         test_env.set_time(AFTER_TIME_OF_2_CLOSE);
         test_env.ensure_index_incrementing(None);
         test_env.users_claimable_contests_has_length(1);
-        test_env.get_contests_by_ids_success(&vec![1 as u8, 2 as u8], None);
-        test_env.claim_multiple_success(vec![&1], Some(&100));
-        test_env.ensure_index_incrementing(Some(1));
 
+        test_env.get_contests_by_ids_success(&vec![1 as u8, 2 as u8], None);
+        test_env.claim_multiple_success(vec![&1], Some(&198));
+        test_env.ensure_index_incrementing(Some(1));
         contest_file = 3;
         test_env.first_bet_on_contest_success(&contest_file, &1, &100);
+        test_env.set_sender("user2".to_owned());
+        test_env.bet_on_contest_success(&contest_file, &2, &100);
+
+        test_env.set_sender("creator".to_owned());
         test_env.set_time(AFTER_TIME_OF_3_CLOSE);
 
         test_env.users_claimable_contests_has_length(1);
-        test_env.claim_multiple_success(vec![&2], Some(&100));
+        test_env.claim_multiple_success(vec![&2], Some(&198));
         test_env.ensure_index_incrementing(Some(2));
 
         contest_file = 4;
         test_env.first_bet_on_contest_success(&contest_file, &1, &100);
+        test_env.set_sender("user2".to_owned());
+        test_env.bet_on_contest_success(&contest_file, &2, &100);
 
+        test_env.set_sender("creator".to_owned());
         test_env.set_time(AFTER_TIME_OF_4_CLOSE);
         test_env.users_claimable_contests_has_length(1);
 
-        test_env.claim_multiple_success(vec![&3], Some(&100));
+        test_env.claim_multiple_success(vec![&3], Some(&198));
         test_env.ensure_index_incrementing(Some(3));
 
         contest_file = 5;
         test_env.first_bet_on_contest_success(&contest_file, &1, &100);
+        test_env.set_sender("user2".to_owned());
+        test_env.bet_on_contest_success(&contest_file, &2, &100);
 
+        test_env.set_sender("creator".to_owned());
         test_env.set_time(AFTER_TIME_OF_RESOLVE);
         test_env.users_claimable_contests_has_length(2);
-        test_env.claim_multiple_success(vec![&4, &5], Some(&200));
+        test_env.claim_multiple_success(vec![&4, &5], Some(&396));
         test_env.ensure_index_incrementing(Some(5));
     }
 }

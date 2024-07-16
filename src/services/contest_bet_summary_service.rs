@@ -97,7 +97,14 @@ pub fn finalize_contest_outcome(
     ];
     let prices = query_prices(&deps.querier, deps.storage, &price_posting_ids);
     let expiry = EXPIRATION_WINDOW + contest_info.get_time_of_close();
-    let result = get_contest_result(env, &prices, &expiry);
+    let result: Option<ContestOutcome>;
+
+    // if one side does not have a bet set to null and void
+    if bets_on_both_sides(contest_bet_summary.clone()) {
+        result = get_contest_result(env, &prices, &expiry);
+    } else {
+        result = Some(ContestOutcome::nullified_result())
+    }
 
     if let Some(outcome) = result {
         // Should certainly exist
@@ -142,6 +149,16 @@ pub fn get_contest_bet_summaries_ignore_missing(
     }
 
     return contest_bet_summaries;
+}
+
+pub fn bets_on_both_sides(contest_bet_summary: ContestBetSummary) -> bool {
+    if !(contest_bet_summary.get_allocation(1).unwrap() == Uint128::zero()
+        || contest_bet_summary.get_allocation(2).unwrap() == Uint128::zero())
+    {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 pub fn get_contest_bet_summaries(
@@ -195,12 +212,17 @@ pub fn update_contest_bet_summaries_with_results(
         if contest_bet_summary.get_outcome().is_some() {
             continue; // Skip if already set
         }
-
-        // Attempt to get the oracle result for the specific contest_info
-        if let Ok(Some(outcome)) = query_contest_result_oracle(storage, querier, env, contest_info)
-        {
-            // Update the contest bet summary with the new outcome
-            let _ = contest_bet_summary.set_outcome(&outcome);
+        // Only check results if its not meant to be null from lack of participation
+        if bets_on_both_sides(contest_bet_summary.clone()) {
+            // Attempt to get the oracle result for the specific contest_info
+            if let Ok(Some(outcome)) =
+                query_contest_result_oracle(storage, querier, env, contest_info)
+            {
+                // Update the contest bet summary with the new outcome
+                let _ = contest_bet_summary.set_outcome(&outcome);
+            }
+        } else {
+            let _ = contest_bet_summary.set_outcome(&ContestOutcome::nullified_result());
         }
         // If the result is not available or the query fails, do not update the summary
     }
