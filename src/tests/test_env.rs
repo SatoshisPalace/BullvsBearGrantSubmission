@@ -371,7 +371,8 @@ pub mod tests {
                 );
                 assert!(
                     response_result.is_ok(),
-                    "Expected Claim to succeed but failed"
+                    "Expected Claim to succeed but failed: {:?}",
+                    response_result
                 );
                 let response = response_result.unwrap();
                 assert_eq!(

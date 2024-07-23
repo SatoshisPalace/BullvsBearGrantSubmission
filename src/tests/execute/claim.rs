@@ -67,6 +67,303 @@ mod tests {
     }
 
     #[test]
+    fn claim_contest_no_opposition_2_user() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
+        let contest_file = 1;
+        let amount_bet = 100;
+        test_env.first_bet_on_contest_success(&contest_file, &1, &amount_bet);
+
+        test_env.set_sender("user2".to_owned());
+        test_env.bet_on_contest_success(&contest_file, &1, &amount_bet);
+
+        test_env.set_time(AFTER_TIME_OF_RESOLVE);
+
+        test_env.claim_success(&contest_file, Some(&amount_bet));
+
+        test_env.set_sender("creator".to_owned());
+        test_env.claim_success(&contest_file, Some(&amount_bet));
+    }
+
+    #[test]
+    fn claim_contest_no_opposition_10_user() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
+        let contest_file = 1;
+        let amount_bet = 100;
+        let users = vec![
+            "user1", "user2", "user3", "user4", "user5", "user6", "user7", "user8", "user9",
+            "user10",
+        ];
+
+        // All users place bets
+        for (i, user) in users.iter().enumerate() {
+            test_env.set_sender(user.to_string());
+            if i == 0 {
+                test_env.first_bet_on_contest_success(&contest_file, &1, &amount_bet);
+            } else {
+                test_env.bet_on_contest_success(&contest_file, &1, &amount_bet);
+            }
+        }
+
+        // Set time to after the resolution time
+        test_env.set_time(AFTER_TIME_OF_RESOLVE);
+
+        // All users claim their winnings
+        for user in &users {
+            test_env.set_sender(user.to_string());
+            test_env.claim_success(&contest_file, Some(&amount_bet));
+        }
+    }
+
+    #[test]
+    fn claim_contest_with_opposition_10_users() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize(FeePercent::new(0, 1)); // Set fee to 0%
+        let contest_file = 1;
+        let amount_bet = 100;
+        let users = vec![
+            "user1", "user2", "user3", "user4", "user5", "user6", "user7", "user8", "user9",
+            "user10",
+        ];
+
+        // Half the users bet on one side, half on the other
+        for (i, user) in users.iter().enumerate() {
+            test_env.set_sender(user.to_string());
+            if i == 0 {
+                test_env.first_bet_on_contest_success(&contest_file, &1, &amount_bet);
+            } else if i < users.len() / 2 {
+                test_env.bet_on_contest_success(&contest_file, &1, &amount_bet);
+            } else {
+                test_env.bet_on_contest_success(&contest_file, &2, &amount_bet);
+            }
+        }
+
+        // Set time to after the resolution time
+        test_env.set_time(AFTER_TIME_OF_RESOLVE);
+
+        // Users who bet on the winning side claim their winnings
+        for (i, user) in users.iter().enumerate() {
+            test_env.set_sender(user.to_string());
+            if i < users.len() / 2 {
+                // Users on the winning side should succeed in claiming
+                test_env.claim_success(
+                    &contest_file,
+                    Some(&(((users.len() as u128) * amount_bet) / (users.len() / 2) as u128)),
+                ); // Example calculation for expected amount
+            } else {
+                // Users on the losing side should fail in claiming
+                test_env.claim_failure(&contest_file);
+            }
+        }
+    }
+
+    #[test]
+    fn claim_contest_with_skewed_opposition() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize(FeePercent::new(0, 1)); // Set fee to 0%
+        let contest_file = 1;
+        let amount_bet = 100;
+        let users = vec![
+            "user1", "user2", "user3", "user4", "user5", "user6", "user7", "user8", "user9",
+            "user10",
+        ];
+
+        // 3 users bet on side 1, 7 users bet on side 2
+        for (i, user) in users.iter().enumerate() {
+            test_env.set_sender(user.to_string());
+            if i == 0 {
+                test_env.first_bet_on_contest_success(&contest_file, &1, &amount_bet);
+            } else if i < 3 {
+                test_env.bet_on_contest_success(&contest_file, &1, &amount_bet);
+            } else {
+                test_env.bet_on_contest_success(&contest_file, &2, &amount_bet);
+            }
+        }
+
+        // Set time to after the resolution time
+        test_env.set_time(AFTER_TIME_OF_RESOLVE);
+
+        // Calculate the total pool and the expected amount for each winning user
+        let total_pool = users.len() as u128 * amount_bet;
+        let expected_payout_per_winner = total_pool / 3; // Since there are 7 winners
+
+        // Users who bet on the winning side claim their winnings
+        for (i, user) in users.iter().enumerate() {
+            test_env.set_sender(user.to_string());
+            if i < 3 {
+                // Users on the winning side should succeed in claiming
+                test_env.claim_success(
+                    &contest_file,
+                    Some(&expected_payout_per_winner), // Each winning user gets their share of the total pool
+                );
+            } else {
+                // Users on the losing side should fail in claiming
+                test_env.claim_failure(&contest_file);
+            }
+        }
+    }
+
+    #[test]
+    fn claim_contest_with_varied_bets_weighted_losers() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize(FeePercent::new(0, 1)); // Set fee to 0%
+        let contest_file = 1;
+        let users = vec![
+            ("user1", 50), // Less even and varied bet amounts
+            ("user2", 200),
+            ("user3", 75),
+            ("user4", 150),
+            ("user5", 300),
+            ("user6", 450),
+            ("user7", 125),
+            ("user8", 175),
+            ("user9", 225),
+            ("user10", 500),
+        ];
+
+        // First 3 users bet on side 1, remaining 7 bet on side 2
+        for (i, &(user, amount)) in users.iter().enumerate() {
+            test_env.set_sender(user.to_string());
+            if i == 0 {
+                test_env.first_bet_on_contest_success(&contest_file, &1, &amount);
+            } else if i < 3 {
+                test_env.bet_on_contest_success(&contest_file, &1, &amount);
+            } else {
+                test_env.bet_on_contest_success(&contest_file, &2, &amount);
+            }
+        }
+
+        // Set time to after the resolution time
+        test_env.set_time(AFTER_TIME_OF_RESOLVE);
+
+        // Calculate the total pool and the total bet amounts on the winning side (side 1 in this case)
+        let total_pool: u128 = users.iter().map(|&(_, amount)| amount).sum();
+        let total_winning_bets: u128 = users.iter().take(3).map(|&(_, amount)| amount).sum();
+
+        // Users who bet on the winning side claim their winnings
+        for (i, &(user, amount)) in users.iter().enumerate() {
+            test_env.set_sender(user.to_string());
+            if i < 3 {
+                // Calculate expected payout based on the user's share of the winning side
+                let expected_payout = amount as u128 * total_pool / total_winning_bets;
+                test_env.claim_success(&contest_file, Some(&expected_payout)); // Each winning user gets their share of the total pool
+            } else {
+                // Users on the losing side should fail in claiming
+                test_env.claim_failure(&contest_file);
+            }
+        }
+    }
+
+    #[test]
+    fn claim_contest_with_varied_bets_weighted_winners() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize(FeePercent::new(0, 1)); // Set fee to 0%
+        let contest_file = 1;
+        let users = vec![
+            ("user6", 450),
+            ("user7", 125),
+            ("user8", 175),
+            ("user9", 225),
+            ("user10", 500),
+            ("user1", 50), // Less even and varied bet amounts
+            ("user2", 200),
+            ("user3", 75),
+            ("user4", 150),
+            ("user5", 300),
+        ];
+
+        // First 3 users bet on side 1, remaining 7 bet on side 2
+        for (i, &(user, amount)) in users.iter().enumerate() {
+            test_env.set_sender(user.to_string());
+            if i == 0 {
+                test_env.first_bet_on_contest_success(&contest_file, &1, &amount);
+            } else if i < 3 {
+                test_env.bet_on_contest_success(&contest_file, &1, &amount);
+            } else {
+                test_env.bet_on_contest_success(&contest_file, &2, &amount);
+            }
+        }
+
+        // Set time to after the resolution time
+        test_env.set_time(AFTER_TIME_OF_RESOLVE);
+
+        // Calculate the total pool and the total bet amounts on the winning side (side 1 in this case)
+        let total_pool: u128 = users.iter().map(|&(_, amount)| amount).sum();
+        let total_winning_bets: u128 = users.iter().take(3).map(|&(_, amount)| amount).sum();
+
+        // Users who bet on the winning side claim their winnings
+        for (i, &(user, amount)) in users.iter().enumerate() {
+            test_env.set_sender(user.to_string());
+            if i < 3 {
+                // Calculate expected payout based on the user's share of the winning side
+                let expected_payout = amount as u128 * total_pool / total_winning_bets;
+                test_env.claim_success(&contest_file, Some(&expected_payout)); // Each winning user gets their share of the total pool
+            } else {
+                // Users on the losing side should fail in claiming
+                test_env.claim_failure(&contest_file);
+            }
+        }
+    }
+
+    #[test]
+    fn claim_contest_with_varied_bets_prime_total() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize(FeePercent::new(0, 1)); // Set fee to 0%
+        let contest_file = 1;
+        let users = vec![
+            ("user1", 101), // Varied bet amounts adding up to 1013
+            ("user2", 103),
+            ("user3", 107),
+            ("user4", 109),
+            ("user5", 113),
+            ("user6", 127),
+            ("user7", 131),
+            ("user8", 137),
+            ("user9", 139),
+            ("user10", 146), // Total sum is 1013 (a prime number)
+        ];
+
+        // First 3 users bet on side 1, remaining 7 bet on side 2
+        for (i, &(user, amount)) in users.iter().enumerate() {
+            test_env.set_sender(user.to_string());
+            if i == 0 {
+                test_env.first_bet_on_contest_success(&contest_file, &1, &amount);
+            } else if i < 3 {
+                test_env.bet_on_contest_success(&contest_file, &1, &amount);
+            } else {
+                test_env.bet_on_contest_success(&contest_file, &2, &amount);
+            }
+        }
+
+        // Set time to after the resolution time
+        test_env.set_time(AFTER_TIME_OF_RESOLVE);
+
+        // Calculate the total pool and the total bet amounts on the winning side (side 1 in this case)
+        let total_pool: u128 = users.iter().map(|&(_, amount)| amount).sum();
+        let total_winning_bets: u128 = users.iter().take(3).map(|&(_, amount)| amount).sum();
+
+        // Users who bet on the winning side claim their winnings
+        for (i, &(user, amount)) in users.iter().enumerate() {
+            test_env.set_sender(user.to_string());
+            if i < 3 {
+                // Calculate expected payout based on the user's share of the winning side
+                let expected_payout = amount as u128 * total_pool / total_winning_bets;
+                test_env.claim_success(&contest_file, Some(&expected_payout)); // Each winning user gets their share of the total pool
+            } else {
+                // Users on the losing side should fail in claiming
+                test_env.claim_failure(&contest_file);
+            }
+        }
+    }
+
+    #[test]
     fn claim_after_expiration_window_no_opposition() {
         let mut test_env = TestEnv::new();
         test_env.initialize(FeePercent::new(

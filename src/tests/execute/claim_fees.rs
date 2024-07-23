@@ -116,4 +116,45 @@ mod tests {
 
         test_env.claim_fees_failure();
     }
+    #[test]
+    fn claim_contest_no_opposition_10_user() {
+        let mut test_env = TestEnv::new();
+        test_env.initialize(FeePercent::new(
+            BASE_FEE_PERCENT_NUMERATOR,
+            BASE_FEE_PERCENT_DENOMINATOR,
+        ));
+        let contest_file = 1;
+        let amount_bet = 100;
+        let users = vec![
+            "user1", "user2", "user3", "user4", "user5", "user6", "user7", "user8", "user9",
+            "user10",
+        ];
+
+        // All users place bets
+        for (i, user) in users.iter().enumerate() {
+            test_env.set_sender(user.to_string());
+            if i == 0 {
+                test_env.first_bet_on_contest_success(&contest_file, &1, &amount_bet);
+            } else {
+                test_env.bet_on_contest_success(&contest_file, &1, &amount_bet);
+            }
+        }
+
+        // Set time to after the resolution time
+        test_env.set_time(AFTER_TIME_OF_RESOLVE);
+
+        // All users claim their winnings
+        for user in &users {
+            test_env.set_sender(user.to_string());
+            print!("{}", user);
+            test_env.claim_success(&contest_file, Some(&amount_bet));
+        }
+
+        // Creator tries to claim fees
+        // Option 1: Expecting an error
+        test_env.claim_fees_failure();
+
+        // Option 2: Expecting zero fee to claim (commented out)
+        // test_env.claim_fees_success(Some(&0));
+    }
 }
