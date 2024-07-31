@@ -190,9 +190,8 @@ pub fn calculate_user_share(
     let total_allocation_for_outcome = contest_bet_summary.get_allocation(*bet.get_outcome_id())?;
 
     // Calculate the user's share
-    // To avoid floating-point arithmetic, we multiply before dividing
     let user_share =
-        bet.get_amount().u128() * total_pool_after_fee / total_allocation_for_outcome.u128();
+        (bet.get_amount().u128() / total_allocation_for_outcome.u128()) * total_pool_after_fee;
 
     Ok(Uint128::from(user_share))
 }
