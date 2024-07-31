@@ -276,15 +276,15 @@ mod tests {
         let mut test_env = TestEnv::new();
         test_env.initialize(FeePercent::new(0, 0));
         let contest_file = 1;
-        test_env.first_bet_on_contest_success(&contest_file, &1, &57327245053272453545984);
+        test_env.first_bet_on_contest_success(&contest_file, &1, &5732724505327245311);
 
         test_env.set_sender("user2".to_owned());
-        test_env.bet_on_contest_success(&5, &2, &20000000000000000000000);
+        test_env.bet_on_contest_success(&5, &2, &4000000000000000000);
 
         test_env.set_time(AFTER_TIME_OF_RESOLVE);
         test_env.set_sender("creator".to_owned());
 
-        test_env.claim_multiple_success(vec![&contest_file], Some(&77327245053272453545984));
+        test_env.claim_multiple_success(vec![&contest_file], Some(&9732724505327245311));
 
         test_env.claim_multiple_failure(vec![&contest_file]);
     }

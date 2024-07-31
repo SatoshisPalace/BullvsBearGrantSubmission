@@ -146,7 +146,6 @@ mod tests {
         // All users claim their winnings
         for user in &users {
             test_env.set_sender(user.to_string());
-            print!("{}", user);
             test_env.claim_success(&contest_file, Some(&amount_bet));
         }
 

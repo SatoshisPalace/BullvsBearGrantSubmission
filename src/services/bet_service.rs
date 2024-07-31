@@ -161,7 +161,6 @@ pub fn assert_not_paid(bet: &Bet) -> Result<(), BetError> {
         Ok(())
     }
 }
-
 pub fn calculate_user_share(
     contest_bet_summary: &ContestBetSummary,
     bet: &Bet,
@@ -179,19 +178,27 @@ pub fn calculate_user_share(
     }
 
     // Apply the fee
-    let mut total_pool_after_fee = total_pool.u128();
+    let total_pool_after_fee = if fee_percent.numerator() > &(0 as u128) {
+        total_pool.u128() * (fee_percent.denominator() - fee_percent.numerator())
+            / fee_percent.denominator()
+    } else {
+        total_pool.u128()
+    };
 
-    if fee_percent.numerator() > &(0 as u128) {
-        total_pool_after_fee = total_pool.u128()
-            * (fee_percent.denominator() - fee_percent.numerator())
-            / fee_percent.denominator();
-    }
     // Get the total allocation for the user's chosen outcome
     let total_allocation_for_outcome = contest_bet_summary.get_allocation(*bet.get_outcome_id())?;
 
-    // Calculate the user's share
-    let user_share =
-        (bet.get_amount().u128() / total_allocation_for_outcome.u128()) * total_pool_after_fee;
+    // Calculate the user's share using fixed-point arithmetic
+    let user_amount = bet.get_amount().u128();
+    let user_share = user_amount
+        .checked_mul(total_pool_after_fee)
+        .ok_or(BetError::StandardError(StdError::GenericErr {
+            msg: "overflow".to_string(),
+        }))?
+        .checked_div(total_allocation_for_outcome.u128())
+        .ok_or(BetError::StandardError(StdError::GenericErr {
+            msg: "overflow".to_string(),
+        }))?;
 
     Ok(Uint128::from(user_share))
 }
