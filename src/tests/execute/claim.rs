@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
+    use std::time::{Duration, Instant};
 
     use cosmwasm_std::Decimal;
     use sp_secret_toolkit::price_feed::{
@@ -162,6 +163,113 @@ mod tests {
                 test_env.claim_failure(&contest_file);
             }
         }
+    }
+
+    fn claim_contest_with_opposition_n_users(n: usize) {
+        let start_total = Instant::now();
+
+        let mut test_env = TestEnv::new();
+        test_env.initialize(FeePercent::new(0, 1)); // Set fee to 0%
+        let contest_file = 1;
+        let amount_bet = 100;
+        let users: Vec<String> = (1..=n).map(|i| format!("user{}", i)).collect();
+
+        let start_betting = Instant::now();
+        let mut total_bet_time = Duration::new(0, 0);
+        let mut bet_count = 0;
+
+        // Half the users bet on one side, half on the other
+        for (i, user) in users.iter().enumerate() {
+            test_env.set_sender(user.to_string());
+            let bet_start = Instant::now();
+            if i == 0 {
+                test_env.first_bet_on_contest_success(&contest_file, &1, &amount_bet);
+            } else if i < users.len() / 2 {
+                test_env.bet_on_contest_success(&contest_file, &1, &amount_bet);
+            } else {
+                test_env.bet_on_contest_success(&contest_file, &2, &amount_bet);
+            }
+            total_bet_time += bet_start.elapsed();
+            bet_count += 1;
+        }
+
+        let duration_betting = start_betting.elapsed();
+        println!("Time taken for betting: {:?}", duration_betting);
+        println!(
+            "Average time per bet: {:?}",
+            total_bet_time / bet_count as u32
+        );
+
+        // Set time to after the resolution time
+        test_env.set_time(AFTER_TIME_OF_RESOLVE);
+
+        let start_claiming = Instant::now();
+        let mut total_claim_success_time = Duration::new(0, 0);
+        let mut total_claim_failure_time = Duration::new(0, 0);
+        let mut claim_success_count = 0;
+        let mut claim_failure_count = 0;
+
+        // Users who bet on the winning side claim their winnings
+        for (i, user) in users.iter().enumerate() {
+            test_env.set_sender(user.to_string());
+            let claim_start = Instant::now();
+            if i < users.len() / 2 {
+                // Users on the winning side should succeed in claiming
+                test_env.claim_success(
+                    &contest_file,
+                    Some(&(((users.len() as u128) * amount_bet) / (users.len() / 2) as u128)),
+                ); // Example calculation for expected amount
+                total_claim_success_time += claim_start.elapsed();
+                claim_success_count += 1;
+            } else {
+                // Users on the losing side should fail in claiming
+                test_env.claim_failure(&contest_file);
+                total_claim_failure_time += claim_start.elapsed();
+                claim_failure_count += 1;
+            }
+        }
+
+        let duration_claiming = start_claiming.elapsed();
+        println!("Time taken for claiming: {:?}", duration_claiming);
+        println!(
+            "Average time per successful claim: {:?}",
+            total_claim_success_time / claim_success_count as u32
+        );
+        println!(
+            "Average time per failed claim: {:?}",
+            total_claim_failure_time / claim_failure_count as u32
+        );
+
+        let duration_total = start_total.elapsed();
+        println!("Total time taken: {:?}", duration_total);
+    }
+
+    #[test]
+    fn test_claim_contest_with_opposition_10_users() {
+        // let iterations = 100;
+        // for _ in 0..iterations {
+        claim_contest_with_opposition_n_users(10);
+        //     println!("-------------------------------");
+        // }
+    }
+
+    #[test]
+    fn test_claim_contest_with_opposition_100_users() {
+        claim_contest_with_opposition_n_users(100);
+    }
+
+    #[test]
+    fn test_claim_contest_with_opposition_1000_users() {
+        claim_contest_with_opposition_n_users(1000);
+    }
+
+    #[test]
+    fn test_claim_contest_with_opposition_10000_users() {
+        // let iterations = 100;
+        // for _ in 0..iterations {
+        claim_contest_with_opposition_n_users(10000);
+        //     println!("-------------------------------");
+        // }
     }
 
     #[test]
